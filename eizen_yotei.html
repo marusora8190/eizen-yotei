@@ -775,10 +775,14 @@ function drawArrows() {
 function fitTexts(root) {
   $$('td.c .fit', root).forEach(f => {
     if (!f.textContent) return;
+    // 文字の位置（右・左）でずらした分は数えない。ずらしても文字の大きさが変わらず、1回ごとに同じ幅だけ動くように
+    const moved = $('span[style*="left"]', f), left = moved ? moved.style.left : '';
+    if (moved) moved.style.left = '0';
     let size = parseFloat(getComputedStyle(f).fontSize);
     let guard = 0;
     while (f.scrollWidth > f.clientWidth + 0.5 && size > 5 && guard++ < 30) { size -= 0.4; f.style.fontSize = size + 'px'; }
     if (f.scrollWidth > f.clientWidth + 0.5) { f.style.whiteSpace = 'normal'; f.style.lineHeight = '1'; }
+    if (moved) moved.style.left = left;
   });
 }
 $('#sheet').addEventListener('click', e => {
