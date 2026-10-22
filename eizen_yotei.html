@@ -806,6 +806,18 @@ $('#tbChips').addEventListener('click', async e => {
     st.subs.delete(mid); renderTable(); toast('取り消しました');
   }
 });
+// 文字の位置を動かせる範囲。予定表のマスの左端・右端で止まるように、今の表示から数える
+function indentLimits(mid, day, k) {
+  const cls = k === 'allday' ? 'ad' : k;
+  const td = $(`#sheet td.c.${cls}[data-mid="${mid}"][data-day="${day}"]`);
+  const sp = td && $('.fit > span', td);
+  if (!sp || !sp.textContent) return [-10, 20];
+  const PX = 96 / 25.4, step = INDENT_MM * PX, gap = 0.4 * PX;
+  const shift = (parseFloat(sp.style.left) || 0) * PX;
+  const c = td.getBoundingClientRect(), r = sp.getBoundingClientRect();
+  const leftSpace = (r.left - shift) - (c.left + gap), rightSpace = (c.right - gap) - (r.right - shift);
+  return [Math.min(0, -Math.floor(leftSpace / step)), Math.max(0, Math.floor(rightSpace / step))];
+}
 function openEntryEditor(mid, day, clickX) {
   const orig = getEntry(mid, day) ? { ...getEntry(mid, day) } : null;
   const mem = memberById(mid), e = orig || {};
@@ -863,7 +875,8 @@ function openEntryEditor(mid, day, clickX) {
   box.addEventListener('click', ev => {
     const b = ev.target.closest('.ind'); if (!b) return;
     const sp = $('.indv', b.closest('.indrow')), d = Number(b.dataset.d);
-    const [lo, hi] = b.closest('.indrow').dataset.f === 'size' ? [-5, 5] : b.closest('.indrow').dataset.f === 'arrow' ? [-15, 15] : [-10, 20];
+    const row = b.closest('.indrow'), f = row.dataset.f;
+    const [lo, hi] = f === 'size' ? [-5, 5] : f === 'arrow' ? [-15, 15] : indentLimits(mid, day, row.dataset.k);
     sp.dataset.v = d === 0 ? 0 : Math.max(lo, Math.min(hi, Number(sp.dataset.v) + d)); showInd(sp);
     preview();
   });
