@@ -99,25 +99,25 @@ h3{font-size:16px;margin:18px 0 8px}
   .monthbar .mlabel{min-width:0;font-size:16px}
 }
 
-/* ===== 予定表（B4横） ===== */
+/* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
 .sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
-.sheet.b4{width:354mm;height:247mm;padding:0}
-.s-title{height:8mm;font-size:13pt;display:flex;align-items:flex-end;padding:0 0 1mm 1mm}
+.sheet.a4l{width:287mm;height:200mm;padding:0}
+.s-title{height:7mm;font-size:12pt;display:flex;align-items:flex-end;padding:0 0 1mm 1mm}
 table.yt{border-collapse:collapse;table-layout:fixed;width:100%}
 table.yt th,table.yt td{border:0.6px solid #000;padding:0;overflow:hidden}
-table.yt thead th{height:6mm;font-size:11pt;font-weight:400;letter-spacing:.3em}
-table.yt thead th.dh{font-size:7.5pt;letter-spacing:0}
-table.yt td.dn{font-size:10pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
-table.yt td.dw{font-size:5.5pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
+table.yt thead th{height:5.5mm;font-size:10pt;font-weight:400;letter-spacing:.3em}
+table.yt thead th.dh{font-size:6.5pt;letter-spacing:0}
+table.yt td.dn{font-size:8.5pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
+table.yt td.dw{font-size:4.8pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
 table.yt td.red-day{color:var(--red)}
 table.yt td.c{vertical-align:middle}
 table.yt td.c.am{border-bottom:0}
 table.yt td.c.pm{border-top:0}
-table.yt td.c .fit{white-space:nowrap;overflow:hidden;font-size:7pt;padding:0 1mm;line-height:1.1}
-table.yt td.c.pm .fit{padding-left:6mm}
-table.yt td.c.ad .fit{font-size:8.5pt;text-align:center}
-table.yt td.c .ap{font-size:5pt}
+table.yt td.c .fit{white-space:nowrap;overflow:hidden;font-size:6.5pt;padding:0 0.8mm;line-height:1.05}
+table.yt td.c.pm .fit{padding-left:4.5mm}
+table.yt td.c.ad .fit{font-size:7.5pt;text-align:center}
+table.yt td.c .ap{font-size:4.5pt}
 table.yt .r{color:var(--red)}
 table.yt td.c.editable{cursor:pointer}
 table.yt td.c.editable:hover{background:#eef4ff}
@@ -238,10 +238,10 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="toolbar">
       <span>提出：</span><span id="tbChips"></span>
       <span style="flex:1"></span>
-      <button class="btn pri" id="btnPrintTable">印刷（B4横）</button>
+      <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「提出」の印をクリックすると、受け取り済みにできます。</p>
-    <div class="sheet-wrap"><div class="sheet b4" id="sheet"></div></div>
+    <div class="sheet-wrap"><div class="sheet a4l" id="sheet"></div></div>
   </section>
 
   <!-- 記入表 -->
@@ -306,13 +306,13 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <section id="v-help" class="help">
     <h2>使い方</h2>
     <h3>この仕組みでできること</h3>
-    <p>先生方の毎月の予定を集めて、6人分を1枚にまとめた「予定表」（B4横）を作ります。これまでの「予定記入表」から「予定表」へ写す作業がいらなくなります。</p>
+    <p>先生方の毎月の予定を集めて、6人分を1枚にまとめた「予定表」（A4横）を作ります。これまでの「予定記入表」から「予定表」へ写す作業がいらなくなります。</p>
     <h3>毎月の流れ</h3>
     <ol>
       <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：「予定表」の上の「提出」の印で、誰が提出済みかが分かります。紙で受け取ったときは、印をクリックして受け取り済みにできます。</li>
-      <li><b>予定表を印刷</b>：「予定表」の「印刷（B4横）」を押します。印刷の画面で用紙が「B4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
+      <li><b>予定表を印刷</b>：「予定表」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
     </ol>
     <h3>予定入力のしかた</h3>
     <ul>
@@ -627,11 +627,11 @@ function renderTable() {
   }).join(' ');
   const [L, R] = halves();
   const editable = !st.personal;
-  const W = 354, dw = 9, ww = 8;
+  const W = 287, dw = 7, ww = 6.5;
   const pc = L.length + R.length;
   const sideW = (R.length ? 2 : 1) * (dw + ww);
   const pw = pc ? (W - sideW) / pc : 0;
-  const titleH = 8, headH = 6, avail = 247 - titleH - headH - 1.5;
+  const titleH = 7, headH = 5.5, avail = 200 - titleH - headH - 1.5;
   const rowH = Math.min(5.2, avail / (nd * 2));
   let cols = `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
@@ -802,7 +802,7 @@ function doPrint(pageCss) {
   $('#pageStyle').textContent = `@page{${pageCss}}`;
   setTimeout(() => window.print(), 50);
 }
-$('#btnPrintTable').addEventListener('click', () => doPrint('size:364mm 257mm;margin:5mm'));
+$('#btnPrintTable').addEventListener('click', () => doPrint('size:297mm 210mm;margin:5mm'));
 $('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
 $('#btnPrintMeal').addEventListener('click', () => doPrint('size:210mm 297mm;margin:12mm'));
 
