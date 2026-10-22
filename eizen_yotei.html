@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>営繕部予定表</title>
+<!-- ⑦ 営繕部予定表システム（単一HTML＋Supabase「スパーベース」共用プロジェクト。表は yotei_ で始まる） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style id="pageStyle"></style>
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#fff; --ink:#1f2933; --sub:#5f6b7a; --line:#d5dae1; --line2:#e7eaee;
+  --nav:#22324a; --nav-ink:#e8edf4; --nav-act:#3b5b8c; --accent:#2f5d9e; --accent-ink:#fff;
+  --red:#d11a1a; --sat:#1f5fbf; --ok:#1e7d3a; --warn:#b45309; --hl:#fff4e5;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Meiryo",sans-serif;font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+header{display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;position:sticky;top:0;z-index:20}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.05em}
+header .who{color:var(--sub);font-size:14px}
+header .sp{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 12px}
+.btn:hover{background:#f0f3f7}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.upd{background:#c62828;border-color:#c62828;color:#fff;font-weight:700}
+.btn.sm{padding:3px 8px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.layout{display:flex;min-height:calc(100vh - 50px)}
+nav{width:200px;flex:none;background:var(--nav);color:var(--nav-ink);padding:10px 0}
+nav a{display:block;padding:10px 18px;color:inherit;text-decoration:none;cursor:pointer;font-size:15px}
+nav a:hover{background:rgba(255,255,255,.08)}
+nav a.act{background:var(--nav-act);font-weight:700}
+nav .sep{height:1px;background:rgba(255,255,255,.15);margin:8px 12px}
+nav .admin-only{display:none}
+body.is-admin nav .admin-only{display:block}
+body.is-admin nav .admin-open{display:none}
+body.personal nav .hide-personal{display:none!important}
+main{flex:1;min-width:0;padding:16px 20px 40px}
+section{display:none}
+section.active{display:block}
+h2{font-size:18px;margin:0 0 10px}
+h3{font-size:16px;margin:18px 0 8px}
+.monthbar{display:flex;align-items:center;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.monthbar .mlabel{font-size:18px;font-weight:700;min-width:15em;text-align:center}
+.monthbar .msub{color:var(--sub);font-size:13px}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.note{color:var(--sub);font-size:13.5px;margin:0 0 10px}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 10px;font-size:13px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.chip.done{background:#e8f5ec;border-color:#9fd3ae;color:var(--ok)}
+.chip.not{background:#fff7ed;border-color:#f5c68f;color:var(--warn)}
+.status{font-size:14px}
+.status.done{color:var(--ok);font-weight:700}
+.status.not{color:var(--warn);font-weight:700}
+.empty{color:var(--sub);padding:20px;text-align:center}
+
+/* ===== 予定入力 ===== */
+.rows{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--line2)}
+.row:first-child{border-top:0}
+.row.sun .date,.row.hol .date{color:var(--red)}
+.row.sat .date{color:var(--sat)}
+.row.sun,.row.hol{background:#fff8f8}
+.row.sat{background:#f7faff}
+.date{width:84px;flex:none;font-weight:700;font-size:16px;line-height:1.2}
+.date small{font-weight:400;font-size:13px;margin-left:2px}
+.date .hn{display:block;font-weight:400;font-size:11px}
+.meal select{padding:4px;border:1px solid var(--line);border-radius:5px;background:#fff}
+.meal select.v-要{background:#e8f5ec;border-color:#9fd3ae}
+.meal select.v-不要{background:#f2f2f2}
+.slots{flex:1;display:flex;gap:8px;min-width:0}
+.slot{flex:1;display:flex;align-items:center;gap:4px;min-width:0}
+.slot .tag{font-size:12px;color:var(--sub);width:2.6em;flex:none;text-align:right}
+.slot input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:#fff}
+.slot input:focus{outline:2px solid #9cb8e3;border-color:#9cb8e3}
+.slot input.is-red{color:var(--red);font-weight:700}
+.redbtn{flex:none;border:1px solid var(--line);background:#fff;color:#999;border-radius:5px;padding:4px 6px;font-size:12px}
+.redbtn.on{background:var(--red);border-color:var(--red);color:#fff}
+.row .slot-ad{display:none}
+.row.is-allday .slot-am,.row.is-allday .slot-pm{display:none}
+.row.is-allday .slot-ad{display:flex}
+.adchk{flex:none;font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:3px;cursor:pointer}
+.sv{flex:none;width:1.4em;text-align:center;font-size:13px}
+.sv.ok{color:var(--ok)} .sv.ng{color:var(--red)} .sv.ing{color:var(--sub)}
+.fill26{flex:none;font-size:12px}
+@media (max-width:760px){
+  .layout{display:block}
+  nav{width:auto;display:flex;flex-wrap:wrap;padding:4px}
+  nav a{padding:6px 10px;font-size:14px}
+  nav .sep{display:none}
+  main{padding:12px 10px 40px}
+  .row{flex-wrap:wrap}
+  .date{width:auto;flex:1}
+  .slots{flex-basis:100%;flex-direction:column;order:5}
+  .slot .tag{width:2.6em}
+  .monthbar .mlabel{min-width:0;font-size:16px}
+}
+
+/* ===== 予定表（B4横） ===== */
+.sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
+.sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
+.sheet.b4{width:354mm;height:247mm;padding:0}
+.s-title{height:8mm;font-size:13pt;display:flex;align-items:flex-end;padding:0 0 1mm 1mm}
+table.yt{border-collapse:collapse;table-layout:fixed;width:100%}
+table.yt th,table.yt td{border:0.6px solid #000;padding:0;overflow:hidden}
+table.yt thead th{height:6mm;font-size:11pt;font-weight:400;letter-spacing:.3em}
+table.yt thead th.dh{font-size:7.5pt;letter-spacing:0}
+table.yt td.dn{font-size:10pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
+table.yt td.dw{font-size:5.5pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
+table.yt td.red-day{color:var(--red)}
+table.yt td.c{vertical-align:middle}
+table.yt td.c.am{border-bottom:0}
+table.yt td.c.pm{border-top:0}
+table.yt td.c .fit{white-space:nowrap;overflow:hidden;font-size:7pt;padding:0 1mm;line-height:1.1}
+table.yt td.c.pm .fit{padding-left:6mm}
+table.yt td.c.ad .fit{font-size:8.5pt;text-align:center}
+table.yt td.c .ap{font-size:5pt}
+table.yt .r{color:var(--red)}
+table.yt td.c.editable{cursor:pointer}
+table.yt td.c.editable:hover{background:#eef4ff}
+table.yt td.half-l{border-left:1.4px solid #000}
+
+/* ===== 記入表（A4横） ===== */
+.kpage{width:281mm;height:194mm;background:#fff;color:#000;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif;display:flex;flex-direction:column}
+.k-head{height:11mm;display:flex;align-items:flex-end;justify-content:space-between;padding:0 1mm 1.5mm;font-size:13pt}
+.k-body{display:flex;gap:0;flex:none}
+.k-body table{border-collapse:collapse;table-layout:fixed;width:50%}
+.k-body th,.k-body td{border:0.8px solid #000;padding:0 1.2mm;overflow:hidden}
+.k-body th{height:9mm;font-size:9.5pt;font-weight:400}
+.k-body th.mealh{font-size:7.5pt;line-height:1.05;padding:0}
+.k-body td{height:10.5mm;font-size:10pt}
+.k-body td.kd{text-align:right;border-right:0;padding-right:1mm}
+.k-body td.kw{text-align:left;font-size:8.5pt;border-left:0}
+.k-body td.red-day{color:var(--red)}
+.k-body td.k26{background:#fbe5d6}
+.k-body td.kt{font-size:9pt;white-space:nowrap}
+.k-body td.kt.r{color:var(--red)}
+.k-body td.km{text-align:center;padding:0}
+.k-body table + table{border-left:0}
+.k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
+
+/* ===== 昼食 ===== */
+.mpage{width:186mm;min-height:270mm;background:#fff;color:#000;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
+.m-title{font-size:13pt;padding:0 0 2mm}
+table.mt{border-collapse:collapse;width:100%;table-layout:fixed}
+table.mt th,table.mt td{border:0.8px solid #000;height:7.6mm;text-align:center;font-size:10.5pt;padding:0}
+table.mt th{font-weight:400;background:#f3f3f3}
+table.mt td.red-day{color:var(--red)}
+table.mt td.mc{cursor:pointer;font-weight:700}
+table.mt td.mc:hover{background:#eef4ff}
+table.mt td.v-要{color:var(--ok)}
+table.mt td.v-不要{color:#888;font-weight:400}
+
+/* ===== マスター ===== */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+table.grid{border-collapse:collapse;width:100%}
+table.grid th,table.grid td{border-bottom:1px solid var(--line2);padding:6px;text-align:left;font-size:14px;vertical-align:middle}
+table.grid th{color:var(--sub);font-weight:400;font-size:13px}
+table.grid input[type=text],table.grid input[type=number],table.grid input[type=date]{padding:4px 6px;border:1px solid var(--line);border-radius:5px;width:100%}
+table.grid td.url{font-size:12px;color:var(--sub);word-break:break-all}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:6px;padding:8px}
+.help p,.help li{font-size:14.5px}
+.help h3{border-left:4px solid var(--accent);padding-left:8px}
+
+/* ===== モーダル・お知らせ ===== */
+#modal{position:fixed;inset:0;background:rgba(20,28,40,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+#modal.show{display:flex}
+#modal .box{background:#fff;border-radius:10px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto}
+#modal .box h3{margin:0 0 10px}
+#modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2933;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:60;max-width:90vw}
+#toast.ng{background:#b91c1c}
+#loading{padding:40px;text-align:center;color:var(--sub)}
+
+@media print{
+  body{background:#fff}
+  header,nav,.toolbar,.monthbar,.note,.no-print,#toast,#modal{display:none!important}
+  .layout{display:block;min-height:0}
+  main{padding:0;margin:0}
+  section{display:none!important}
+  section.active{display:block!important}
+  .sheet-wrap{overflow:visible;border:0;padding:0;background:none;border-radius:0}
+  .sheet,.kpage,.mpage{box-shadow:none;margin:0}
+  .kpage{break-after:page;page-break-after:always}
+  .kpage:last-child{break-after:auto;page-break-after:auto}
+  table.yt td.c.editable:hover,table.mt td.mc:hover{background:none}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>営繕部予定表</h1>
+  <span class="who" id="whoLabel"></span>
+  <span class="sp"></span>
+  <button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button>
+</header>
+<div class="layout">
+<nav id="nav">
+  <a data-view="input">✏️ 予定入力</a>
+  <a data-view="table">📅 予定表</a>
+  <a data-view="form" class="hide-personal">🖨 記入表の印刷</a>
+  <a data-view="meal" class="hide-personal">🍙 昼食調査</a>
+  <a data-view="help">❓ 使い方</a>
+  <div class="sep hide-personal"></div>
+  <a id="navAdminOpen" class="admin-open hide-personal">🔑 管理者メニュー</a>
+  <a data-view="master" class="admin-only hide-personal">⚙️ マスター</a>
+  <a id="navAdminClose" class="admin-only hide-personal">🔒 管理者メニューを閉じる</a>
+</nav>
+<main>
+  <div id="loading">読み込み中…</div>
+
+  <div class="monthbar" id="monthbar" style="display:none">
+    <button class="btn" id="mPrev">◀ 前の月</button>
+    <span class="mlabel" id="mLabel"></span>
+    <button class="btn" id="mNext">次の月 ▶</button>
+    <button class="btn sm" id="mNextMonth">来月へ</button>
+  </div>
+
+  <!-- 予定入力 -->
+  <section id="v-input">
+    <div class="toolbar">
+      <label id="inMemberWrap">先生：<select id="inMember"></select></label>
+      <span class="status" id="inStatus"></span>
+      <span class="sp" style="flex:1"></span>
+      <button class="btn pri" id="btnSubmit">提出する</button>
+    </div>
+    <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
+    <div class="rows" id="inRows"></div>
+    <datalist id="dlPast"></datalist>
+  </section>
+
+  <!-- 予定表 -->
+  <section id="v-table">
+    <div class="toolbar">
+      <span>提出：</span><span id="tbChips"></span>
+      <span style="flex:1"></span>
+      <button class="btn pri" id="btnPrintTable">印刷（B4横）</button>
+    </div>
+    <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「提出」の印をクリックすると、受け取り済みにできます。</p>
+    <div class="sheet-wrap"><div class="sheet b4" id="sheet"></div></div>
+  </section>
+
+  <!-- 記入表 -->
+  <section id="v-form">
+    <div class="toolbar">
+      <span>印刷する先生：</span><span id="fmMembers"></span>
+      <label><input type="checkbox" id="fmFill"> 入力済みの予定も印刷する</label>
+      <span style="flex:1"></span>
+      <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
+    </div>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。昼食調査の対象の先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。</p>
+    <div class="sheet-wrap" id="fmPages"></div>
+  </section>
+
+  <!-- 昼食調査 -->
+  <section id="v-meal">
+    <div class="toolbar">
+      <span class="note" style="margin:0">マスをクリックすると「要」→「不要」→空欄の順に変わります（自動で保存）。対象の先生はマスターで決めます。</span>
+      <span style="flex:1"></span>
+      <button class="btn pri" id="btnPrintMeal">印刷（A4縦）</button>
+    </div>
+    <div class="sheet-wrap"><div class="mpage" id="mealPage"></div></div>
+  </section>
+
+  <!-- マスター -->
+  <section id="v-master">
+    <h2>マスター</h2>
+    <div class="panel">
+      <h3 style="margin-top:0">先生の一覧</h3>
+      <p class="note">並び順の小さい順に、予定表の左から並びます（前半の人数が左半分、残りが右半分）。「在籍」のチェックを外すと、入力・予定表・記入表に出なくなります（これまでの予定は残ります）。「個人用URL」を先生に渡すと、その先生の入力画面がすぐ開きます。</p>
+      <div style="overflow:auto"><table class="grid" id="msMembers"></table></div>
+      <div style="margin-top:8px"><button class="btn" id="msAddMember">＋ 先生を追加</button></div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">提出の期限・提出先</h3>
+      <table class="grid" style="max-width:560px">
+        <tr><th style="width:12em">提出の期限（前の月の何日）</th><td><input type="number" id="msDeadline" min="1" max="31" style="width:6em"> 日</td></tr>
+        <tr><th>提出先（記入表の右下）</th><td><input type="text" id="msSubmitTo"></td></tr>
+      </table>
+      <div style="margin-top:8px"><button class="btn pri" id="msSaveSettings">保存</button></div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">自動で赤字にする言葉</h3>
+      <p class="note">1行に1つ。予定にこの言葉が入っていると、入力したときに自動で「赤」になります（あとから手で外せます）。</p>
+      <textarea id="msRed"></textarea>
+      <div style="margin-top:8px"><button class="btn pri" id="msSaveRed">保存</button></div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">祝日</h3>
+      <p class="note">予定表・記入表で日付を赤くするのに使います。2050年まで入っています。</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <select id="msHolYear"></select>
+        <span style="flex:1"></span>
+        <input type="date" id="msHolDate"> <input type="text" id="msHolName" placeholder="祝日の名前" style="width:10em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
+        <button class="btn" id="msHolAdd">追加</button>
+      </div>
+      <table class="grid" id="msHolList" style="max-width:560px"></table>
+    </div>
+  </section>
+
+  <!-- 使い方 -->
+  <section id="v-help" class="help">
+    <h2>使い方</h2>
+    <h3>この仕組みでできること</h3>
+    <p>先生方の毎月の予定を集めて、6人分を1枚にまとめた「予定表」（B4横）を作ります。これまでの「予定記入表」から「予定表」へ写す作業がいらなくなります。</p>
+    <h3>毎月の流れ</h3>
+    <ol>
+      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。</li>
+      <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表」のマスをクリックして入力します。</li>
+      <li><b>提出の確認</b>：「予定表」の上の「提出」の印で、誰が提出済みかが分かります。紙で受け取ったときは、印をクリックして受け取り済みにできます。</li>
+      <li><b>予定表を印刷</b>：「予定表」の「印刷（B4横）」を押します。印刷の画面で用紙が「B4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
+    </ol>
+    <h3>予定入力のしかた</h3>
+    <ul>
+      <li>上の「◀ 前の月／次の月 ▶」で月を選びます。はじめは来月が出ます。</li>
+      <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
+      <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
+      <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
+      <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
+      <li>昼食調査の対象の先生は、日付の右の欄で昼食の「要／不要」を選びます。</li>
+    </ul>
+    <h3>先生ご本人に入力してもらうとき</h3>
+    <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
+    <h3>管理者メニュー</h3>
+    <p>「🔑 管理者メニュー」を押して、②〜⑤と同じ管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食調査の対象・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
+    <h3>困ったとき</h3>
+    <ul>
+      <li>画面が古いまま・おかしいときは、右上の赤い「Update」を押します。</li>
+      <li>予定表が1枚に収まらないときは、印刷の画面で「余白：なし」または「倍率：用紙に合わせる」を選んでください。</li>
+    </ul>
+  </section>
+</main>
+</div>
+
+<div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+// ===== 接続 =====
+const SB_URL = 'https://zhxuntrhxnrssqpvcmvl.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoeHVudHJoeG5yc3NxcHZjbXZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDcyNjYsImV4cCI6MjA5NzgyMzI2Nn0.l3pwvKZVVJqDA4HORqt-Op-cTvVF3bkX1ovWgAuSO58';
+const ADMIN_EMAIL = 'admin@marusora-apps.example.com';
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'yotei-anon' } });
+function safeSession() { try { window.sessionStorage.setItem('_t', '1'); window.sessionStorage.removeItem('_t'); return window.sessionStorage; } catch (e) { return undefined; } }
+const adminSb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: safeSession(), storageKey: 'yotei-admin', persistSession: !!safeSession(), autoRefreshToken: true } });
+
+// ===== 状態 =====
+const st = {
+  members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [] },
+  y: 0, m: 0, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null,
+};
+
+// ===== 小道具 =====
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const pad = n => String(n).padStart(2, '0');
+const ymStr = (y, m) => `${y}-${pad(m)}`;
+const dstr = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+const dim = (y, m) => new Date(y, m, 0).getDate();
+const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
+const WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
+const reiki = y => y - 1837;
+const label26 = m => (m === 1 ? '春季大祭' : m === 10 ? '秋季大祭' : '本部月次祭');
+const isRedDay = (y, m, d) => wdOf(y, m, d) === 0 || st.holidays.has(dstr(y, m, d));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const key = (mid, day) => `${mid}|${day}`;
+const prevYM = (y, m) => (m === 1 ? [y - 1, 12] : [y, m - 1]);
+const nextYM = (y, m) => (m === 12 ? [y + 1, 1] : [y, m + 1]);
+function monthTitle(y, m) { return `立教${reiki(y)}年${m}月度`; }
+function deadlineText(y, m) { const [py, pm] = prevYM(y, m); return `${pm}月${st.settings.deadline_day}日までに提出お願いします`; }
+function autoRed(text) { const t = (text || '').trim(); return !!t && st.settings.red_keywords.some(k => k && t.includes(k)); }
+
+let toastTimer = null;
+function toast(msg, ng = false) {
+  const t = $('#toast'); t.textContent = msg; t.className = ng ? 'ng' : ''; t.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = 'none'), ng ? 6000 : 2500);
+}
+function errMsg(error) {
+  const m = (error && (error.message || error.toString())) || '不明なエラー';
+  if (/permission denied|row-level security/i.test(m)) return '権限がありません（' + m + '）';
+  if (/Failed to fetch|NetworkError/i.test(m)) return 'インターネットにつながっていないか、データベースが休止している可能性があります';
+  return m;
+}
+function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.add('show'); }
+function closeModal() { $('#modal').classList.remove('show'); $('#modalBox').innerHTML = ''; }
+$('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
+
+// ===== 読み込み =====
+async function loadMasters() {
+  const [mem, hol, set] = await Promise.all([
+    sb.from('yotei_members').select('*').order('sort_order').order('id'),
+    sb.from('yotei_holidays').select('day,name').order('day').range(0, 4999),
+    sb.from('yotei_settings').select('key,value'),
+  ]);
+  for (const r of [mem, hol, set]) if (r.error) throw r.error;
+  st.allMembers = mem.data;
+  st.members = mem.data.filter(x => x.active);
+  st.holidays = new Map(hol.data.map(h => [h.day, h.name]));
+  for (const s of set.data) st.settings[s.key] = s.value;
+  st.settings.deadline_day = Number(st.settings.deadline_day) || 27;
+  if (!Array.isArray(st.settings.red_keywords)) st.settings.red_keywords = [];
+}
+async function loadMonth() {
+  const { y, m } = st;
+  const from = dstr(y, m, 1), to = dstr(y, m, dim(y, m));
+  const [ent, sub] = await Promise.all([
+    sb.from('yotei_entries').select('*').gte('day', from).lte('day', to).range(0, 4999),
+    sb.from('yotei_submissions').select('*').eq('ym', ymStr(y, m)),
+  ]);
+  if (ent.error) throw ent.error; if (sub.error) throw sub.error;
+  st.entries = new Map(ent.data.map(e => [key(e.member_id, e.day), e]));
+  st.subs = new Map(sub.data.map(s => [s.member_id, s]));
+}
+function getEntry(mid, day) { return st.entries.get(key(mid, day)) || null; }
+function memberById(id) { return st.allMembers.find(x => x.id === id); }
+
+// ===== 保存 =====
+async function saveEntry(mid, day, data) {
+  const rec = {
+    member_id: mid, day,
+    am: data.am || null, pm: data.pm || null, allday: data.allday || null,
+    am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
+    meal: data.meal || null, updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('yotei_entries').upsert(rec, { onConflict: 'member_id,day' });
+  if (error) throw error;
+  st.entries.set(key(mid, day), rec);
+  return rec;
+}
+
+// ===== 画面の切り替え =====
+const VIEWS = ['input', 'table', 'form', 'meal', 'master', 'help'];
+function showView(v) {
+  if (!VIEWS.includes(v)) v = 'input';
+  if (st.personal && !['input', 'table', 'help'].includes(v)) v = 'input';
+  if (v === 'master' && !st.isAdmin) v = 'input';
+  st.view = v;
+  $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
+  $$('nav a[data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
+  $('#monthbar').style.display = ['input', 'table', 'form', 'meal'].includes(v) ? 'flex' : 'none';
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + v); } catch (e) {}
+  render();
+}
+function render() {
+  $('#mLabel').innerHTML = `${monthTitle(st.y, st.m)} <span class="msub">（${st.y}年${st.m}月）</span>`;
+  if (st.view === 'input') renderInput();
+  else if (st.view === 'table') renderTable();
+  else if (st.view === 'form') renderForm();
+  else if (st.view === 'meal') renderMeal();
+  else if (st.view === 'master') renderMaster();
+}
+$$('nav a[data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
+
+async function changeMonth(y, m) {
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  st.y = y; st.m = m;
+  try { await loadMonth(); } catch (e) { toast('読み込めませんでした：' + errMsg(e), true); }
+  render();
+}
+$('#mPrev').addEventListener('click', () => changeMonth(...prevYM(st.y, st.m)));
+$('#mNext').addEventListener('click', () => changeMonth(...nextYM(st.y, st.m)));
+$('#mNextMonth').addEventListener('click', () => { const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1)); });
+$('#btnUpdate').addEventListener('click', () => {
+  const p = new URLSearchParams(location.search); p.set('_', Date.now());
+  location.href = location.pathname + '?' + p.toString() + location.hash;
+});
+
+// ===== 予定入力 =====
+let pendingSaves = 0;
+window.addEventListener('beforeunload', e => { if (pendingSaves > 0) { e.preventDefault(); e.returnValue = ''; } });
+
+function renderInput() {
+  const sel = $('#inMember');
+  if (!st.members.length) { $('#inRows').innerHTML = '<div class="empty">先生が登録されていません（マスターで追加）</div>'; return; }
+  if (!st.inMember || !st.members.some(x => x.id === st.inMember)) st.inMember = st.members[0].id;
+  sel.innerHTML = st.members.map(x => `<option value="${x.id}" ${x.id === st.inMember ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+  $('#inMemberWrap').style.display = st.personal ? 'none' : '';
+  const mem = memberById(st.inMember);
+  renderInputStatus();
+  const { y, m } = st, nd = dim(y, m);
+  let html = '';
+  for (let d = 1; d <= nd; d++) {
+    const day = dstr(y, m, d), w = wdOf(y, m, d), hol = st.holidays.get(day);
+    const e = getEntry(mem.id, day) || {};
+    const isAd = !!e.allday;
+    const cls = ['row', w === 0 ? 'sun' : w === 6 ? 'sat' : '', hol ? 'hol' : '', isAd ? 'is-allday' : ''].join(' ');
+    const slot = (k, tag, val, red) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" list="dlPast" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} title="予定表で赤字にする">赤</button></div>`;
+    const empty = !e.am && !e.pm && !e.allday;
+    html += `<div class="${cls}" data-day="${day}" data-d="${d}">
+      <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
+      ${mem.meal_survey ? `<div class="meal"><select class="mealsel v-${esc(e.meal || '')}" title="昼食"><option value="">昼食</option><option value="要" ${e.meal === '要' ? 'selected' : ''}>要</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>不要</option></select></div>` : ''}
+      <div class="slots">${slot('am', '午前', e.am, e.am_red)}${slot('pm', '午後', e.pm, e.pm_red)}${slot('allday', '終日', e.allday, e.allday_red)}</div>
+      ${d === 26 && empty ? `<button type="button" class="btn sm fill26">「${label26(m)}」を入れる</button>` : ''}
+      <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
+      <span class="sv"></span>
+    </div>`;
+  }
+  $('#inRows').innerHTML = html;
+  loadPastTexts(mem.id);
+}
+function renderInputStatus() {
+  const s = st.subs.get(st.inMember), el = $('#inStatus'), mem = memberById(st.inMember);
+  const who = st.personal ? `${esc(mem.name)}先生　` : '';
+  if (s) {
+    const t = new Date(s.submitted_at);
+    el.className = 'status done';
+    el.innerHTML = `${who}提出済み（${t.getMonth() + 1}月${t.getDate()}日 ${pad(t.getHours())}:${pad(t.getMinutes())}）<span style="font-weight:400;color:var(--sub)">　提出のあとも直せます</span>`;
+    $('#btnSubmit').textContent = 'もう一度提出する';
+  } else {
+    el.className = 'status not';
+    el.innerHTML = `${who}未提出　<span style="font-weight:400;color:var(--sub)">${esc(deadlineText(st.y, st.m))}</span>`;
+    $('#btnSubmit').textContent = '提出する';
+  }
+}
+const pastCache = new Map();
+async function loadPastTexts(mid) {
+  let list = pastCache.get(mid);
+  if (!list) {
+    const since = new Date(); since.setMonth(since.getMonth() - 8);
+    const { data, error } = await sb.from('yotei_entries').select('am,pm,allday').eq('member_id', mid).gte('day', dstr(since.getFullYear(), since.getMonth() + 1, 1)).range(0, 1999);
+    if (error) return;
+    const cnt = new Map();
+    for (const r of data) for (const t of [r.am, r.pm, r.allday]) if (t) for (const p of t.split('、')) { const s = p.trim(); if (s) cnt.set(s, (cnt.get(s) || 0) + 1); }
+    list = [...cnt.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]).slice(0, 300);
+    pastCache.set(mid, list);
+  }
+  if (mid === st.inMember) $('#dlPast').innerHTML = list.map(t => `<option value="${esc(t)}">`).join('');
+}
+function rowData(row) {
+  const isAd = $('.adcb', row).checked;
+  const v = k => { const s = $(`.slot[data-k="${k}"]`, row); return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on') }; };
+  const am = v('am'), pm = v('pm'), ad = v('allday');
+  const meal = $('.mealsel', row) ? $('.mealsel', row).value : (getEntry(st.inMember, row.dataset.day) || {}).meal || null;
+  return isAd ? { allday: ad.t, allday_red: ad.r, meal } : { am: am.t, am_red: am.r, pm: pm.t, pm_red: pm.r, meal };
+}
+const rowTimers = new WeakMap();
+function scheduleSave(row, delay = 700) {
+  clearTimeout(rowTimers.get(row));
+  const sv = $('.sv', row); sv.className = 'sv ing'; sv.textContent = '…';
+  rowTimers.set(row, setTimeout(() => doSaveRow(row), delay));
+}
+async function doSaveRow(row) {
+  const mid = st.inMember, day = row.dataset.day, sv = $('.sv', row);
+  pendingSaves++;
+  try {
+    await saveEntry(mid, day, rowData(row));
+    sv.className = 'sv ok'; sv.textContent = '✓';
+    const f = $('.fill26', row); if (f) f.remove();
+  } catch (e) {
+    sv.className = 'sv ng'; sv.textContent = '×';
+    toast('保存できませんでした：' + errMsg(e), true);
+  } finally { pendingSaves--; }
+}
+$('#inRows').addEventListener('input', e => {
+  const inp = e.target.closest('.slot input'); if (!inp) return;
+  const slot = inp.closest('.slot'), btn = $('.redbtn', slot);
+  if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
+  if (!inp.value.trim()) { btn.classList.remove('on'); inp.classList.remove('is-red'); delete btn.dataset.manual; }
+  scheduleSave(inp.closest('.row'));
+});
+$('#inRows').addEventListener('change', e => {
+  const row = e.target.closest('.row'); if (!row) return;
+  if (e.target.classList.contains('adcb')) {
+    const sA = $('.slot[data-k="am"] input', row), sP = $('.slot[data-k="pm"] input', row), sD = $('.slot[data-k="allday"] input', row);
+    const bA = $('.slot[data-k="am"] .redbtn', row), bP = $('.slot[data-k="pm"] .redbtn', row), bD = $('.slot[data-k="allday"] .redbtn', row);
+    if (e.target.checked) {
+      if (!sD.value.trim()) { sD.value = [sA.value.trim(), sP.value.trim()].filter(Boolean).join('、'); const r = bA.classList.contains('on') || bP.classList.contains('on') || autoRed(sD.value); bD.classList.toggle('on', r); sD.classList.toggle('is-red', r); }
+      sA.value = ''; sP.value = '';
+      row.classList.add('is-allday'); sD.focus();
+    } else {
+      if (!sA.value.trim() && !sP.value.trim()) { sA.value = sD.value; const r = bD.classList.contains('on'); bA.classList.toggle('on', r); sA.classList.toggle('is-red', r); }
+      sD.value = '';
+      row.classList.remove('is-allday'); sA.focus();
+    }
+    scheduleSave(row, 0);
+  } else if (e.target.classList.contains('mealsel')) {
+    e.target.className = 'mealsel v-' + e.target.value;
+    scheduleSave(row, 0);
+  } else if (e.target.matches('.slot input')) {
+    scheduleSave(row, 0);
+  }
+});
+$('#inRows').addEventListener('click', e => {
+  const btn = e.target.closest('.redbtn');
+  if (btn) {
+    const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1';
+    $('input', btn.closest('.slot')).classList.toggle('is-red', on);
+    scheduleSave(btn.closest('.row'), 0); return;
+  }
+  const f = e.target.closest('.fill26');
+  if (f) {
+    const row = f.closest('.row');
+    $('.adcb', row).checked = true; row.classList.add('is-allday');
+    const s = $('.slot[data-k="allday"]', row); $('input', s).value = label26(st.m); $('input', s).classList.add('is-red'); $('.redbtn', s).classList.add('on');
+    f.remove(); scheduleSave(row, 0);
+  }
+});
+$('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value); renderInput(); });
+$('#btnSubmit').addEventListener('click', async () => {
+  if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
+  const mem = memberById(st.inMember);
+  if (!confirm(`${mem.name}先生の${monthTitle(st.y, st.m)}の予定を提出します。よろしいですか？`)) return;
+  const rec = { member_id: st.inMember, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
+  const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
+  if (error) { toast('提出できませんでした：' + errMsg(error), true); return; }
+  st.subs.set(st.inMember, rec); renderInputStatus(); toast('提出しました');
+});
+
+// ===== 予定表 =====
+function halves() { const n = st.members.length, k = Math.ceil(n / 2); return [st.members.slice(0, k), st.members.slice(k)]; }
+function cellText(t, red, prefix) {
+  if (!t) return '';
+  return `<span class="${red ? 'r' : ''}">${prefix ? `<span class="ap">${prefix}</span>` : ''}${esc(t)}</span>`;
+}
+function renderTable() {
+  const { y, m } = st, nd = dim(y, m);
+  // 提出の印
+  $('#tbChips').innerHTML = st.members.map(x => {
+    const s = st.subs.get(x.id);
+    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}">${s ? '✓' : '—'} ${esc(x.name)}</span>`;
+  }).join(' ');
+  const [L, R] = halves();
+  const editable = !st.personal;
+  const W = 354, dw = 9, ww = 8;
+  const pc = L.length + R.length;
+  const sideW = (R.length ? 2 : 1) * (dw + ww);
+  const pw = pc ? (W - sideW) / pc : 0;
+  const titleH = 8, headH = 6, avail = 247 - titleH - headH - 1.5;
+  const rowH = Math.min(5.2, avail / (nd * 2));
+  let cols = `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
+  if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
+  let head = `<th colspan="2" class="dh">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:1.4px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  let body = '';
+  for (let d = 1; d <= nd; d++) {
+    const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
+    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_EN[w]})</td>`;
+    const cell1 = x => {
+      const e = getEntry(x.id, day) || {}, ed = editable ? ' editable' : '';
+      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red)}</div></td>`;
+      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM')}</div></td>`;
+    };
+    const cell2 = x => {
+      const e = getEntry(x.id, day) || {}, ed = editable ? ' editable' : '';
+      if (e.allday) return '';
+      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM')}</div></td>`;
+    };
+    body += `<tr style="height:${rowH}mm">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
+    body += `<tr style="height:${rowH}mm">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
+  }
+  $('#sheet').innerHTML = `<div class="s-title">${monthTitle(y, m)} 予定表</div><table class="yt"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  fitTexts($('#sheet'));
+  $$('.hide-personal-note').forEach(n => (n.style.display = st.personal ? 'none' : ''));
+}
+// 長い予定は文字を小さくして1行に収める（Excelの「縮小して全体を表示」と同じ考え方）
+function fitTexts(root) {
+  $$('td.c .fit', root).forEach(f => {
+    if (!f.textContent) return;
+    let size = parseFloat(getComputedStyle(f).fontSize);
+    let guard = 0;
+    while (f.scrollWidth > f.clientWidth + 0.5 && size > 5 && guard++ < 30) { size -= 0.4; f.style.fontSize = size + 'px'; }
+    if (f.scrollWidth > f.clientWidth + 0.5) { f.style.whiteSpace = 'normal'; f.style.lineHeight = '1'; }
+  });
+}
+$('#sheet').addEventListener('click', e => {
+  const td = e.target.closest('td.c.editable'); if (!td) return;
+  openEntryEditor(Number(td.dataset.mid), td.dataset.day);
+});
+$('#tbChips').addEventListener('click', async e => {
+  const c = e.target.closest('.chip'); if (!c || st.personal) return;
+  const mid = Number(c.dataset.mid), mem = memberById(mid), s = st.subs.get(mid);
+  if (!s) {
+    if (!confirm(`${mem.name}先生の${monthTitle(st.y, st.m)}を「受け取り済み（提出済み）」にしますか？`)) return;
+    const rec = { member_id: mid, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
+    const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
+    if (error) { toast('できませんでした：' + errMsg(error), true); return; }
+    st.subs.set(mid, rec); renderTable();
+  } else {
+    if (!confirm(`${mem.name}先生の提出の印を取り消しますか？（管理者パスワードがいります）`)) return;
+    if (!(await ensureAdmin())) return;
+    const { error } = await adminSb.from('yotei_submissions').delete().eq('member_id', mid).eq('ym', ymStr(st.y, st.m));
+    if (error) { toast('取り消せませんでした：' + errMsg(error), true); return; }
+    st.subs.delete(mid); renderTable(); toast('取り消しました');
+  }
+});
+function openEntryEditor(mid, day) {
+  const mem = memberById(mid), e = getEntry(mid, day) || {};
+  const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
+  const isAd = !!e.allday;
+  const fld = (k, lab, val, red) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" list="dlPast" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button></div>`;
+  openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
+    <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
+    <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red)}${fld('pm', '午後', e.pm, e.pm_red)}</div>
+    <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red)}</div>
+    ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">（未記入）</option><option ${e.meal === '要' ? 'selected' : ''}>要</option><option ${e.meal === '不要' ? 'selected' : ''}>不要</option></select></div>` : ''}
+    ${dd === 26 ? `<div style="margin-top:6px"><button type="button" class="btn sm" id="ed26">「${label26(mm)}」を入れる</button></div>` : ''}
+    <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
+  const box = $('#modalBox');
+  loadPastTexts(mid).then(() => {});
+  if (pastCache.get(mid)) $('#dlPast').innerHTML = pastCache.get(mid).map(t => `<option value="${esc(t)}">`).join('');
+  box.addEventListener('input', ev => {
+    const inp = ev.target.closest('.slot input'); if (!inp) return;
+    const btn = $('.redbtn', inp.closest('.slot'));
+    if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
+  });
+  box.addEventListener('click', ev => {
+    const btn = ev.target.closest('.redbtn');
+    if (btn) { const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1'; $('input', btn.closest('.slot')).classList.toggle('is-red', on); }
+  });
+  $('#edAd').addEventListener('change', ev => {
+    const a = $('#edNormal .slot[data-k="am"] input'), p = $('#edNormal .slot[data-k="pm"] input'), d = $('#edAllday input');
+    if (ev.target.checked) { if (!d.value.trim()) d.value = [a.value.trim(), p.value.trim()].filter(Boolean).join('、'); const r = autoRed(d.value) || $('#edNormal .redbtn.on') != null; $('#edAllday .redbtn').classList.toggle('on', r); d.classList.toggle('is-red', r); }
+    else if (!a.value.trim() && !p.value.trim()) { a.value = d.value; const r = $('#edAllday .redbtn').classList.contains('on'); $('#edNormal .slot[data-k="am"] .redbtn').classList.toggle('on', r); a.classList.toggle('is-red', r); }
+    $('#edNormal').style.display = ev.target.checked ? 'none' : ''; $('#edAllday').style.display = ev.target.checked ? '' : 'none';
+  });
+  const b26 = $('#ed26');
+  if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); });
+  $('#edCancel').addEventListener('click', closeModal);
+  $('#edSave').addEventListener('click', async () => {
+    const g = sel => { const s = $(sel); return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on') }; };
+    const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
+    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, pm: p.t, pm_red: p.r, meal }; })();
+    $('#edSave').disabled = true;
+    try { await saveEntry(mid, day, data); closeModal(); pastCache.delete(mid); render(); toast('保存しました'); }
+    catch (err) { $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true); }
+  });
+  setTimeout(() => { const i = $(isAd ? '#edAllday input' : '#edNormal input'); if (i) i.focus(); }, 30);
+}
+
+// ===== 記入表 =====
+let fmSelected = null;
+function renderForm() {
+  if (!fmSelected) fmSelected = new Set(st.members.map(x => x.id));
+  $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${esc(x.name)}</label>`).join('');
+  const fill = $('#fmFill').checked;
+  const { y, m } = st, nd = dim(y, m);
+  const pages = st.members.filter(x => fmSelected.has(x.id)).map(mem => {
+    const meal = mem.meal_survey;
+    const half = (from, to) => {
+      const cw = meal ? 8 : 0;
+      const rest = 140.5 - 11 - 11 - cw;
+      let h = `<table><colgroup><col style="width:11mm"><col style="width:11mm">${meal ? '<col style="width:8mm">' : ''}<col style="width:${rest / 2}mm"><col style="width:${rest / 2}mm"></colgroup>`;
+      h += `<thead><tr><th colspan="2">日・曜日</th>${meal ? '<th class="mealh">食<br>事</th>' : ''}<th>午前</th><th>午後</th></tr></thead><tbody>`;
+      for (let d = from; d < from + 16; d++) {
+        if (d > to) { h += `<tr><td class="kd"></td><td class="kw"></td>${meal ? '<td class="km"></td>' : ''}<td></td><td></td></tr>`; continue; }
+        const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
+        const e = fill ? getEntry(mem.id, day) || {} : {};
+        const is26 = d === 26;
+        let am = '', pm = '', ad = '';
+        if (fill && e.allday) ad = `<td colspan="2" class="kt${e.allday_red ? ' r' : ''}" style="text-align:center">${esc(e.allday)}</td>`;
+        else {
+          am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${esc(e.am)}</td>` : (is26 && !(fill && (e.am || e.pm)) ? `<td class="kt">${label26(m)}</td>` : '<td></td>');
+          pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${esc(e.pm)}</td>` : '<td></td>';
+        }
+        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_EN[w]}</td>${meal ? `<td class="km">${fill && e.meal ? esc(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
+      }
+      return h + '</tbody></table>';
+    };
+    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span><span>${monthTitle(y, m)}予定記入表</span></div>
+      <div class="k-body">${half(1, 15)}${half(16, nd)}</div>
+      <div class="k-foot"><span>${esc(deadlineText(y, m))}</span><span>${esc(st.settings.submit_to || '')}</span></div></div>`;
+  });
+  $('#fmPages').innerHTML = pages.length ? pages.join('') : '<div class="empty">印刷する先生を選んでください</div>';
+  $$('#fmPages .kt').forEach(td => { let s = 9, g = 0; td.style.fontSize = s + 'pt'; while (td.scrollWidth > td.clientWidth + 0.5 && s > 6 && g++ < 20) { s -= 0.5; td.style.fontSize = s + 'pt'; } });
+}
+$('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
+$('#fmFill').addEventListener('change', renderForm);
+
+// ===== 昼食調査 =====
+function renderMeal() {
+  const { y, m } = st, nd = dim(y, m), ms = st.members.filter(x => x.meal_survey);
+  if (!ms.length) { $('#mealPage').innerHTML = '<div class="empty">昼食調査の対象の先生がいません（マスターで決めます）</div>'; return; }
+  let h = `<div class="m-title">${monthTitle(y, m)} 昼食調査（要・不要）</div><table class="mt"><colgroup><col style="width:14mm"><col style="width:12mm">${ms.map(() => '<col>').join('')}<col style="width:22mm"></colgroup>`;
+  h += `<thead><tr><th>日</th><th>曜日</th>${ms.map(x => `<th>${esc(x.name)}</th>`).join('')}<th>要の人数</th></tr></thead><tbody>`;
+  const tot = ms.map(() => 0);
+  for (let d = 1; d <= nd; d++) {
+    const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
+    let need = 0;
+    const cells = ms.map((x, i) => { const v = (getEntry(x.id, day) || {}).meal || ''; if (v === '要') { need++; tot[i]++; } return `<td class="mc v-${v}" data-mid="${x.id}" data-day="${day}">${v}</td>`; }).join('');
+    h += `<tr><td class="${rd}">${d}</td><td class="${rd}">${WD_JA[w]}</td>${cells}<td>${need || ''}</td></tr>`;
+  }
+  h += `<tr><td colspan="2">要の日数</td>${tot.map(t => `<td>${t}</td>`).join('')}<td></td></tr></tbody></table>`;
+  $('#mealPage').innerHTML = h;
+}
+$('#mealPage').addEventListener('click', async e => {
+  const td = e.target.closest('td.mc'); if (!td) return;
+  const mid = Number(td.dataset.mid), day = td.dataset.day, cur = getEntry(mid, day) || {};
+  const next = cur.meal === '要' ? '不要' : cur.meal === '不要' ? null : '要';
+  try { await saveEntry(mid, day, { ...cur, meal: next }); renderMeal(); }
+  catch (err) { toast('保存できませんでした：' + errMsg(err), true); }
+});
+
+// ===== 印刷 =====
+function doPrint(pageCss) {
+  $('#pageStyle').textContent = `@page{${pageCss}}`;
+  setTimeout(() => window.print(), 50);
+}
+$('#btnPrintTable').addEventListener('click', () => doPrint('size:364mm 257mm;margin:5mm'));
+$('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
+$('#btnPrintMeal').addEventListener('click', () => doPrint('size:210mm 297mm;margin:12mm'));
+
+// ===== 管理者 =====
+async function ensureAdmin() {
+  if (st.isAdmin) {
+    const { data } = await adminSb.auth.getSession();
+    if (data && data.session) return true;
+    setAdmin(false);
+  }
+  return new Promise(resolve => {
+    openModal(`<h3>管理者パスワード</h3><p class="note">②〜⑤と同じ管理者パスワードを入れてください。一度入れると、このタブを閉じるまで入れ直す必要はありません。</p>
+      <input type="password" id="admPw" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px" autocomplete="current-password">
+      <div class="acts"><button class="btn" id="admCancel">やめる</button><button class="btn pri" id="admOk">OK</button></div>`);
+    const go = async () => {
+      const pw = $('#admPw').value; if (!pw) return;
+      $('#admOk').disabled = true;
+      const { error } = await adminSb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pw });
+      if (error) { $('#admOk').disabled = false; toast('パスワードが違います', true); $('#admPw').select(); return; }
+      closeModal(); $('#toast').style.display = 'none'; setAdmin(true); resolve(true);
+    };
+    $('#admOk').addEventListener('click', go);
+    $('#admPw').addEventListener('keydown', ev => { if (ev.key === 'Enter') go(); });
+    $('#admCancel').addEventListener('click', () => { closeModal(); resolve(false); });
+    setTimeout(() => $('#admPw').focus(), 30);
+  });
+}
+function setAdmin(on) { st.isAdmin = on; document.body.classList.toggle('is-admin', on); }
+$('#navAdminOpen').addEventListener('click', async () => { if (await ensureAdmin()) showView('master'); });
+$('#navAdminClose').addEventListener('click', async () => {
+  await adminSb.auth.signOut().catch(() => {});
+  setAdmin(false); if (st.view === 'master') showView('input'); toast('管理者メニューを閉じました');
+});
+
+// ===== マスター =====
+let holYear = new Date().getFullYear();
+function personalUrl(id) { return location.origin + location.pathname + '?p=' + id; }
+function renderMaster() {
+  const rows = st.allMembers.map(x => `<tr data-id="${x.id}">
+    <td style="width:5em"><input type="number" class="f-sort" value="${x.sort_order}"></td>
+    <td><input type="text" class="f-name" value="${esc(x.name)}"></td>
+    <td><input type="text" class="f-head" value="${esc(x.header_name)}"></td>
+    <td><input type="text" class="f-title" value="${esc(x.form_title)}"></td>
+    <td style="text-align:center"><input type="checkbox" class="f-meal" ${x.meal_survey ? 'checked' : ''}></td>
+    <td style="text-align:center"><input type="checkbox" class="f-active" ${x.active ? 'checked' : ''}></td>
+    <td><button class="btn sm pri f-save">保存</button></td>
+    <td class="url">${esc(personalUrl(x.id))} <button class="btn sm f-copy">コピー</button></td></tr>`).join('');
+  $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食調査</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
+  $('#msDeadline').value = st.settings.deadline_day;
+  $('#msSubmitTo').value = st.settings.submit_to || '';
+  $('#msRed').value = (st.settings.red_keywords || []).join('\n');
+  const years = [...new Set([...st.holidays.keys()].map(d => Number(d.slice(0, 4))))].sort();
+  if (!years.includes(holYear)) years.push(holYear), years.sort();
+  $('#msHolYear').innerHTML = years.map(yy => `<option value="${yy}" ${yy === holYear ? 'selected' : ''}>${yy}年</option>`).join('');
+  const list = [...st.holidays.entries()].filter(([d]) => d.startsWith(holYear + '-'));
+  $('#msHolList').innerHTML = list.length ? list.map(([d, n]) => { const [yy, mm, dd] = d.split('-').map(Number); return `<tr><td style="width:10em">${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）</td><td>${esc(n)}</td><td style="width:5em"><button class="btn sm h-del" data-day="${d}">削除</button></td></tr>`; }).join('') : '<tr><td class="empty">この年の祝日はありません</td></tr>';
+}
+async function adminDo(fn, okMsg) {
+  if (!(await ensureAdmin())) return false;
+  const { error } = await fn();
+  if (error) { toast('保存できませんでした：' + errMsg(error), true); return false; }
+  await loadMasters(); renderMaster(); if (okMsg) toast(okMsg); return true;
+}
+$('#msMembers').addEventListener('click', async e => {
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+  const id = Number(tr.dataset.id);
+  if (e.target.classList.contains('f-copy')) {
+    const u = personalUrl(id);
+    try { await navigator.clipboard.writeText(u); toast('コピーしました'); } catch (err) { prompt('このURLをコピーしてください', u); }
+    return;
+  }
+  if (e.target.classList.contains('f-save')) {
+    const rec = {
+      sort_order: Number($('.f-sort', tr).value) || 0, name: $('.f-name', tr).value.trim(), header_name: $('.f-head', tr).value.trim(),
+      form_title: $('.f-title', tr).value.trim(), meal_survey: $('.f-meal', tr).checked, active: $('.f-active', tr).checked,
+    };
+    if (!rec.name) { toast('名前を入れてください', true); return; }
+    if (!rec.header_name) rec.header_name = rec.name;
+    await adminDo(() => adminSb.from('yotei_members').update(rec).eq('id', id), '保存しました');
+  }
+});
+$('#msAddMember').addEventListener('click', async () => {
+  const name = prompt('追加する先生の名前（短く。例：青木）'); if (!name || !name.trim()) return;
+  const maxSort = Math.max(0, ...st.allMembers.map(x => x.sort_order));
+  await adminDo(() => adminSb.from('yotei_members').insert({ name: name.trim(), header_name: name.trim(), form_title: name.trim() + '先生', sort_order: maxSort + 1 }), '追加しました。見出し・宛名を確かめて保存してください');
+});
+$('#msSaveSettings').addEventListener('click', async () => {
+  const dd = Math.min(31, Math.max(1, Number($('#msDeadline').value) || 27));
+  await adminDo(() => adminSb.from('yotei_settings').upsert([{ key: 'deadline_day', value: dd }, { key: 'submit_to', value: $('#msSubmitTo').value.trim() }]), '保存しました');
+});
+$('#msSaveRed').addEventListener('click', async () => {
+  const words = [...new Set($('#msRed').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean))];
+  await adminDo(() => adminSb.from('yotei_settings').upsert({ key: 'red_keywords', value: words }), '保存しました');
+});
+$('#msHolYear').addEventListener('change', e => { holYear = Number(e.target.value); renderMaster(); });
+$('#msHolList').addEventListener('click', async e => {
+  const b = e.target.closest('.h-del'); if (!b) return;
+  if (!confirm(`${b.dataset.day} の祝日を削除しますか？`)) return;
+  await adminDo(() => adminSb.from('yotei_holidays').delete().eq('day', b.dataset.day), '削除しました');
+});
+$('#msHolAdd').addEventListener('click', async () => {
+  const d = $('#msHolDate').value, n = $('#msHolName').value.trim();
+  if (!d || !n) { toast('日付と名前を入れてください', true); return; }
+  holYear = Number(d.slice(0, 4));
+  if (await adminDo(() => adminSb.from('yotei_holidays').upsert({ day: d, name: n }), '追加しました')) { $('#msHolDate').value = ''; $('#msHolName').value = ''; }
+});
+
+// ===== はじめ =====
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  const t = new Date();
+  [st.y, st.m] = nextYM(t.getFullYear(), t.getMonth() + 1);
+  const mq = params.get('m');
+  if (mq && /^\d{4}-\d{2}$/.test(mq)) { st.y = Number(mq.slice(0, 4)); st.m = Number(mq.slice(5)); }
+  try {
+    await loadMasters();
+    const p = Number(params.get('p'));
+    if (p && st.members.some(x => x.id === p)) {
+      st.personal = p; st.inMember = p; document.body.classList.add('personal');
+      $('#whoLabel').textContent = memberById(p).name + '先生';
+    }
+    try { const { data } = await adminSb.auth.getSession(); if (data && data.session && data.session.user && data.session.user.email === ADMIN_EMAIL) setAdmin(true); } catch (e) {}
+    await loadMonth();
+    $('#loading').style.display = 'none';
+    showView((location.hash || '#input').slice(1));
+  } catch (e) {
+    $('#loading').innerHTML = '読み込めませんでした：' + esc(errMsg(e)) + '<br>右上の「Update」を押すか、しばらくしてからもう一度開いてください。';
+  }
+})();
+</script>
+</body>
+</html>
