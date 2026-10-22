@@ -160,19 +160,6 @@ table.yt td.half-l{border-left:1.4px solid #000}
 .k-body table + table{border-left:0}
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
 
-/* ===== 昼食 ===== */
-.mpage{width:186mm;min-height:270mm;background:#fff;color:#000;margin:0 auto;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
-.m-title{font-size:13pt;padding:0 0 2mm}
-table.mt{border-collapse:collapse;width:100%;table-layout:fixed}
-table.mt th,table.mt td{border:0.8px solid #000;height:7.6mm;text-align:center;font-size:10.5pt;padding:0}
-table.mt th{font-weight:400;background:#f3f3f3}
-table.mt td.red-day{color:var(--red)}
-table.mt td.mc{cursor:pointer;font-weight:700}
-table.mt td.mc:hover{background:#eef4ff}
-table.mt td.v-要{color:var(--ok)}
-table.mt td.v-ng{color:#888}
-table.mt td.v-ok{color:var(--ok)}
-
 /* ===== マスター ===== */
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
 table.grid{border-collapse:collapse;width:100%}
@@ -226,7 +213,6 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <a data-view="input">✏️ 予定入力</a>
   <a data-view="table">📅 予定表</a>
   <a data-view="form" class="hide-personal">🖨 記入表の印刷</a>
-  <a data-view="meal" class="hide-personal">🍙 昼食調査</a>
   <a data-view="help">❓ 使い方</a>
   <div class="sep hide-personal"></div>
   <a id="navAdminOpen" class="admin-open hide-personal">🔑 管理者メニュー</a>
@@ -275,18 +261,8 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
-    <p class="note">紙で書いていただくための記入表です（1人1枚）。昼食調査の対象の先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。</p>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。</p>
     <div class="sheet-wrap" id="fmPages"></div>
-  </section>
-
-  <!-- 昼食調査 -->
-  <section id="v-meal">
-    <div class="toolbar">
-      <span class="note" style="margin:0">はじめはすべて「○」（いる）です。マスをクリックすると「○」と「✖」（いらない）が切り替わります（自動で保存）。対象の先生はマスターで決めます。</span>
-      <span style="flex:1"></span>
-      <button class="btn pri" id="btnPrintMeal">印刷（A4縦）</button>
-    </div>
-    <div class="sheet-wrap"><div class="mpage" id="mealPage"></div></div>
   </section>
 
   <!-- マスター -->
@@ -355,12 +331,12 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日の終日の欄に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
-      <li>昼食調査の対象の先生は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
+      <li>マスターで「昼食」にチェックした先生（今は今村・増野先生）は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
     </ul>
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
     <h3>管理者メニュー</h3>
-    <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食調査の対象・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
+    <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食の欄を出す先生・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
     <h3>困ったとき</h3>
     <ul>
       <li>画面が古いまま・おかしいときは、右上の赤い「Update」を押します。</li>
@@ -527,7 +503,7 @@ async function saveEntry(mid, day, data, base) {
 }
 
 // ===== 画面の切り替え =====
-const VIEWS = ['input', 'table', 'form', 'meal', 'master', 'help'];
+const VIEWS = ['input', 'table', 'form', 'master', 'help'];
 // 上の帯・サイドバー・月の切り替え・ボタンの帯を、下にスクロールしても出たままにする
 function updSticky() {
   const r = document.documentElement.style, h = $('header').offsetHeight;
@@ -544,7 +520,7 @@ function showView(v) {
   st.view = v;
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   $$('nav a[data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
-  $('#monthbar').style.display = ['input', 'table', 'form', 'meal'].includes(v) ? 'flex' : 'none';
+  $('#monthbar').style.display = ['input', 'table', 'form'].includes(v) ? 'flex' : 'none';
   try { history.replaceState(null, '', location.pathname + location.search + '#' + v); } catch (e) {}
   render();
   updSticky();
@@ -554,7 +530,6 @@ function render() {
   if (st.view === 'input') renderInput();
   else if (st.view === 'table') renderTable();
   else if (st.view === 'form') renderForm();
-  else if (st.view === 'meal') renderMeal();
   else if (st.view === 'master') renderMaster();
 }
 $$('nav a[data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
@@ -995,30 +970,6 @@ function renderForm() {
 $('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
 $('#fmFill').addEventListener('change', renderForm);
 
-// ===== 昼食調査 =====
-function renderMeal() {
-  const { y, m } = st, nd = dim(y, m), ms = st.members.filter(x => x.meal_survey);
-  if (!ms.length) { $('#mealPage').innerHTML = '<div class="empty">昼食調査の対象の先生がいません（マスターで決めます）</div>'; return; }
-  let h = `<div class="m-title">${monthTitle(y, m)} 昼食調査（○：いる・✖：いらない）</div><table class="mt"><colgroup><col style="width:14mm"><col style="width:12mm">${ms.map(() => '<col>').join('')}<col style="width:22mm"></colgroup>`;
-  h += `<thead><tr><th>日</th><th>曜日</th>${ms.map(x => `<th>${esc(x.name)}</th>`).join('')}<th>○の人数</th></tr></thead><tbody>`;
-  const tot = ms.map(() => 0);
-  for (let d = 1; d <= nd; d++) {
-    const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
-    let need = 0;
-    const cells = ms.map((x, i) => { const v = (getEntry(x.id, day) || {}).meal; const ok = v !== '不要'; if (ok) { need++; tot[i]++; } return `<td class="mc ${ok ? 'v-ok' : 'v-ng'}" data-mid="${x.id}" data-day="${day}">${mealMark(v)}</td>`; }).join('');
-    h += `<tr><td class="${rd}">${d}</td><td class="${rd}">${WD_JA[w]}</td>${cells}<td>${need || ''}</td></tr>`;
-  }
-  h += `<tr><td colspan="2">○の日数</td>${tot.map(t => `<td>${t}</td>`).join('')}<td></td></tr></tbody></table>`;
-  $('#mealPage').innerHTML = h;
-}
-$('#mealPage').addEventListener('click', async e => {
-  const td = e.target.closest('td.mc'); if (!td) return;
-  const mid = Number(td.dataset.mid), day = td.dataset.day, cur = getEntry(mid, day) || {};
-  const next = cur.meal === '不要' ? null : '不要';
-  try { await saveEntry(mid, day, { ...cur, meal: next }); renderMeal(); }
-  catch (err) { toast('保存できませんでした：' + errMsg(err), true); }
-});
-
 // ===== 印刷 =====
 function doPrint(pageCss) {
   $('#pageStyle').textContent = `@page{${pageCss}}`;
@@ -1026,7 +977,6 @@ function doPrint(pageCss) {
 }
 $('#btnPrintTable').addEventListener('click', () => doPrint('size:297mm 210mm;margin:5mm'));
 $('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
-$('#btnPrintMeal').addEventListener('click', () => doPrint('size:210mm 297mm;margin:12mm'));
 
 // ===== 管理者 =====
 async function ensureAdmin() {
@@ -1072,7 +1022,7 @@ function renderMaster() {
     <td style="text-align:center"><input type="checkbox" class="f-active" ${x.active ? 'checked' : ''}></td>
     <td><button class="btn sm pri f-save">保存</button></td>
     <td class="url">${esc(personalUrl(x.id))} <button class="btn sm f-copy">コピー</button></td></tr>`).join('');
-  $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食調査</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
+  $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
   $('#msDeadline').value = st.settings.deadline_day;
   $('#msSubmitTo').value = st.settings.submit_to || '';
   const reds = st.settings.red_keywords || [];
