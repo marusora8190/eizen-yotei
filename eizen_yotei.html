@@ -182,6 +182,10 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 /* ===== モーダル・お知らせ ===== */
 #modal{position:fixed;inset:0;background:rgba(20,28,40,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
 #modal.show{display:flex}
+#modal.side{background:rgba(20,28,40,.12)}
+#modal.side.right{justify-content:flex-end}
+#modal.side.left{justify-content:flex-start}
+#modal.side .box{box-shadow:0 6px 24px rgba(0,0,0,.25);width:min(520px,100%)}
 #modal .box{background:#fff;border-radius:10px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto}
 #modal .box h3{margin:0 0 10px}
 #modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
@@ -333,7 +337,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
-      <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字は動きません）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
+      <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
       <li>昼食調査の対象の先生は、日付の右の欄で昼食の「要／不要」を選びます。</li>
@@ -403,7 +407,11 @@ function errMsg(error) {
 }
 // 開くたびに中身の入れ物を作り直す（前に開いたときのボタンの動きが重ならないように）
 function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
-function closeModal() { $('#modal').classList.remove('show'); $('#modalBox').innerHTML = ''; }
+let modalOnClose = null;
+function closeModal() {
+  $('#modal').classList.remove('show', 'side', 'left', 'right'); $('#modalBox').innerHTML = '';
+  if (modalOnClose) { const f = modalOnClose; modalOnClose = null; f(); }
+}
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
 
 // ===== 読み込み =====
@@ -455,7 +463,7 @@ function untilSelect(k, day, val) {
 function memberById(id) { return st.allMembers.find(x => x.id === id); }
 
 // ===== 保存 =====
-async function saveEntry(mid, day, data) {
+function makeRec(mid, day, data) {
   const prev = getEntry(mid, day) || {};
   const keep = (k, f) => (data[k] ? Number(data[k + '_' + f] ?? prev[k + '_' + f] ?? 0) || 0 : 0);
   const rec = {
@@ -470,6 +478,12 @@ async function saveEntry(mid, day, data) {
     allday_until: data.allday && data.allday_until > day ? data.allday_until : null,
     meal: data.meal || null, updated_at: new Date().toISOString(),
   };
+  return rec;
+}
+async function saveEntry(mid, day, data, base) {
+  // base：直し画面で見本表示している間は、元の予定を使って位置・大きさを引き継ぐ
+  if (base !== undefined) { if (base) st.entries.set(key(mid, day), base); else st.entries.delete(key(mid, day)); }
+  const rec = makeRec(mid, day, data);
   const { error } = await sb.from('yotei_entries').upsert(rec, { onConflict: 'member_id,day' });
   if (error) throw error;
   st.entries.set(key(mid, day), rec);
@@ -674,13 +688,13 @@ $('#btnSubmit').addEventListener('click', async () => {
 
 // ===== 予定表 =====
 function halves() { const n = st.members.length, k = Math.ceil(n / 2); return [st.members.slice(0, k), st.members.slice(k)]; }
-// AM・PM の文字は小さく（元のExcelのマクロと同じ）。予定の文字だけを indent の分だけ右・左にずらす
+// AM・PM の文字は小さく（元のExcelのマクロと同じ）。indent の分だけ AM・PM ごと右・左にずらす。size は予定の文字だけ
 const INDENT_MM = 1.5;
 function cellText(t, red, prefix, indent, size) {
   if (!t) return '';
-  const css = (indent ? `position:relative;left:${indent * INDENT_MM}mm;` : '') + (size ? `font-size:${(1 + size * 0.1).toFixed(2)}em;` : '');
-  const sh = css ? ` style="${css}"` : '';
-  return `<span class="${red ? 'r' : ''}">${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sh}>${esc(t)}</span></span>`;
+  const mv = indent ? ` style="position:relative;left:${indent * INDENT_MM}mm"` : '';
+  const sz = size ? ` style="font-size:${(1 + size * 0.1).toFixed(2)}em"` : '';
+  return `<span class="${red ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${esc(t)}</span></span>`;
 }
 function renderTable() {
   const { y, m } = st, nd = dim(y, m);
@@ -769,7 +783,7 @@ function fitTexts(root) {
 }
 $('#sheet').addEventListener('click', e => {
   const td = e.target.closest('td.c.editable'); if (!td) return;
-  openEntryEditor(Number(td.dataset.mid), td.dataset.day);
+  openEntryEditor(Number(td.dataset.mid), td.dataset.day, e.clientX);
 });
 $('#tbChips').addEventListener('click', async e => {
   const c = e.target.closest('.chip'); if (!c || st.personal) return;
@@ -788,8 +802,9 @@ $('#tbChips').addEventListener('click', async e => {
     st.subs.delete(mid); renderTable(); toast('取り消しました');
   }
 });
-function openEntryEditor(mid, day) {
-  const mem = memberById(mid), e = getEntry(mid, day) || {};
+function openEntryEditor(mid, day, clickX) {
+  const orig = getEntry(mid, day) ? { ...getEntry(mid, day) } : null;
+  const mem = memberById(mid), e = orig || {};
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
@@ -805,15 +820,36 @@ function openEntryEditor(mid, day) {
     ${dd === 26 ? `<div style="margin-top:6px"><button type="button" class="btn sm" id="ed26">「${label26(mm)}」を入れる</button></div>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
+  // 予定表が見えるように、クリックした場所と反対側に画面を出す
+  $('#modal').classList.add('side', clickX != null && clickX > window.innerWidth / 2 ? 'left' : 'right');
+  const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
+  const collect = () => {
+    const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
+    return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
+  };
+  // 保存する前に、予定表にそのまま映す（やめたときは元に戻す）
+  let pvTimer = null;
+  const preview = (delay = 0) => {
+    clearTimeout(pvTimer);
+    pvTimer = setTimeout(() => {
+      if (orig) st.entries.set(key(mid, day), orig); else st.entries.delete(key(mid, day));
+      st.entries.set(key(mid, day), makeRec(mid, day, collect()));
+      renderTable();
+    }, delay);
+  };
+  modalOnClose = () => { clearTimeout(pvTimer); if (orig) st.entries.set(key(mid, day), orig); else st.entries.delete(key(mid, day)); renderTable(); };
   box.addEventListener('input', ev => {
     const inp = ev.target.closest('.slot input'); if (!inp) return;
     const btn = $('.redbtn', inp.closest('.slot'));
     if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
+    preview(250);
   });
   box.addEventListener('change', ev => {
     if (!ev.target.classList.contains('until')) return;
     ev.target.classList.toggle('set', !!ev.target.value);
     const k = ev.target.closest('.slot').dataset.k, ar = $(`.arrowrow[data-k="${k}"]`, box); if (ar) ar.style.display = ev.target.value ? '' : 'none';
+    preview();
   });
   const showInd = sp => {
     const v = Number(sp.dataset.v), f = sp.closest('.indrow').dataset.f;
@@ -825,10 +861,11 @@ function openEntryEditor(mid, day) {
     const sp = $('.indv', b.closest('.indrow')), d = Number(b.dataset.d);
     const [lo, hi] = b.closest('.indrow').dataset.f === 'size' ? [-5, 5] : b.closest('.indrow').dataset.f === 'arrow' ? [-15, 15] : [-10, 20];
     sp.dataset.v = d === 0 ? 0 : Math.max(lo, Math.min(hi, Number(sp.dataset.v) + d)); showInd(sp);
+    preview();
   });
   box.addEventListener('click', ev => {
     const btn = ev.target.closest('.redbtn');
-    if (btn) { const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1'; $('input', btn.closest('.slot')).classList.toggle('is-red', on); }
+    if (btn) { const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1'; $('input', btn.closest('.slot')).classList.toggle('is-red', on); preview(); }
   });
   $('#edAd').addEventListener('change', ev => {
     const a = $('#edNormal .slot[data-k="am"] input'), p = $('#edNormal .slot[data-k="pm"] input'), d = $('#edAllday input');
@@ -840,18 +877,19 @@ function openEntryEditor(mid, day) {
     uA.classList.toggle('set', !!uA.value); uD.classList.toggle('set', !!uD.value);
     $$('.arrowrow', box).forEach(r => { const u = $(`.slot[data-k="${r.dataset.k}"] .until`, box); r.style.display = u && u.value ? '' : 'none'; });
     $('#edNormal').style.display = ev.target.checked ? 'none' : ''; $('#edAllday').style.display = ev.target.checked ? '' : 'none';
+    preview();
   });
   const b26 = $('#ed26');
-  if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); });
+  if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); preview(); });
   $('#edCancel').addEventListener('click', closeModal);
   $('#edSave').addEventListener('click', async () => {
-    const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
-    const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
-    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
-      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
-    $('#edSave').disabled = true;
-    try { await saveEntry(mid, day, data); closeModal(); render(); toast('保存しました'); }
-    catch (err) { $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true); }
+    const data = collect();
+    $('#edSave').disabled = true; clearTimeout(pvTimer);
+    try { await saveEntry(mid, day, data, orig); modalOnClose = null; closeModal(); render(); toast('保存しました'); }
+    catch (err) {
+      $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true);
+      st.entries.set(key(mid, day), makeRec(mid, day, data)); // 見本表示は続ける
+    }
   });
   setTimeout(() => { const i = $(isAd ? '#edAllday input' : '#edNormal input'); if (i) i.focus(); }, 30);
 }
