@@ -981,7 +981,7 @@ function renderForm() {
           am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
           pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
-        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${mealMark(fill ? e.meal : null)}</td>` : ''}${ad || am + pm}</tr>`;
+        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
