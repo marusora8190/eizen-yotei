@@ -70,8 +70,11 @@ h3{font-size:16px;margin:18px 0 8px}
 .date small{font-weight:400;font-size:13px;margin-left:2px}
 .date .hn{display:block;font-weight:400;font-size:11px}
 .meal select{padding:4px;border:1px solid var(--line);border-radius:5px;background:#fff}
-.meal select.v-要{background:#e8f5ec;border-color:#9fd3ae}
-.meal select.v-不要{background:#f2f2f2}
+.meal{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--sub)}
+.meal select.v-ok{background:#e8f5ec;border-color:#9fd3ae;color:var(--ok);font-weight:700}
+.meal select.v-ng{background:#f2f2f2;color:#555;font-weight:700}
+.mealnote{background:#fff7ed;border:1px solid #f5c68f;border-radius:6px;padding:6px 10px;margin:0 0 8px;font-size:14px;color:#7c4a03}
+.k-head .k-mealnote{font-size:9pt;color:#000;border:0.8px solid #000;padding:0.6mm 2mm;align-self:center}
 .slots{flex:1;display:flex;gap:8px;min-width:0}
 .slot{flex:1;display:flex;align-items:center;gap:4px;min-width:0}
 .slot .tag{font-size:12px;color:var(--sub);width:2.6em;flex:none;text-align:right}
@@ -166,7 +169,8 @@ table.mt td.red-day{color:var(--red)}
 table.mt td.mc{cursor:pointer;font-weight:700}
 table.mt td.mc:hover{background:#eef4ff}
 table.mt td.v-要{color:var(--ok)}
-table.mt td.v-不要{color:#888;font-weight:400}
+table.mt td.v-ng{color:#888}
+table.mt td.v-ok{color:var(--ok)}
 
 /* ===== マスター ===== */
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:14px}
@@ -247,6 +251,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn pri" id="btnSubmit">提出する</button>
     </div>
     <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
+    <div class="mealnote" id="inMealNote" style="display:none">🍙 昼食は、はじめから「○」（いる）になっています。いらない日だけ「✖」を選んでください。</div>
     <div class="rows" id="inRows"></div>
   </section>
 
@@ -276,7 +281,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <!-- 昼食調査 -->
   <section id="v-meal">
     <div class="toolbar">
-      <span class="note" style="margin:0">マスをクリックすると「要」→「不要」→空欄の順に変わります（自動で保存）。対象の先生はマスターで決めます。</span>
+      <span class="note" style="margin:0">はじめはすべて「○」（いる）です。マスをクリックすると「○」と「✖」（いらない）が切り替わります（自動で保存）。対象の先生はマスターで決めます。</span>
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintMeal">印刷（A4縦）</button>
     </div>
@@ -340,7 +345,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
-      <li>昼食調査の対象の先生は、日付の右の欄で昼食の「要／不要」を選びます。</li>
+      <li>昼食調査の対象の先生は、日付の右の「昼食」の欄が、はじめから「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
     </ul>
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
@@ -384,6 +389,7 @@ const dim = (y, m) => new Date(y, m, 0).getDate();
 const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
 const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
 const reiki = y => y - 1837;
+const mealMark = v => (v === '不要' ? '✖' : '○'); // 昼食：何も入っていなければ「○」（いる）
 const label26 = m => (m === 1 ? '春季大祭' : m === 10 ? '秋季大祭' : '本部月次祭');
 const isRedDay = (y, m, d) => wdOf(y, m, d) === 0 || st.holidays.has(dstr(y, m, d));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -560,7 +566,7 @@ function renderInput() {
     const empty = !e.am && !e.pm && !e.allday;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
-      ${mem.meal_survey ? `<div class="meal"><select class="mealsel v-${esc(e.meal || '')}" title="昼食"><option value="">昼食</option><option value="要" ${e.meal === '要' ? 'selected' : ''}>要</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>不要</option></select></div>` : ''}
+      ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
       ${d === 26 && empty ? `<button type="button" class="btn sm fill26">「${label26(m)}」を入れる</button>` : ''}
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
@@ -569,6 +575,7 @@ function renderInput() {
     </div>`;
   }
   $('#inRows').innerHTML = html;
+  $('#inMealNote').style.display = mem.meal_survey ? '' : 'none';
   updateContNotes();
 }
 function renderInputStatus() {
@@ -650,7 +657,7 @@ $('#inRows').addEventListener('change', e => {
     }
     scheduleSave(row, 0);
   } else if (e.target.classList.contains('mealsel')) {
-    e.target.className = 'mealsel v-' + e.target.value;
+    e.target.className = 'mealsel ' + (e.target.value === '不要' ? 'v-ng' : 'v-ok');
     scheduleSave(row, 0);
   } else if (e.target.classList.contains('until')) {
     e.target.classList.toggle('set', !!e.target.value);
@@ -848,7 +855,7 @@ function openEntryEditor(mid, day, clickX) {
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
     <p class="note" style="margin:4px 0 0">右の「1日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
-    ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">（未記入）</option><option ${e.meal === '要' ? 'selected' : ''}>要</option><option ${e.meal === '不要' ? 'selected' : ''}>不要</option></select></div>` : ''}
+    ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
     ${dd === 26 ? `<div style="margin-top:6px"><button type="button" class="btn sm" id="ed26">「${label26(mm)}」を入れる</button></div>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
@@ -953,11 +960,11 @@ function renderForm() {
           am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : (is26 && !(fill && (e.am || e.pm)) ? `<td class="kt">${label26(m)}</td>` : '<td></td>');
           pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
-        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill && e.meal ? esc(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
+        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${mealMark(fill ? e.meal : null)}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
-    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span><span>${monthTitle(y, m)}予定記入表</span></div>
+    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span>${meal ? `<span class="k-mealnote">昼食は、はじめから「○」（いる）になっています。いらない日だけ「✖」を選んでください。</span>` : ''}<span>${monthTitle(y, m)}予定記入表</span></div>
       <div class="k-body">${half(1, 15)}${half(16, nd)}</div>
       <div class="k-foot"><span>${esc(deadlineText(y, m))}</span><span>${esc(st.settings.submit_to || '')}</span></div></div>`;
   });
@@ -971,22 +978,22 @@ $('#fmFill').addEventListener('change', renderForm);
 function renderMeal() {
   const { y, m } = st, nd = dim(y, m), ms = st.members.filter(x => x.meal_survey);
   if (!ms.length) { $('#mealPage').innerHTML = '<div class="empty">昼食調査の対象の先生がいません（マスターで決めます）</div>'; return; }
-  let h = `<div class="m-title">${monthTitle(y, m)} 昼食調査（要・不要）</div><table class="mt"><colgroup><col style="width:14mm"><col style="width:12mm">${ms.map(() => '<col>').join('')}<col style="width:22mm"></colgroup>`;
-  h += `<thead><tr><th>日</th><th>曜日</th>${ms.map(x => `<th>${esc(x.name)}</th>`).join('')}<th>要の人数</th></tr></thead><tbody>`;
+  let h = `<div class="m-title">${monthTitle(y, m)} 昼食調査（○：いる・✖：いらない）</div><table class="mt"><colgroup><col style="width:14mm"><col style="width:12mm">${ms.map(() => '<col>').join('')}<col style="width:22mm"></colgroup>`;
+  h += `<thead><tr><th>日</th><th>曜日</th>${ms.map(x => `<th>${esc(x.name)}</th>`).join('')}<th>○の人数</th></tr></thead><tbody>`;
   const tot = ms.map(() => 0);
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
     let need = 0;
-    const cells = ms.map((x, i) => { const v = (getEntry(x.id, day) || {}).meal || ''; if (v === '要') { need++; tot[i]++; } return `<td class="mc v-${v}" data-mid="${x.id}" data-day="${day}">${v}</td>`; }).join('');
+    const cells = ms.map((x, i) => { const v = (getEntry(x.id, day) || {}).meal; const ok = v !== '不要'; if (ok) { need++; tot[i]++; } return `<td class="mc ${ok ? 'v-ok' : 'v-ng'}" data-mid="${x.id}" data-day="${day}">${mealMark(v)}</td>`; }).join('');
     h += `<tr><td class="${rd}">${d}</td><td class="${rd}">${WD_JA[w]}</td>${cells}<td>${need || ''}</td></tr>`;
   }
-  h += `<tr><td colspan="2">要の日数</td>${tot.map(t => `<td>${t}</td>`).join('')}<td></td></tr></tbody></table>`;
+  h += `<tr><td colspan="2">○の日数</td>${tot.map(t => `<td>${t}</td>`).join('')}<td></td></tr></tbody></table>`;
   $('#mealPage').innerHTML = h;
 }
 $('#mealPage').addEventListener('click', async e => {
   const td = e.target.closest('td.mc'); if (!td) return;
   const mid = Number(td.dataset.mid), day = td.dataset.day, cur = getEntry(mid, day) || {};
-  const next = cur.meal === '要' ? '不要' : cur.meal === '不要' ? null : '要';
+  const next = cur.meal === '不要' ? null : '不要';
   try { await saveEntry(mid, day, { ...cur, meal: next }); renderMeal(); }
   catch (err) { toast('保存できませんでした：' + errMsg(err), true); }
 });
