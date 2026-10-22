@@ -356,7 +356,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
     <h3>管理者メニュー</h3>
-    <p>「🔑 管理者メニュー」を押して、②〜⑤と同じ管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食調査の対象・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
+    <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食調査の対象・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
     <h3>困ったとき</h3>
     <ul>
       <li>画面が古いまま・おかしいときは、右上の赤い「Update」を押します。</li>
@@ -1032,7 +1032,7 @@ async function ensureAdmin() {
     setAdmin(false);
   }
   return new Promise(resolve => {
-    openModal(`<h3>管理者パスワード</h3><p class="note">②〜⑤と同じ管理者パスワードを入れてください。一度入れると、このタブを閉じるまで入れ直す必要はありません。</p>
+    openModal(`<h3>管理者パスワード</h3><p class="note">管理者パスワードを入れてください。一度入れると、このタブを閉じるまで入れ直す必要はありません。</p>
       <input type="password" id="admPw" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:6px" autocomplete="current-password">
       <div class="acts"><button class="btn" id="admCancel">やめる</button><button class="btn pri" id="admOk">OK</button></div>`);
     const go = async () => {
