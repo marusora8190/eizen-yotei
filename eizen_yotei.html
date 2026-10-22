@@ -88,6 +88,8 @@ h3{font-size:16px;margin:18px 0 8px}
 .sv.ok{color:var(--ok)} .sv.ng{color:var(--red)} .sv.ing{color:var(--sub)}
 .fill26{flex:none;font-size:12px}
 .until{flex:none;width:5.6em;padding:4px 2px;border:1px solid var(--line);border-radius:5px;background:#fff;font-size:12.5px;color:var(--sub)}
+.indrow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin:-2px 0 8px}
+.indv{min-width:3.6em;text-align:center;color:var(--ink);font-weight:700}
 .until.set{color:var(--ink);background:#eef4ff;border-color:#9cb8e3;font-weight:700}
 .row{flex-wrap:wrap}
 .contnote{flex-basis:100%;font-size:12.5px;color:var(--sub);padding-left:92px;margin-top:-2px}
@@ -331,6 +333,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
+      <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字は動きません）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。</li>
       <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
       <li>昼食調査の対象の先生は、日付の右の欄で昼食の「要／不要」を選びます。</li>
@@ -398,7 +401,8 @@ function errMsg(error) {
   if (/Failed to fetch|NetworkError/i.test(m)) return 'インターネットにつながっていないか、データベースが休止している可能性があります';
   return m;
 }
-function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.add('show'); }
+// 開くたびに中身の入れ物を作り直す（前に開いたときのボタンの動きが重ならないように）
+function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
 function closeModal() { $('#modal').classList.remove('show'); $('#modalBox').innerHTML = ''; }
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
 
@@ -437,7 +441,7 @@ function continuations(mid) {
     if (mid != null && e.member_id !== mid) continue;
     for (const k of ['am', 'pm', 'allday']) {
       const u = e[k + '_until'];
-      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'] });
+      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0 });
     }
   }
   return out;
@@ -452,7 +456,11 @@ function memberById(id) { return st.allMembers.find(x => x.id === id); }
 
 // ===== 保存 =====
 async function saveEntry(mid, day, data) {
+  const prev = getEntry(mid, day) || {};
+  const keep = (k, f) => (data[k] ? Number(data[k + '_' + f] ?? prev[k + '_' + f] ?? 0) || 0 : 0);
   const rec = {
+    am_indent: keep('am', 'indent'), pm_indent: keep('pm', 'indent'), allday_indent: keep('allday', 'indent'),
+    am_size: keep('am', 'size'), pm_size: keep('pm', 'size'), allday_size: keep('allday', 'size'),
     member_id: mid, day,
     am: data.am || null, pm: data.pm || null, allday: data.allday || null,
     am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
@@ -665,9 +673,13 @@ $('#btnSubmit').addEventListener('click', async () => {
 
 // ===== 予定表 =====
 function halves() { const n = st.members.length, k = Math.ceil(n / 2); return [st.members.slice(0, k), st.members.slice(k)]; }
-function cellText(t, red, prefix) {
+// AM・PM の文字は小さく（元のExcelのマクロと同じ）。予定の文字だけを indent の分だけ右・左にずらす
+const INDENT_MM = 1.5;
+function cellText(t, red, prefix, indent, size) {
   if (!t) return '';
-  return `<span class="${red ? 'r' : ''}">${prefix ? `<span class="ap">${prefix}</span>` : ''}${esc(t)}</span>`;
+  const css = (indent ? `position:relative;left:${indent * INDENT_MM}mm;` : '') + (size ? `font-size:${(1 + size * 0.1).toFixed(2)}em;` : '');
+  const sh = css ? ` style="${css}"` : '';
+  return `<span class="${red ? 'r' : ''}">${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sh}>${esc(t)}</span></span>`;
 }
 function renderTable() {
   const { y, m } = st, nd = dim(y, m);
@@ -694,10 +706,10 @@ function renderTable() {
   const withEnds = (mid, day) => {
     const e = { ...(getEntry(mid, day) || {}) };
     const ea = ends.get(key(mid, day) + '|allday'), em = ends.get(key(mid, day) + '|am'), ep = ends.get(key(mid, day) + '|pm');
-    if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; }
+    if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; e.allday_indent = ea.indent; e.allday_size = ea.size; }
     if (!e.allday) {
-      if (em && !e.am) { e.am = em.text; e.am_red = em.red; }
-      if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; }
+      if (em && !e.am) { e.am = em.text; e.am_red = em.red; e.am_indent = em.indent; e.am_size = em.size; }
+      if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; e.pm_indent = ep.indent; e.pm_size = ep.size; }
     }
     return e;
   };
@@ -707,13 +719,13 @@ function renderTable() {
     const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_JA[w]})</td>`;
     const cell1 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
-      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red)}</div></td>`;
-      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM')}</div></td>`;
+      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size)}</div></td>`;
+      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size)}</div></td>`;
     };
     const cell2 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
       if (e.allday) return '';
-      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM')}</div></td>`;
+      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size)}</div></td>`;
     };
     body += `<tr style="height:${rowH}mm">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
     body += `<tr style="height:${rowH}mm">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
@@ -779,7 +791,9 @@ function openEntryEditor(mid, day) {
   const mem = memberById(mid), e = getEntry(mid, day) || {};
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
-  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>`;
+  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
+    <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>
+    <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
@@ -795,6 +809,17 @@ function openEntryEditor(mid, day) {
     if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
   });
   box.addEventListener('change', ev => { if (ev.target.classList.contains('until')) ev.target.classList.toggle('set', !!ev.target.value); });
+  const showInd = sp => {
+    const v = Number(sp.dataset.v), f = sp.closest('.indrow').dataset.f;
+    sp.textContent = v === 0 ? '標準' : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`);
+  };
+  $$('.indv', box).forEach(showInd);
+  box.addEventListener('click', ev => {
+    const b = ev.target.closest('.ind'); if (!b) return;
+    const sp = $('.indv', b.closest('.indrow')), d = Number(b.dataset.d);
+    const [lo, hi] = b.closest('.indrow').dataset.f === 'size' ? [-5, 5] : [-10, 20];
+    sp.dataset.v = d === 0 ? 0 : Math.max(lo, Math.min(hi, Number(sp.dataset.v) + d)); showInd(sp);
+  });
   box.addEventListener('click', ev => {
     const btn = ev.target.closest('.redbtn');
     if (btn) { const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1'; $('input', btn.closest('.slot')).classList.toggle('is-red', on); }
@@ -813,10 +838,10 @@ function openEntryEditor(mid, day) {
   if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); });
   $('#edCancel').addEventListener('click', closeModal);
   $('#edSave').addEventListener('click', async () => {
-    const g = sel => { const s = $(sel); return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null }; };
+    const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0 }; };
     const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
-    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, meal }))(g('#edAllday .slot'))
-      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, pm: p.t, pm_red: p.r, pm_until: p.u, meal }; })();
+    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, meal }; })();
     $('#edSave').disabled = true;
     try { await saveEntry(mid, day, data); closeModal(); render(); toast('保存しました'); }
     catch (err) { $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true); }
