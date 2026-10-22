@@ -747,6 +747,7 @@ function renderTable() {
   }
   $('#sheet').innerHTML = `<div class="s-title">${monthTitle(y, m)} 予定表</div><table class="yt"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
   fitTexts($('#sheet'));
+  snapToEdges($('#sheet'));
   drawArrows();
   $$('.hide-personal-note').forEach(n => (n.style.display = st.personal ? 'none' : ''));
 }
@@ -772,6 +773,20 @@ function drawArrows() {
   }
 }
 // 長い予定は文字を小さくして1行に収める（Excelの「縮小して全体を表示」と同じ考え方）
+// 左・右へ動かしきったとき、文字の端をマスの端（午前の AM と同じ位置）にぴったり合わせる
+const EDGE_MM = 0.8;
+function snapToEdges(root) {
+  const PX = 96 / 25.4;
+  $$('td.c .fit > span[style*="left"]', root).forEach(sp => {
+    const c = sp.closest('.fit').getBoundingClientRect();
+    let shift = parseFloat(sp.style.left) || 0;
+    const r = sp.getBoundingClientRect(), lo = c.left + EDGE_MM * PX, hi = c.right - EDGE_MM * PX;
+    if (r.left < lo) shift += (lo - r.left) / PX;
+    else if (r.right > hi && r.width < hi - lo) shift -= (r.right - hi) / PX;
+    else return;
+    sp.style.left = shift.toFixed(2) + 'mm';
+  });
+}
 function fitTexts(root) {
   $$('td.c .fit', root).forEach(f => {
     if (!f.textContent) return;
@@ -812,11 +827,12 @@ function indentLimits(mid, day, k) {
   const td = $(`#sheet td.c.${cls}[data-mid="${mid}"][data-day="${day}"]`);
   const sp = td && $('.fit > span', td);
   if (!sp || !sp.textContent) return [-10, 20];
-  const PX = 96 / 25.4, step = INDENT_MM * PX, gap = 0.4 * PX;
-  const shift = (parseFloat(sp.style.left) || 0) * PX;
-  const c = td.getBoundingClientRect(), r = sp.getBoundingClientRect();
+  const PX = 96 / 25.4, step = INDENT_MM * PX, gap = EDGE_MM * PX;
+  const shift = (parseFloat(sp.style.left) || 0) * PX; // 実際にずれている分（端に合わせた分も含む）
+  const c = sp.closest('.fit').getBoundingClientRect(), r = sp.getBoundingClientRect();
   const leftSpace = (r.left - shift) - (c.left + gap), rightSpace = (c.right - gap) - (r.right - shift);
-  return [Math.min(0, -Math.floor(leftSpace / step)), Math.max(0, Math.floor(rightSpace / step))];
+  // 最後の1回は、端にぴったり合わせる（snapToEdges）
+  return [Math.min(0, -Math.ceil(leftSpace / step - 0.01)), Math.max(0, Math.ceil(rightSpace / step - 0.01))];
 }
 function openEntryEditor(mid, day, clickX) {
   const orig = getEntry(mid, day) ? { ...getEntry(mid, day) } : null;
