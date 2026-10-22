@@ -252,7 +252,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
-    <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「提出」の印をクリックすると、受け取り済みにできます。</p>
+    <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「未」の印をクリックすると、受け取り済み（「済」）にできます。</p>
     <div class="sheet-wrap"><div class="sheet a4l" id="sheet"></div></div>
   </section>
 
@@ -715,7 +715,7 @@ function renderTable() {
   // 提出の印
   $('#tbChips').innerHTML = st.members.map(x => {
     const s = st.subs.get(x.id);
-    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}">${s ? '✓' : '—'} ${esc(x.name)}</span>`;
+    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${esc(x.name)}</span>`;
   }).join(' ');
   const [L, R] = halves();
   const editable = !st.personal;
