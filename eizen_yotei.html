@@ -233,7 +233,6 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     </div>
     <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
     <div class="rows" id="inRows"></div>
-    <datalist id="dlPast"></datalist>
   </section>
 
   <!-- 予定表 -->
@@ -502,7 +501,7 @@ function renderInput() {
     const e = getEntry(mem.id, day) || {};
     const isAd = !!e.allday;
     const cls = ['row', w === 0 ? 'sun' : w === 6 ? 'sat' : '', hol ? 'hol' : '', isAd ? 'is-allday' : ''].join(' ');
-    const slot = (k, tag, val, red) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" list="dlPast" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} title="予定表で赤字にする">赤</button></div>`;
+    const slot = (k, tag, val, red) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} title="予定表で赤字にする">赤</button></div>`;
     const empty = !e.am && !e.pm && !e.allday;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
@@ -514,7 +513,6 @@ function renderInput() {
     </div>`;
   }
   $('#inRows').innerHTML = html;
-  loadPastTexts(mem.id);
 }
 function renderInputStatus() {
   const s = st.subs.get(st.inMember), el = $('#inStatus'), mem = memberById(st.inMember);
@@ -529,20 +527,6 @@ function renderInputStatus() {
     el.innerHTML = `${who}未提出　<span style="font-weight:400;color:var(--sub)">${esc(deadlineText(st.y, st.m))}</span>`;
     $('#btnSubmit').textContent = '提出する';
   }
-}
-const pastCache = new Map();
-async function loadPastTexts(mid) {
-  let list = pastCache.get(mid);
-  if (!list) {
-    const since = new Date(); since.setMonth(since.getMonth() - 8);
-    const { data, error } = await sb.from('yotei_entries').select('am,pm,allday').eq('member_id', mid).gte('day', dstr(since.getFullYear(), since.getMonth() + 1, 1)).range(0, 1999);
-    if (error) return;
-    const cnt = new Map();
-    for (const r of data) for (const t of [r.am, r.pm, r.allday]) if (t) for (const p of t.split('、')) { const s = p.trim(); if (s) cnt.set(s, (cnt.get(s) || 0) + 1); }
-    list = [...cnt.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]).slice(0, 300);
-    pastCache.set(mid, list);
-  }
-  if (mid === st.inMember) $('#dlPast').innerHTML = list.map(t => `<option value="${esc(t)}">`).join('');
 }
 function rowData(row) {
   const isAd = $('.adcb', row).checked;
@@ -705,7 +689,7 @@ function openEntryEditor(mid, day) {
   const mem = memberById(mid), e = getEntry(mid, day) || {};
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
-  const fld = (k, lab, val, red) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" list="dlPast" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button></div>`;
+  const fld = (k, lab, val, red) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red)}${fld('pm', '午後', e.pm, e.pm_red)}</div>
@@ -714,8 +698,6 @@ function openEntryEditor(mid, day) {
     ${dd === 26 ? `<div style="margin-top:6px"><button type="button" class="btn sm" id="ed26">「${label26(mm)}」を入れる</button></div>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
-  loadPastTexts(mid).then(() => {});
-  if (pastCache.get(mid)) $('#dlPast').innerHTML = pastCache.get(mid).map(t => `<option value="${esc(t)}">`).join('');
   box.addEventListener('input', ev => {
     const inp = ev.target.closest('.slot input'); if (!inp) return;
     const btn = $('.redbtn', inp.closest('.slot'));
@@ -740,7 +722,7 @@ function openEntryEditor(mid, day) {
     const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, meal }))(g('#edAllday .slot'))
       : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, pm: p.t, pm_red: p.r, meal }; })();
     $('#edSave').disabled = true;
-    try { await saveEntry(mid, day, data); closeModal(); pastCache.delete(mid); render(); toast('保存しました'); }
+    try { await saveEntry(mid, day, data); closeModal(); render(); toast('保存しました'); }
     catch (err) { $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true); }
   });
   setTimeout(() => { const i = $(isAd ? '#edAllday input' : '#edNormal input'); if (i) i.focus(); }, 30);
