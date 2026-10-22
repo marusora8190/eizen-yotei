@@ -985,7 +985,7 @@ function renderForm() {
       }
       return h + '</tbody></table>';
     };
-    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span>${meal ? `<span class="k-mealnote">昼食は、はじめは「○」（いる）になっています。いらない日だけ「✖」を選んでください。</span>` : ''}<span>${monthTitle(y, m)}予定記入表</span></div>
+    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span><span>${monthTitle(y, m)}予定記入表</span></div>
       <div class="k-body">${half(1, 15)}${half(16, nd)}</div>
       <div class="k-foot"><span>${esc(deadlineText(y, m))}</span><span>${esc(st.settings.submit_to || '')}</span></div></div>`;
   });
