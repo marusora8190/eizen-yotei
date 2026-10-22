@@ -132,7 +132,8 @@ table.yt td.c{vertical-align:middle}
 table.yt td.c.am{border-bottom:0}
 table.yt td.c.pm{border-top:0}
 table.yt td.c .fit{white-space:nowrap;overflow:hidden;font-size:6.5pt;padding:0 0.8mm;line-height:1.05}
-table.yt td.c.pm .fit{padding-left:4.5mm}
+/* 午前・午後の「標準」の位置は、左端（0.8mm）から右へ3回分（1.5mm×3）。そこから左へ3回で左端 */
+table.yt td.c.am .fit,table.yt td.c.pm .fit{padding-left:5.3mm}
 table.yt td.c.ad .fit{font-size:7.5pt;text-align:center}
 table.yt td.c .ap{font-size:4.5pt}
 table.yt .r{color:var(--red)}
