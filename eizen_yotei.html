@@ -92,7 +92,7 @@ h3{font-size:16px;margin:18px 0 8px}
 .sv.ok{color:var(--ok)} .sv.ng{color:var(--red)} .sv.ing{color:var(--sub)}
 .until{flex:none;width:5.6em;padding:4px 2px;border:1px solid var(--line);border-radius:5px;background:#fff;font-size:12.5px;color:var(--sub)}
 .indrow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin:-2px 0 8px}
-.indv{min-width:3.6em;text-align:center;color:var(--ink);font-weight:700}
+.indv{min-width:5.2em;text-align:center;color:var(--ink);font-weight:700}
 .until.set{color:var(--ink);background:#eef4ff;border-color:#9cb8e3;font-weight:700}
 .row{flex-wrap:wrap}
 .contnote{flex-basis:100%;font-size:12.5px;color:var(--sub);padding-left:92px;margin-top:-2px}
@@ -869,9 +869,9 @@ function openEntryEditor(mid, day, clickX) {
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
-    <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>
-    <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>
-    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>`;
+    <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
+    <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印をマスの真ん中にする">真ん中</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
@@ -914,7 +914,7 @@ function openEntryEditor(mid, day, clickX) {
   });
   const showInd = sp => {
     const v = Number(sp.dataset.v), f = sp.closest('.indrow').dataset.f;
-    sp.textContent = v === 0 ? (f === 'arrow' ? '真ん中' : '標準') : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`);
+    sp.textContent = '今：' + (v === 0 ? (f === 'arrow' ? '真ん中' : '標準') : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`));
   };
   $$('.indv', box).forEach(showInd);
   box.addEventListener('click', ev => {
