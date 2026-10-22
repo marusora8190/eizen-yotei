@@ -80,6 +80,7 @@ h3{font-size:16px;margin:18px 0 8px}
 .slot .tag{font-size:12px;color:var(--sub);width:2.6em;flex:none;text-align:right}
 .slot input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:#fff}
 .slot input:focus{outline:2px solid #9cb8e3;border-color:#9cb8e3}
+.slot-ad input{text-align:center}
 .slot input.is-red{color:var(--red);font-weight:700}
 .redbtn{flex:none;border:1px solid var(--line);background:#fff;color:#999;border-radius:5px;padding:4px 6px;font-size:12px}
 .redbtn.on{background:var(--red);border-color:var(--red);color:#fff}
@@ -89,7 +90,6 @@ h3{font-size:16px;margin:18px 0 8px}
 .adchk{flex:none;font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:3px;cursor:pointer}
 .sv{flex:none;width:1.4em;text-align:center;font-size:13px}
 .sv.ok{color:var(--ok)} .sv.ng{color:var(--red)} .sv.ing{color:var(--sub)}
-.fill26{flex:none;font-size:12px}
 .until{flex:none;width:5.6em;padding:4px 2px;border:1px solid var(--line);border-radius:5px;background:#fff;font-size:12.5px;color:var(--sub)}
 .indrow{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin:-2px 0 8px}
 .indv{min-width:3.6em;text-align:center;color:var(--ink);font-weight:700}
@@ -251,7 +251,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn pri" id="btnSubmit">提出する</button>
     </div>
     <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
-    <div class="mealnote" id="inMealNote" style="display:none">🍙 昼食は、はじめから「○」（いる）になっています。いらない日だけ「✖」を選んでください。</div>
+    <div class="mealnote" id="inMealNote" style="display:none">昼食は、はじめは「○」（いる）になっています。いらない日だけ「✖」を選んでください。</div>
     <div class="rows" id="inRows"></div>
   </section>
 
@@ -312,6 +312,12 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <div style="margin-top:8px"><button class="btn pri" id="msSaveRed">保存</button></div>
     </div>
     <div class="panel">
+      <h3 style="margin-top:0">行事（予定入力・予定表・記入表に出す文字）</h3>
+      <p class="note">毎年決まっている行事です。先生の予定が空いている日は、先生全員の終日の欄に、はじめから入ります（予定表・記入表にも出ます）。「月」を「毎月」にすると、毎月その日に入ります。同じ日に「その月だけ」の行事があるときは、そちらが優先されます（例：1月26日は「春季大祭」、ほかの月の26日は「本部月次祭」）。</p>
+      <div style="overflow:auto"><table class="grid" id="msEvents"></table></div>
+      <div style="margin-top:8px"><button class="btn" id="msAddEvent">＋ 行事を追加</button></div>
+    </div>
+    <div class="panel">
       <h3 style="margin-top:0">祝日</h3>
       <p class="note">予定表・記入表で日付を赤くするのに使います。2050年まで入っています。</p>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
@@ -343,9 +349,9 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
-      <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
+      <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日の終日の欄に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
-      <li>昼食調査の対象の先生は、日付の右の「昼食」の欄が、はじめから「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
+      <li>昼食調査の対象の先生は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
     </ul>
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
@@ -390,7 +396,24 @@ const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
 const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
 const reiki = y => y - 1837;
 const mealMark = v => (v === '不要' ? '✖' : '○'); // 昼食：何も入っていなければ「○」（いる）
-const label26 = m => (m === 1 ? '春季大祭' : m === 10 ? '秋季大祭' : '本部月次祭');
+// マスターの「行事」。その月だけの行事があれば、同じ日の「毎月」の行事より優先する
+function eventFor(day) {
+  const [, m, d] = day.split('-').map(Number);
+  const hit = x => x.day_from <= d && d <= x.day_to;
+  let list = (st.events || []).filter(x => x.month === m && hit(x));
+  if (!list.length) list = (st.events || []).filter(x => x.month == null && hit(x));
+  if (!list.length) return null;
+  return { text: list.map(x => x.text).join('、'), red: list.some(x => x.red) };
+}
+// 先生の予定が何も入っていない日は、行事を終日の予定として出す（その先生が消した日は出さない）
+function effEntry(mid, day) {
+  const e = getEntry(mid, day) || {};
+  if (e.am || e.pm || e.allday || e.event_off) return e;
+  // 「〜日まで続く」予定の途中・最後の日は、行事を入れない
+  if (continuations(mid).some(c => c.start < day && day <= c.until)) return e;
+  const ev = eventFor(day);
+  return ev ? { ...e, allday: ev.text, allday_red: ev.red } : e;
+}
 const isRedDay = (y, m, d) => wdOf(y, m, d) === 0 || st.holidays.has(dstr(y, m, d));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const key = (mid, day) => `${mid}|${day}`;
@@ -422,12 +445,14 @@ $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') cl
 
 // ===== 読み込み =====
 async function loadMasters() {
-  const [mem, hol, set] = await Promise.all([
+  const [mem, hol, set, ev] = await Promise.all([
     sb.from('yotei_members').select('*').order('sort_order').order('id'),
     sb.from('yotei_holidays').select('day,name').order('day').range(0, 4999),
     sb.from('yotei_settings').select('key,value'),
+    sb.from('yotei_events').select('*').order('sort_order').order('id'),
   ]);
-  for (const r of [mem, hol, set]) if (r.error) throw r.error;
+  for (const r of [mem, hol, set, ev]) if (r.error) throw r.error;
+  st.events = ev.data;
   st.allMembers = mem.data;
   st.members = mem.data.filter(x => x.active);
   st.holidays = new Map(hol.data.map(h => [h.day, h.name]));
@@ -483,6 +508,7 @@ function makeRec(mid, day, data) {
     pm_until: data.pm && data.pm_until > day ? data.pm_until : null,
     allday_until: data.allday && data.allday_until > day ? data.allday_until : null,
     meal: data.meal || null, updated_at: new Date().toISOString(),
+    event_off: !data.am && !data.pm && !data.allday && !!eventFor(day),
   };
   return rec;
 }
@@ -559,16 +585,14 @@ function renderInput() {
   let html = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), hol = st.holidays.get(day);
-    const e = getEntry(mem.id, day) || {};
+    const e = effEntry(mem.id, day);
     const isAd = !!e.allday;
     const cls = ['row', w === 0 ? 'sun' : w === 6 ? 'sat' : '', hol ? 'hol' : '', isAd ? 'is-allday' : ''].join(' ');
     const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
-    const empty = !e.am && !e.pm && !e.allday;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
-      ${d === 26 && empty ? `<button type="button" class="btn sm fill26">「${label26(m)}」を入れる</button>` : ''}
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
       <span class="sv"></span>
       <div class="contnote"></div>
@@ -621,7 +645,6 @@ async function doSaveRow(row) {
   try {
     await saveEntry(mid, day, rowData(row));
     sv.className = 'sv ok'; sv.textContent = '✓';
-    const f = $('.fill26', row); if (f) f.remove();
     updateContNotes();
   } catch (e) {
     sv.className = 'sv ng'; sv.textContent = '×';
@@ -674,13 +697,6 @@ $('#inRows').addEventListener('click', e => {
     $('input', btn.closest('.slot')).classList.toggle('is-red', on);
     scheduleSave(btn.closest('.row'), 0); return;
   }
-  const f = e.target.closest('.fill26');
-  if (f) {
-    const row = f.closest('.row');
-    $('.adcb', row).checked = true; row.classList.add('is-allday');
-    const s = $('.slot[data-k="allday"]', row); $('input', s).value = label26(st.m); $('input', s).classList.add('is-red'); $('.redbtn', s).classList.add('on');
-    f.remove(); scheduleSave(row, 0);
-  }
 });
 $('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value); renderInput(); });
 $('#btnSubmit').addEventListener('click', async () => {
@@ -726,13 +742,15 @@ function renderTable() {
   const ends = new Map();
   for (const c of continuations(null)) ends.set(key(c.mid, c.until) + '|' + c.k, c);
   const withEnds = (mid, day) => {
-    const e = { ...(getEntry(mid, day) || {}) };
+    const real = getEntry(mid, day) || {};
+    const e = { ...real };
     const ea = ends.get(key(mid, day) + '|allday'), em = ends.get(key(mid, day) + '|am'), ep = ends.get(key(mid, day) + '|pm');
     if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; e.allday_indent = ea.indent; e.allday_size = ea.size; }
     if (!e.allday) {
       if (em && !e.am) { e.am = em.text; e.am_red = em.red; e.am_indent = em.indent; e.am_size = em.size; }
       if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; e.pm_indent = ep.indent; e.pm_size = ep.size; }
     }
+    if (!e.am && !e.pm && !e.allday) return effEntry(mid, day);
     return e;
   };
   let body = '';
@@ -843,7 +861,7 @@ function indentLimits(mid, day, k) {
 }
 function openEntryEditor(mid, day, clickX) {
   const orig = getEntry(mid, day) ? { ...getEntry(mid, day) } : null;
-  const mem = memberById(mid), e = orig || {};
+  const mem = memberById(mid), e = effEntry(mid, day);
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
@@ -856,7 +874,7 @@ function openEntryEditor(mid, day, clickX) {
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
     <p class="note" style="margin:4px 0 0">右の「1日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
     ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
-    ${dd === 26 ? `<div style="margin-top:6px"><button type="button" class="btn sm" id="ed26">「${label26(mm)}」を入れる</button></div>` : ''}
+    ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、終日の欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
   // 予定表が見えるように、クリックした場所と反対側に画面を出す
@@ -919,8 +937,6 @@ function openEntryEditor(mid, day, clickX) {
     $('#edNormal').style.display = ev.target.checked ? 'none' : ''; $('#edAllday').style.display = ev.target.checked ? '' : 'none';
     preview();
   });
-  const b26 = $('#ed26');
-  if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); preview(); });
   $('#edCancel').addEventListener('click', closeModal);
   $('#edSave').addEventListener('click', async () => {
     const data = collect();
@@ -951,20 +967,21 @@ function renderForm() {
       for (let d = from; d < from + 16; d++) {
         if (d > to) { h += `<tr><td class="kd"></td><td class="kw"></td>${meal ? '<td class="km"></td>' : ''}<td></td><td></td></tr>`; continue; }
         const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
-        const e = fill ? getEntry(mem.id, day) || {} : {};
-        const is26 = d === 26;
+        const ev = eventFor(day);
+        const e = fill ? effEntry(mem.id, day) : (ev ? { allday: ev.text, allday_red: ev.red } : {});
+        const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
         const tx = k => esc(e[k]) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
-        if (fill && e.allday) ad = `<td colspan="2" class="kt${e.allday_red ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
+        if (e.allday) ad = `<td colspan="2" class="kt${e.allday_red ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
-          am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : (is26 && !(fill && (e.am || e.pm)) ? `<td class="kt">${label26(m)}</td>` : '<td></td>');
+          am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
           pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
         h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${mealMark(fill ? e.meal : null)}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
-    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span>${meal ? `<span class="k-mealnote">昼食は、はじめから「○」（いる）になっています。いらない日だけ「✖」を選んでください。</span>` : ''}<span>${monthTitle(y, m)}予定記入表</span></div>
+    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span>${meal ? `<span class="k-mealnote">昼食は、はじめは「○」（いる）になっています。いらない日だけ「✖」を選んでください。</span>` : ''}<span>${monthTitle(y, m)}予定記入表</span></div>
       <div class="k-body">${half(1, 15)}${half(16, nd)}</div>
       <div class="k-foot"><span>${esc(deadlineText(y, m))}</span><span>${esc(st.settings.submit_to || '')}</span></div></div>`;
   });
@@ -1055,6 +1072,16 @@ function renderMaster() {
   $('#msDeadline').value = st.settings.deadline_day;
   $('#msSubmitTo').value = st.settings.submit_to || '';
   $('#msRed').value = (st.settings.red_keywords || []).join('\n');
+  const monthOpts = v => `<option value="" ${v == null ? 'selected' : ''}>毎月</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}月</option>`).join('');
+  const dayOpts = v => Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}日</option>`).join('');
+  $('#msEvents').innerHTML = `<tr><th>月</th><th>日から</th><th>日まで</th><th>出す文字</th><th>赤字</th><th></th><th></th></tr>` + (st.events || []).map(x => `<tr data-id="${x.id}">
+    <td><select class="e-month">${monthOpts(x.month)}</select></td>
+    <td><select class="e-from">${dayOpts(x.day_from)}</select></td>
+    <td><select class="e-to">${dayOpts(x.day_to)}</select></td>
+    <td><input type="text" class="e-text" value="${esc(x.text)}"></td>
+    <td style="text-align:center"><input type="checkbox" class="e-red" ${x.red ? 'checked' : ''}></td>
+    <td><button class="btn sm pri e-save">保存</button></td>
+    <td><button class="btn sm e-del">削除</button></td></tr>`).join('');
   const years = [...new Set([...st.holidays.keys()].map(d => Number(d.slice(0, 4))))].sort();
   if (!years.includes(holYear)) years.push(holYear), years.sort();
   $('#msHolYear').innerHTML = years.map(yy => `<option value="${yy}" ${yy === holYear ? 'selected' : ''}>${yy}年</option>`).join('');
@@ -1093,6 +1120,25 @@ $('#msAddMember').addEventListener('click', async () => {
 $('#msSaveSettings').addEventListener('click', async () => {
   const dd = Math.min(31, Math.max(1, Number($('#msDeadline').value) || 27));
   await adminDo(() => adminSb.from('yotei_settings').upsert([{ key: 'deadline_day', value: dd }, { key: 'submit_to', value: $('#msSubmitTo').value.trim() }]), '保存しました');
+});
+$('#msEvents').addEventListener('click', async e => {
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+  const id = Number(tr.dataset.id);
+  if (e.target.classList.contains('e-save')) {
+    const mv = $('.e-month', tr).value, from = Number($('.e-from', tr).value), to = Number($('.e-to', tr).value), text = $('.e-text', tr).value.trim();
+    if (!text) { toast('出す文字を入れてください', true); return; }
+    if (to < from) { toast('「日まで」は「日から」と同じか、あとの日にしてください', true); return; }
+    await adminDo(() => adminSb.from('yotei_events').update({ month: mv ? Number(mv) : null, day_from: from, day_to: to, text, red: $('.e-red', tr).checked }).eq('id', id), '保存しました');
+    render();
+  } else if (e.target.classList.contains('e-del')) {
+    if (!confirm(`行事「${$('.e-text', tr).value}」を削除しますか？`)) return;
+    await adminDo(() => adminSb.from('yotei_events').delete().eq('id', id), '削除しました');
+  }
+});
+$('#msAddEvent').addEventListener('click', async () => {
+  const text = prompt('追加する行事の名前（例：教祖誕生祭）'); if (!text || !text.trim()) return;
+  const maxSort = Math.max(0, ...(st.events || []).map(x => x.sort_order));
+  await adminDo(() => adminSb.from('yotei_events').insert({ month: 1, day_from: 1, day_to: 1, text: text.trim(), red: true, sort_order: maxSort + 1 }), '追加しました。月と日を選んで「保存」を押してください');
 });
 $('#msSaveRed').addEventListener('click', async () => {
   const words = [...new Set($('#msRed').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean))];
