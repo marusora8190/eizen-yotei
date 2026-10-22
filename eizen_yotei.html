@@ -109,7 +109,7 @@ table.yt th,table.yt td{border:0.6px solid #000;padding:0;overflow:hidden}
 table.yt thead th{height:5.5mm;font-size:10pt;font-weight:400;letter-spacing:.3em}
 table.yt thead th.dh{font-size:6.5pt;letter-spacing:0}
 table.yt td.dn{font-size:8.5pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
-table.yt td.dw{font-size:4.8pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
+table.yt td.dw{font-size:6pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
 table.yt td.red-day{color:var(--red)}
 table.yt td.c{vertical-align:middle}
 table.yt td.c.am{border-bottom:0}
@@ -133,7 +133,7 @@ table.yt td.half-l{border-left:1.4px solid #000}
 .k-body th.mealh{font-size:7.5pt;line-height:1.05;padding:0}
 .k-body td{height:10.5mm;font-size:10pt}
 .k-body td.kd{text-align:right;border-right:0;padding-right:1mm}
-.k-body td.kw{text-align:left;font-size:8.5pt;border-left:0}
+.k-body td.kw{text-align:left;font-size:9.5pt;border-left:0}
 .k-body td.red-day{color:var(--red)}
 .k-body td.k26{background:#fbe5d6}
 .k-body td.kt{font-size:9pt;white-space:nowrap}
@@ -363,7 +363,6 @@ const ymStr = (y, m) => `${y}-${pad(m)}`;
 const dstr = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 const dim = (y, m) => new Date(y, m, 0).getDate();
 const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
-const WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
 const reiki = y => y - 1837;
 const label26 = m => (m === 1 ? '春季大祭' : m === 10 ? '秋季大祭' : '本部月次祭');
@@ -640,7 +639,7 @@ function renderTable() {
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
-    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_EN[w]})</td>`;
+    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_JA[w]})</td>`;
     const cell1 = x => {
       const e = getEntry(x.id, day) || {}, ed = editable ? ' editable' : '';
       if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red)}</div></td>`;
@@ -759,7 +758,7 @@ function renderForm() {
           am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${esc(e.am)}</td>` : (is26 && !(fill && (e.am || e.pm)) ? `<td class="kt">${label26(m)}</td>` : '<td></td>');
           pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${esc(e.pm)}</td>` : '<td></td>';
         }
-        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_EN[w]}</td>${meal ? `<td class="km">${fill && e.meal ? esc(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
+        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill && e.meal ? esc(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
