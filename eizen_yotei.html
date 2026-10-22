@@ -333,7 +333,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
-      <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字は動きません）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。</li>
+      <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字は動きません）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>26日は「本部月次祭」（1月は春季大祭、10月は秋季大祭）を1回のクリックで入れられます。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
       <li>昼食調査の対象の先生は、日付の右の欄で昼食の「要／不要」を選びます。</li>
@@ -441,7 +441,7 @@ function continuations(mid) {
     if (mid != null && e.member_id !== mid) continue;
     for (const k of ['am', 'pm', 'allday']) {
       const u = e[k + '_until'];
-      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0 });
+      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0, arrow: e[k + '_arrow'] || 0 });
     }
   }
   return out;
@@ -461,6 +461,7 @@ async function saveEntry(mid, day, data) {
   const rec = {
     am_indent: keep('am', 'indent'), pm_indent: keep('pm', 'indent'), allday_indent: keep('allday', 'indent'),
     am_size: keep('am', 'size'), pm_size: keep('pm', 'size'), allday_size: keep('allday', 'size'),
+    am_arrow: keep('am', 'arrow'), pm_arrow: keep('pm', 'arrow'), allday_arrow: keep('allday', 'arrow'),
     member_id: mid, day,
     am: data.am || null, pm: data.pm || null, allday: data.allday || null,
     am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
@@ -749,7 +750,7 @@ function drawArrows() {
     const a = cellOf(c.mid, c.start, c.k), b = cellOf(c.mid, c.until, c.k);
     if (!a || !b) continue;
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    const x = (ra.left + ra.width / 2 - base.left) * MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
+    const x = (ra.left + ra.width / 2 - base.left) * MM + c.arrow * INDENT_MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
     if (y2 - y1 < 1) continue;
     const el = document.createElement('div'); el.className = 'yarrow';
     el.style.left = x + 'mm'; el.style.top = y1 + 'mm'; el.style.height = (y2 - y1) + 'mm';
@@ -793,7 +794,8 @@ function openEntryEditor(mid, day) {
   const isAd = !!e.allday;
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>
-    <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>`;
+    <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0">元に戻す</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
@@ -808,16 +810,20 @@ function openEntryEditor(mid, day) {
     const btn = $('.redbtn', inp.closest('.slot'));
     if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
   });
-  box.addEventListener('change', ev => { if (ev.target.classList.contains('until')) ev.target.classList.toggle('set', !!ev.target.value); });
+  box.addEventListener('change', ev => {
+    if (!ev.target.classList.contains('until')) return;
+    ev.target.classList.toggle('set', !!ev.target.value);
+    const k = ev.target.closest('.slot').dataset.k, ar = $(`.arrowrow[data-k="${k}"]`, box); if (ar) ar.style.display = ev.target.value ? '' : 'none';
+  });
   const showInd = sp => {
     const v = Number(sp.dataset.v), f = sp.closest('.indrow').dataset.f;
-    sp.textContent = v === 0 ? '標準' : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`);
+    sp.textContent = v === 0 ? (f === 'arrow' ? '真ん中' : '標準') : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`);
   };
   $$('.indv', box).forEach(showInd);
   box.addEventListener('click', ev => {
     const b = ev.target.closest('.ind'); if (!b) return;
     const sp = $('.indv', b.closest('.indrow')), d = Number(b.dataset.d);
-    const [lo, hi] = b.closest('.indrow').dataset.f === 'size' ? [-5, 5] : [-10, 20];
+    const [lo, hi] = b.closest('.indrow').dataset.f === 'size' ? [-5, 5] : b.closest('.indrow').dataset.f === 'arrow' ? [-15, 15] : [-10, 20];
     sp.dataset.v = d === 0 ? 0 : Math.max(lo, Math.min(hi, Number(sp.dataset.v) + d)); showInd(sp);
   });
   box.addEventListener('click', ev => {
@@ -832,16 +838,17 @@ function openEntryEditor(mid, day) {
     if (ev.target.checked) { if (!uD.value) uD.value = uA.value || $('#edNormal .slot[data-k="pm"] .until').value || ''; }
     else if (!uA.value) uA.value = uD.value;
     uA.classList.toggle('set', !!uA.value); uD.classList.toggle('set', !!uD.value);
+    $$('.arrowrow', box).forEach(r => { const u = $(`.slot[data-k="${r.dataset.k}"] .until`, box); r.style.display = u && u.value ? '' : 'none'; });
     $('#edNormal').style.display = ev.target.checked ? 'none' : ''; $('#edAllday').style.display = ev.target.checked ? '' : 'none';
   });
   const b26 = $('#ed26');
   if (b26) b26.addEventListener('click', () => { $('#edAd').checked = true; $('#edNormal').style.display = 'none'; $('#edAllday').style.display = ''; const d = $('#edAllday input'); d.value = label26(mm); d.classList.add('is-red'); $('#edAllday .redbtn').classList.add('on'); });
   $('#edCancel').addEventListener('click', closeModal);
   $('#edSave').addEventListener('click', async () => {
-    const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0 }; };
+    const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
     const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
-    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, meal }))(g('#edAllday .slot'))
-      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, meal }; })();
+    const data = $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
     $('#edSave').disabled = true;
     try { await saveEntry(mid, day, data); closeModal(); render(); toast('保存しました'); }
     catch (err) { $('#edSave').disabled = false; toast('保存できませんでした：' + errMsg(err), true); }
