@@ -20,12 +20,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 header{display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;position:sticky;top:0;z-index:20}
 body.nav-hidden nav{display:none!important}
-.zoombox{display:inline-flex}
-.zoombox .btn{border-radius:0;padding:6px 10px;font-weight:700}
-.zoombox .btn:first-child{border-radius:6px 0 0 6px}
-.zoombox .btn:last-child{border-radius:0 6px 6px 0}
-.zoombox .zoomv{min-width:4.2em;font-weight:400;border-left:0;border-right:0}
-.zoomable{zoom:var(--zoom,1)}
 .navtoggle{font-size:18px;line-height:1;padding:5px 10px}
 header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.05em}
 header .who{color:var(--sub);font-size:14px}
@@ -120,7 +114,6 @@ h3{font-size:16px;margin:18px 0 8px}
   .date{width:auto;flex:1}
   .slots{flex-basis:100%;flex-direction:column;order:5}
   .contnote{order:6;padding-left:0}
-  .zoombox{display:none}
   .slot .tag{width:2.6em}
   .monthbar .mlabel{min-width:0;font-size:16px}
 }
@@ -212,7 +205,6 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   .ypage + .ypage{margin-top:0}
   table.yt td.c.editable:hover,table.mt td.mc:hover{background:none}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .zoomable{zoom:1!important}
 }
 </style>
 </head>
@@ -222,7 +214,6 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <h1>営繕部予定表</h1>
   <span class="who" id="whoLabel"></span>
   <span class="sp"></span>
-  <span class="zoombox" title="画面の大きさ（印刷には関係ありません）"><button class="btn" id="zoomOut" title="小さく">－</button><button class="btn zoomv" id="zoomReset" title="100%に戻す">100%</button><button class="btn" id="zoomIn" title="大きく">＋</button></span>
   <button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button>
 </header>
 <div class="layout">
@@ -256,7 +247,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     </div>
     <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
     <div class="mealnote" id="inMealNote" style="display:none">昼食は、はじめは「○」（いる）になっています。いらない日だけ「✖」を選んでください。</div>
-    <div class="rows zoomable" id="inRows"></div>
+    <div class="rows" id="inRows"></div>
   </section>
 
   <!-- 予定表 -->
@@ -267,7 +258,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「未」の印をクリックすると、受け取り済み（「済」）にできます。</p>
-    <div class="sheet-wrap zoomable"><div id="sheet"></div></div>
+    <div class="sheet-wrap"><div id="sheet"></div></div>
   </section>
 
   <!-- 記入表 -->
@@ -279,11 +270,11 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
     <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。</p>
-    <div class="sheet-wrap zoomable" id="fmPages"></div>
+    <div class="sheet-wrap" id="fmPages"></div>
   </section>
 
   <!-- マスター -->
-  <section id="v-master" class="zoomable">
+  <section id="v-master">
     <h2>マスター</h2>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
@@ -328,7 +319,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   </section>
 
   <!-- 使い方 -->
-  <section id="v-help" class="help zoomable">
+  <section id="v-help" class="help">
     <h2>使い方</h2>
     <h3>この仕組みでできること</h3>
     <p>先生方の毎月の予定を集めて、6人分を1枚にまとめた「予定表」（A4横）を作ります。これまでの「予定記入表」から「予定表」へ写す作業がいらなくなります。</p>
@@ -537,19 +528,7 @@ function setNavHidden(on) {
   try { localStorage.setItem('yotei-nav-hidden', on ? '1' : ''); } catch (e) {}
   updSticky();
 }
-// 画面の拡大・縮小（予定入力・予定表・記入表・マスター・使い方の中身だけ。印刷の大きさは変わらない）
-const ZOOMS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
-let zoom = 1;
-function setZoom(z) {
-  zoom = z; document.documentElement.style.setProperty('--zoom', z);
-  $('#zoomReset').textContent = Math.round(z * 100) + '%';
-  try { localStorage.setItem('yotei-zoom', String(z)); } catch (e) {}
-  if (st.view === 'table' && $('#sheet').innerHTML) renderTable();
-}
-$('#zoomIn').addEventListener('click', () => { const n = ZOOMS.find(v => v > zoom + 0.001); if (n) setZoom(n); });
-$('#zoomOut').addEventListener('click', () => { const n = [...ZOOMS].reverse().find(v => v < zoom - 0.001); if (n) setZoom(n); });
-$('#zoomReset').addEventListener('click', () => setZoom(1));
-try { const z = Number(localStorage.getItem('yotei-zoom')); if (z && ZOOMS.includes(z)) { zoom = z; document.documentElement.style.setProperty('--zoom', z); $('#zoomReset').textContent = Math.round(z * 100) + '%'; } } catch (e) {}
+try { localStorage.removeItem('yotei-zoom'); } catch (e) {}
 $('#btnNav').addEventListener('click', () => setNavHidden(!document.body.classList.contains('nav-hidden')));
 try { if (localStorage.getItem('yotei-nav-hidden') === '1') document.body.classList.add('nav-hidden'); } catch (e) {}
 function showView(v) {
