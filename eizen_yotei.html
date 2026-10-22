@@ -19,6 +19,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 header{display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;position:sticky;top:0;z-index:20}
+body.nav-hidden nav{display:none!important}
+.navtoggle{font-size:18px;line-height:1;padding:5px 10px}
 header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.05em}
 header .who{color:var(--sub);font-size:14px}
 header .sp{flex:1}
@@ -203,6 +205,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 </head>
 <body>
 <header>
+  <button class="btn navtoggle" id="btnNav" title="サイドバーを隠す・出す">☰</button>
   <h1>営繕部予定表</h1>
   <span class="who" id="whoLabel"></span>
   <span class="sp"></span>
@@ -513,6 +516,15 @@ function updSticky() {
   r.setProperty('--hdr', h + 'px'); r.setProperty('--st', st + 'px'); r.setProperty('--mb', mb + 'px');
 }
 window.addEventListener('resize', updSticky);
+// サイドバーを隠す・出す（このパソコンのこのブラウザで覚えておく）
+function setNavHidden(on) {
+  document.body.classList.toggle('nav-hidden', on);
+  $('#btnNav').title = on ? 'サイドバーを出す' : 'サイドバーを隠す';
+  try { localStorage.setItem('yotei-nav-hidden', on ? '1' : ''); } catch (e) {}
+  updSticky();
+}
+$('#btnNav').addEventListener('click', () => setNavHidden(!document.body.classList.contains('nav-hidden')));
+try { if (localStorage.getItem('yotei-nav-hidden') === '1') document.body.classList.add('nav-hidden'); } catch (e) {}
 function showView(v) {
   if (!VIEWS.includes(v)) v = 'input';
   if (st.personal && !['input', 'table', 'help'].includes(v)) v = 'input';
