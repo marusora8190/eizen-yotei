@@ -116,7 +116,27 @@ h3{font-size:16px;margin:18px 0 8px}
   .contnote{order:6;padding-left:0}
   .slot .tag{width:2.6em}
   .monthbar .mlabel{min-width:0;font-size:16px}
+  /* スマホ：月の切り替えを1段に、上の帯も小さく */
+  .monthbar{flex-wrap:nowrap;gap:6px;padding:6px 10px}
+  .monthbar .lg,.monthbar .msub{display:none}
+  .monthbar .btn{padding:4px 12px}
+  .monthbar .mlabel{flex:1;font-size:15px;white-space:nowrap}
+  header{padding:5px 10px;gap:8px}
+  header h1{font-size:16px}
+  header .btn{padding:4px 10px}
+  .navtoggle{font-size:16px}
+  /* スマホで先生ごとのURLから予定表を見るときは、その先生の列だけ（印刷ボタンは出さない） */
+  body.personal #btnPrintTable{display:none}
 }
+.sheet.a4l.solo{width:auto;height:auto}
+.solo .s-title{height:auto;padding:4px 6px;font-size:15px}
+.solo table.yt thead th{height:auto;padding:4px 0;font-size:14px}
+.solo table.yt thead th.dh{font-size:11px}
+.solo table.yt td.dn{font-size:15px}
+.solo table.yt td.dw{font-size:11px}
+.solo table.yt td.c .fit{font-size:13px;padding:2px 6px;white-space:normal;line-height:1.25}
+.solo table.yt td.c.ad .fit{font-size:14px}
+.solo table.yt td.c .ap{font-size:10px}
 
 /* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
@@ -231,9 +251,9 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <div id="loading">読み込み中…</div>
 
   <div class="monthbar" id="monthbar" style="display:none">
-    <button class="btn" id="mPrev">◀ 前の月</button>
+    <button class="btn" id="mPrev">◀<span class="lg"> 前の月</span></button>
     <span class="mlabel" id="mLabel"></span>
-    <button class="btn" id="mNext">次の月 ▶</button>
+    <button class="btn" id="mNext"><span class="lg">次の月 </span>▶</button>
     <button class="btn sm" id="mNextMonth">来月へ</button>
   </div>
 
@@ -521,6 +541,7 @@ function updSticky() {
   r.setProperty('--hdr', h + 'px'); r.setProperty('--st', st + 'px'); r.setProperty('--mb', mb + 'px');
 }
 window.addEventListener('resize', updSticky);
+window.matchMedia('(max-width:760px)').addEventListener('change', () => { if (st.view === 'table' && st.personal) renderTable(); updSticky(); });
 // サイドバーを隠す・出す（このパソコンのこのブラウザで覚えておく）
 function setNavHidden(on) {
   document.body.classList.toggle('nav-hidden', on);
@@ -728,8 +749,11 @@ function renderTable() {
   const W = 287, dw = 7, ww = 6.5;
   const titleH = 7, headH = 5.5, avail = 200 - titleH - headH - 1.5;
   const rowH = Math.min(5.2, avail / (nd * 2));
+  // スマホで先生ごとのURLを開いているときは、その先生の列だけを、画面の幅に合わせて出す
+  const solo = !!st.personal && window.matchMedia('(max-width:760px)').matches;
   const groups = [];
-  for (let i = 0; i < st.members.length; i += PER_PAGE) groups.push(st.members.slice(i, i + PER_PAGE));
+  if (solo) groups.push([memberById(st.personal)]);
+  else for (let i = 0; i < st.members.length; i += PER_PAGE) groups.push(st.members.slice(i, i + PER_PAGE));
   if (!groups.length) groups.push([]);
   // 2ページ以上になるときは、どのページも6人のときと同じ列の幅にそろえる
   const fullPw = (W - 2 * (dw + ww)) / PER_PAGE;
@@ -754,7 +778,7 @@ function renderTable() {
   const sideW = (R.length ? 2 : 1) * (dw + ww);
   const pw = groups.length > 1 ? fullPw : (pc ? (W - sideW) / pc : 0);
   const tableW = sideW + pw * pc;
-  let cols = `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
+  let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
   let head = `<th colspan="2" class="dh">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
   if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:1.4px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
@@ -772,11 +796,12 @@ function renderTable() {
       if (e.allday) return '';
       return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size)}</div></td>`;
     };
-    body += `<tr style="height:${rowH}mm">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
-    body += `<tr style="height:${rowH}mm">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
+    const rh = solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
+    body += `<tr style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
+    body += `<tr style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
   }
   const pg = groups.length > 1 ? `<span class="s-page">（${pageNo}／${groups.length}）</span>` : '';
-  return `<div class="sheet a4l ypage"><div class="s-title">${monthTitle(y, m)} 予定表${pg}</div><table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title">${monthTitle(y, m)} 予定表${pg}</div><table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   };
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
   fitTexts($('#sheet'));
@@ -809,8 +834,8 @@ function drawArrows() {
 // 長い予定は文字を小さくして1行に収める（Excelの「縮小して全体を表示」と同じ考え方）
 // 左・右へ動かしきったとき、文字の端をマスの端（午前の AM と同じ位置）にぴったり合わせる
 const EDGE_MM = 0.8;
-// 画面の拡大・縮小をしていても正しく測れるように、予定表の紙の幅（287mm）から 1mm が何点かを求める
-function pxPerMm() { const pg = $('#sheet .ypage'); const r = pg ? pg.getBoundingClientRect() : { width: 0 }; return r.width ? r.width / 287 : 96 / 25.4; }
+// 1mm が画面の何点か（CSSの決まりで 96点＝25.4mm）
+function pxPerMm() { return 96 / 25.4; }
 function snapToEdges(root) {
   const PX = pxPerMm();
   $$('td.c .fit > span[style*="left"]', root).forEach(sp => {
@@ -825,7 +850,7 @@ function snapToEdges(root) {
 }
 function fitTexts(root) {
   $$('td.c .fit', root).forEach(f => {
-    if (!f.textContent) return;
+    if (!f.textContent || f.closest('.solo')) return;
     // 文字の位置（右・左）でずらした分は数えない。ずらしても文字の大きさが変わらず、1回ごとに同じ幅だけ動くように
     const moved = $('span[style*="left"]', f), left = moved ? moved.style.left : '';
     if (moved) moved.style.left = '0';
