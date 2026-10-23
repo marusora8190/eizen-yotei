@@ -244,7 +244,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 <nav id="nav">
   <a data-view="input">✏️ 予定入力</a>
   <a data-view="table">📅 予定表</a>
-  <a data-view="form" class="hide-personal">🖨 記入表の印刷</a>
+  <a data-view="form">🖨 記入表の印刷</a>
   <a data-view="help">❓ 使い方</a>
   <div class="sep hide-personal"></div>
   <a id="navAdminOpen" class="admin-open hide-personal">🔑 管理者メニュー</a>
@@ -288,7 +288,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <!-- 記入表 -->
   <section id="v-form">
     <div class="toolbar">
-      <span>印刷する先生：</span><span id="fmMembers"></span>
+      <span id="fmMembersWrap"><span>印刷する先生：</span><span id="fmMembers"></span></span>
       <label><input type="checkbox" id="fmFill"> 入力済みの予定も印刷する</label>
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
@@ -366,7 +366,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>マスターで「昼食」にチェックした先生（今は今村・増野先生）は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
     </ul>
     <h3>先生ご本人に入力してもらうとき</h3>
-    <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。</p>
+    <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。先生ごとのURLでも「記入表の印刷」が使え、その先生の記入表だけを印刷できます。</p>
     <h3>管理者メニュー</h3>
     <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食の欄を出す先生・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
     <h3>困ったとき</h3>
@@ -558,7 +558,7 @@ $('#btnNav').addEventListener('click', () => setNavHidden(!document.body.classLi
 try { if (localStorage.getItem('yotei-nav-hidden') === '1') document.body.classList.add('nav-hidden'); } catch (e) {}
 function showView(v) {
   if (!VIEWS.includes(v)) v = 'input';
-  if (st.personal && !['input', 'table', 'help'].includes(v)) v = 'input';
+  if (st.personal && !['input', 'table', 'form', 'help'].includes(v)) v = 'input';
   if (v === 'master' && !st.isAdmin) v = 'input';
   st.view = v;
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
@@ -997,7 +997,9 @@ function renderForm() {
   $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${esc(x.name)}</label>`).join('');
   const fill = $('#fmFill').checked;
   const { y, m } = st, nd = dim(y, m);
-  const pages = st.members.filter(x => fmSelected.has(x.id)).map(mem => {
+  // 先生ごとのURLでは、その先生の記入表だけを出す（印刷する先生の選択欄は出さない）
+  $('#fmMembersWrap').style.display = st.personal ? 'none' : '';
+  const pages = st.members.filter(x => st.personal ? x.id === st.personal : fmSelected.has(x.id)).map(mem => {
     const meal = mem.meal_survey;
     const half = (from, to) => {
       const cw = meal ? 8 : 0;
