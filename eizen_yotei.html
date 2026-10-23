@@ -343,6 +343,16 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       </div>
       <div class="msbox" style="max-width:560px"><table class="grid" id="msHolList"></table></div>
     </div>
+    <div class="panel">
+      <h3 style="margin-top:0">🗑 古いデータの整理</h3>
+      <p class="note">入力した日付より前の予定と、その前の月までの提出の印を、全員分まとめて削除します（入力した日の分は残ります。例：2027年4月1日なら、3月31日までの予定と3月分までの提出の印が消えます）。先生の一覧・行事・祝日・設定は消しません。入力できる日付は今日までです。削除すると画面からは元に戻せません（毎週の自動バックアップには残ります）。</p>
+      <p class="note" id="clOldest" style="margin:6px 0"></p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="clDate"> より前を
+        <button class="btn" id="clCheck">対象を確認する</button>
+      </div>
+      <div id="clResult" style="margin-top:8px"></div>
+    </div>
   </section>
 
   <!-- 使い方 -->
@@ -1095,6 +1105,7 @@ $('#navAdminClose').addEventListener('click', async () => {
 let holYear = new Date().getFullYear();
 function personalUrl(id) { return location.origin + location.pathname + '?p=' + id; }
 function renderMaster() {
+  clInfo();
   const rows = st.allMembers.map(x => `<tr data-id="${x.id}">
     <td style="width:5em"><input type="number" class="f-sort" value="${x.sort_order}"></td>
     <td><input type="text" class="f-name" value="${esc(x.name)}"></td>
@@ -1126,6 +1137,54 @@ function renderMaster() {
   const list = [...st.holidays.entries()].filter(([d]) => d.startsWith(holYear + '-'));
   $('#msHolList').innerHTML = '<tr><th>日付</th><th>祝日の名前</th><th></th></tr>' + (list.length ? list.map(([d, n]) => { const [yy, mm, dd] = d.split('-').map(Number); return `<tr><td style="width:10em">${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）</td><td>${esc(n)}</td><td style="width:5em"><button class="btn sm h-del" data-day="${d}">削除</button></td></tr>`; }).join('') : '<tr><td colspan="3" class="empty">この年の祝日はありません</td></tr>');
 }
+// ===== 古いデータの整理（予定・提出の印） =====
+const todayJst = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+async function clInfo() {
+  $('#clDate').max = todayJst();
+  const { data, error } = await sb.from('yotei_entries').select('day').order('day').limit(1);
+  $('#clOldest').textContent = error ? '' : (data && data.length ? `いちばん古い予定：${data[0].day.replace(/^(\d+)-0?(\d+)-0?(\d+)$/, '$1年$2月$3日')}` : '予定はまだありません');
+}
+async function clCount(d) {
+  const ym = d.slice(0, 7);
+  const [ent, sub] = await Promise.all([
+    sb.from('yotei_entries').select('*', { count: 'exact', head: true }).lt('day', d),
+    sb.from('yotei_submissions').select('*', { count: 'exact', head: true }).lt('ym', ym),
+  ]);
+  if (ent.error) throw ent.error; if (sub.error) throw sub.error;
+  return { ent: ent.count || 0, sub: sub.count || 0 };
+}
+const jpDate = d => d.replace(/^(\d+)-0?(\d+)-0?(\d+)$/, '$1年$2月$3日');
+$('#clCheck').addEventListener('click', async () => {
+  const d = $('#clDate').value;
+  $('#clResult').innerHTML = '';
+  if (!d) { toast('日付を入れてください', true); return; }
+  if (d > todayJst()) { toast('今日より後の日付は選べません', true); return; }
+  try {
+    const c = await clCount(d);
+    if (!c.ent && !c.sub) { $('#clResult').innerHTML = `<p class="note">${jpDate(d)}より前のデータはありません。</p>`; return; }
+    $('#clResult').innerHTML = `<p style="margin:0 0 6px">${jpDate(d)}より前：予定 <b>${c.ent}件</b>・提出の印 <b>${c.sub}件</b></p><button class="btn" id="clDel" data-d="${d}" style="border-color:#c62828;color:#c62828">削除する</button>`;
+  } catch (err) { toast('数えられませんでした：' + errMsg(err), true); }
+});
+$('#clResult').addEventListener('click', async e => {
+  if (e.target.id !== 'clDel') return;
+  const d = e.target.dataset.d;
+  if (!(await ensureAdmin())) return;
+  let c;
+  try { c = await clCount(d); } catch (err) { toast('数えられませんでした：' + errMsg(err), true); return; }
+  if (!confirm(`${jpDate(d)}より前の、予定 ${c.ent}件・提出の印 ${c.sub}件を、全員分削除します。\n元に戻せません。よろしいですか？`)) return;
+  e.target.disabled = true;
+  const r1 = await adminSb.from('yotei_entries').delete().lt('day', d);
+  const r2 = r1.error ? null : await adminSb.from('yotei_submissions').delete().lt('ym', d.slice(0, 7));
+  const err = r1.error || (r2 && r2.error);
+  if (err) { e.target.disabled = false; toast('削除できませんでした：' + errMsg(err), true); return; }
+  const left = await clCount(d).catch(() => null);
+  $('#clResult').innerHTML = left && (left.ent || left.sub)
+    ? `<p class="note" style="color:#c62828">削除しましたが、まだ 予定 ${left.ent}件・提出の印 ${left.sub}件 が残っています。もう一度お試しください。</p>`
+    : `<p class="note">削除しました（予定 ${c.ent}件・提出の印 ${c.sub}件）。</p>`;
+  toast('削除しました');
+  try { await loadMonth(); } catch (er) {}
+  clInfo();
+});
 async function adminDo(fn, okMsg) {
   if (!(await ensureAdmin())) return false;
   const { error } = await fn();
