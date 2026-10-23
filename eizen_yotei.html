@@ -325,7 +325,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     </div>
     <div class="panel">
       <h3 style="margin-top:0">行事（予定入力・予定表・記入表に出す文字）</h3>
-      <p class="note">毎年決まっている行事です。先生の予定が空いている日は、先生全員の終日の欄に、はじめから入ります（予定表・記入表にも出ます）。「月」を「毎月」にすると、毎月その日に入ります。同じ日に「その月だけ」の行事があるときは、そちらが優先されます（例：1月26日は「春季大祭」、ほかの月の26日は「本部月次祭」）。</p>
+      <p class="note">毎年決まっている行事です。先生の予定が空いている日は、先生全員の、「時間」で選んだ欄（終日・午前・午後）に、はじめから入ります（予定表・記入表にも出ます）。同じ日に終日の行事があるときは、午前・午後の行事は出ません。「月」を「毎月」にすると、毎月その日に入ります。同じ日に「その月だけ」の行事があるときは、そちらが優先されます（例：1月26日は「春季大祭」、ほかの月の26日は「本部月次祭」）。</p>
       <div style="overflow:auto"><table class="grid" id="msEvents"></table></div>
       <div style="margin-top:8px"><button class="btn" id="msAddEvent">＋ 行事を追加</button></div>
     </div>
@@ -361,7 +361,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
-      <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日の終日の欄に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
+      <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
       <li>マスターで「昼食」にチェックした先生（今は今村・増野先生）は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
     </ul>
@@ -408,14 +408,30 @@ const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
 const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
 const reiki = y => y - 1837;
 const mealMark = v => (v === '不要' ? '✖' : '○'); // 昼食：何も入っていなければ「○」（いる）
-// マスターの「行事」。その月だけの行事があれば、同じ日の「毎月」の行事より優先する
+// マスターの「行事」。終日・午前・午後ごとに、その月だけの行事があれば、同じ日の「毎月」の行事より優先する
+// 終日の行事がある日は、午前・午後の行事は出さない
+const EV_SLOTS = { allday: '終日', am: '午前', pm: '午後' };
 function eventFor(day) {
   const [, m, d] = day.split('-').map(Number);
   const hit = x => x.day_from <= d && d <= x.day_to;
-  let list = (st.events || []).filter(x => x.month === m && hit(x));
-  if (!list.length) list = (st.events || []).filter(x => x.month == null && hit(x));
-  if (!list.length) return null;
-  return { text: list.map(x => x.text).join('、'), red: list.some(x => x.red) };
+  const pick = k => {
+    const sl = x => (x.slot || 'allday') === k && hit(x);
+    let list = (st.events || []).filter(x => x.month === m && sl(x));
+    if (!list.length) list = (st.events || []).filter(x => x.month == null && sl(x));
+    return list.length ? { text: list.map(x => x.text).join('、'), red: list.some(x => x.red) } : null;
+  };
+  const r = { allday: pick('allday'), am: null, pm: null };
+  if (!r.allday) { r.am = pick('am'); r.pm = pick('pm'); }
+  if (!r.allday && !r.am && !r.pm) return null;
+  r.text = Object.keys(EV_SLOTS).filter(k => r[k]).map(k => (k === 'allday' ? '' : EV_SLOTS[k] + '：') + r[k].text).join('、');
+  return r;
+}
+// 行事を予定の形にする（終日なら allday、午前・午後なら am・pm）
+function evEntry(ev) {
+  const o = {};
+  if (!ev) return o;
+  ['allday', 'am', 'pm'].forEach(k => { if (ev[k]) { o[k] = ev[k].text; o[k + '_red'] = ev[k].red; } });
+  return o;
 }
 // 先生の予定が何も入っていない日は、行事を終日の予定として出す（その先生が消した日は出さない）
 function effEntry(mid, day) {
@@ -424,7 +440,7 @@ function effEntry(mid, day) {
   // 「〜日まで続く」予定の途中・最後の日は、行事を入れない
   if (continuations(mid).some(c => c.start < day && day <= c.until)) return e;
   const ev = eventFor(day);
-  return ev ? { ...e, allday: ev.text, allday_red: ev.red } : e;
+  return ev ? { ...e, ...evEntry(ev) } : e;
 }
 const isRedDay = (y, m, d) => wdOf(y, m, d) === 0 || st.holidays.has(dstr(y, m, d));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -914,7 +930,7 @@ function openEntryEditor(mid, day, clickX) {
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
     <p class="note" style="margin:4px 0 0">右の「1日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
     ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
-    ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、終日の欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
+    ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、その欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
   // 予定表が見えるように、クリックした場所と反対側に画面を出す
@@ -1010,14 +1026,14 @@ function renderForm() {
         if (d > to) { h += `<tr><td class="kd"></td><td class="kw"></td>${meal ? '<td class="km"></td>' : ''}<td></td><td></td></tr>`; continue; }
         const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
         const ev = eventFor(day);
-        const e = fill ? effEntry(mem.id, day) : (ev ? { allday: ev.text, allday_red: ev.red } : {});
+        const e = fill ? effEntry(mem.id, day) : evEntry(ev);
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
         const tx = k => esc(e[k]) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
         if (e.allday) ad = `<td colspan="2" class="kt${e.allday_red ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
-          am = fill && e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
-          pm = fill && e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
+          am = e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
+          pm = e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
         h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
       }
@@ -1092,10 +1108,11 @@ function renderMaster() {
   $('#msRedList').innerHTML = `<tr><th style="width:3em">No.</th><th>言葉</th><th></th><th></th></tr>` + (reds.length ? reds.map((w, i) => `<tr data-i="${i}"><td>${i + 1}</td><td><input type="text" class="r-word" value="${esc(w)}"></td><td style="width:4.5em"><button class="btn sm pri r-save">保存</button></td><td style="width:4.5em"><button class="btn sm r-del">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="empty">言葉がありません</td></tr>');
   const monthOpts = v => `<option value="" ${v == null ? 'selected' : ''}>毎月</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}月</option>`).join('');
   const dayOpts = v => Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}日</option>`).join('');
-  $('#msEvents').innerHTML = `<tr><th>月</th><th>日から</th><th>日まで</th><th>出す文字</th><th>赤字</th><th></th><th></th></tr>` + (st.events || []).map(x => `<tr data-id="${x.id}">
+  $('#msEvents').innerHTML = `<tr><th>月</th><th>日から</th><th>日まで</th><th>時間</th><th>出す文字</th><th>赤字</th><th></th><th></th></tr>` + (st.events || []).map(x => `<tr data-id="${x.id}">
     <td><select class="e-month">${monthOpts(x.month)}</select></td>
     <td><select class="e-from">${dayOpts(x.day_from)}</select></td>
     <td><select class="e-to">${dayOpts(x.day_to)}</select></td>
+    <td><select class="e-slot">${Object.entries(EV_SLOTS).map(([k, t]) => `<option value="${k}" ${(x.slot || 'allday') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
     <td><input type="text" class="e-text" value="${esc(x.text)}"></td>
     <td style="text-align:center"><input type="checkbox" class="e-red" ${x.red ? 'checked' : ''}></td>
     <td><button class="btn sm pri e-save">保存</button></td>
@@ -1146,7 +1163,7 @@ $('#msEvents').addEventListener('click', async e => {
     const mv = $('.e-month', tr).value, from = Number($('.e-from', tr).value), to = Number($('.e-to', tr).value), text = $('.e-text', tr).value.trim();
     if (!text) { toast('出す文字を入れてください', true); return; }
     if (to < from) { toast('「日まで」は「日から」と同じか、あとの日にしてください', true); return; }
-    await adminDo(() => adminSb.from('yotei_events').update({ month: mv ? Number(mv) : null, day_from: from, day_to: to, text, red: $('.e-red', tr).checked }).eq('id', id), '保存しました');
+    await adminDo(() => adminSb.from('yotei_events').update({ month: mv ? Number(mv) : null, day_from: from, day_to: to, text, red: $('.e-red', tr).checked, slot: $('.e-slot', tr).value }).eq('id', id), '保存しました');
     render();
   } else if (e.target.classList.contains('e-del')) {
     if (!confirm(`行事「${$('.e-text', tr).value}」を削除しますか？`)) return;
@@ -1156,7 +1173,7 @@ $('#msEvents').addEventListener('click', async e => {
 $('#msAddEvent').addEventListener('click', async () => {
   const text = prompt('追加する行事の名前（例：教祖誕生祭）'); if (!text || !text.trim()) return;
   const maxSort = Math.max(0, ...(st.events || []).map(x => x.sort_order));
-  await adminDo(() => adminSb.from('yotei_events').insert({ month: 1, day_from: 1, day_to: 1, text: text.trim(), red: true, sort_order: maxSort + 1 }), '追加しました。月と日を選んで「保存」を押してください');
+  await adminDo(() => adminSb.from('yotei_events').insert({ month: 1, day_from: 1, day_to: 1, text: text.trim(), red: true, slot: 'allday', sort_order: maxSort + 1 }), '追加しました。月・日・時間を選んで「保存」を押してください');
 });
 function saveRedWords(words, msg) {
   words = [...new Set(words.map(w => w.trim()).filter(Boolean))];
