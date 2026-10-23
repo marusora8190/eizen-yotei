@@ -194,6 +194,9 @@ table.grid{border-collapse:collapse;width:100%}
 table.grid th,table.grid td{border-bottom:1px solid var(--line2);padding:6px;text-align:left;font-size:14px;vertical-align:middle}
 table.grid th{color:var(--sub);font-weight:400;font-size:13px}
 table.grid input[type=text],table.grid input[type=number],table.grid input[type=date]{padding:4px 6px;border:1px solid var(--line);border-radius:5px;width:100%}
+/* マスターの表：枠の中で上下に動き、見出しの行は上に残る */
+.msbox{overflow:auto;max-height:60vh}
+.msbox table.grid tr:first-child th{position:sticky;top:0;z-index:2;background:var(--panel);text-align:center;box-shadow:inset 0 -1px 0 var(--line)}
 table.grid td.url{font-size:12px;color:var(--sub);word-break:break-all}
 textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:6px;padding:8px}
 .help p,.help li{font-size:14.5px}
@@ -303,7 +306,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
       <p class="note">並び順の小さい順に、予定表の左から並びます（前半の人数が左半分、残りが右半分）。「在籍」のチェックを外すと、入力・予定表・記入表に出なくなります（これまでの予定は残ります）。「個人用URL」を先生に渡すと、その先生の入力画面がすぐ開きます。</p>
-      <div style="overflow:auto"><table class="grid" id="msMembers"></table></div>
+      <div class="msbox"><table class="grid" id="msMembers"></table></div>
       <div style="margin-top:8px"><button class="btn" id="msAddMember">＋ 先生を追加</button></div>
     </div>
     <div class="panel">
@@ -317,7 +320,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="panel">
       <h3 style="margin-top:0">自動で赤字にする言葉</h3>
       <p class="note">予定にこの言葉が入っていると、入力したときに自動で「赤」になります（あとから手で外せます）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。すでに入っている予定の赤字は変わりません。</p>
-      <div style="overflow:auto"><table class="grid" id="msRedList" style="max-width:560px"></table></div>
+      <div class="msbox"><table class="grid" id="msRedList" style="max-width:560px"></table></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" id="msRedNew" placeholder="追加する言葉（例：教祖殿）" style="width:16em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
         <button class="btn" id="msRedAdd">＋ 追加</button>
@@ -326,7 +329,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="panel">
       <h3 style="margin-top:0">行事（予定入力・予定表・記入表に出す文字）</h3>
       <p class="note">毎年決まっている行事です。先生の予定が空いている日は、先生全員の、「時間」で選んだ欄（終日・午前・午後）に、はじめから入ります（予定表・記入表にも出ます）。同じ日に終日の行事があるときは、午前・午後の行事は出ません。「月」を「毎月」にすると、毎月その日に入ります。同じ日に「その月だけ」の行事があるときは、そちらが優先されます（例：1月26日は「春季大祭」、ほかの月の26日は「本部月次祭」）。</p>
-      <div style="overflow:auto"><table class="grid" id="msEvents"></table></div>
+      <div class="msbox"><table class="grid" id="msEvents"></table></div>
       <div style="margin-top:8px"><button class="btn" id="msAddEvent">＋ 行事を追加</button></div>
     </div>
     <div class="panel">
@@ -338,7 +341,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
         <input type="date" id="msHolDate"> <input type="text" id="msHolName" placeholder="祝日の名前" style="width:10em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
         <button class="btn" id="msHolAdd">追加</button>
       </div>
-      <table class="grid" id="msHolList" style="max-width:560px"></table>
+      <div class="msbox" style="max-width:560px"><table class="grid" id="msHolList"></table></div>
     </div>
   </section>
 
@@ -1121,7 +1124,7 @@ function renderMaster() {
   if (!years.includes(holYear)) years.push(holYear), years.sort();
   $('#msHolYear').innerHTML = years.map(yy => `<option value="${yy}" ${yy === holYear ? 'selected' : ''}>${yy}年</option>`).join('');
   const list = [...st.holidays.entries()].filter(([d]) => d.startsWith(holYear + '-'));
-  $('#msHolList').innerHTML = list.length ? list.map(([d, n]) => { const [yy, mm, dd] = d.split('-').map(Number); return `<tr><td style="width:10em">${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）</td><td>${esc(n)}</td><td style="width:5em"><button class="btn sm h-del" data-day="${d}">削除</button></td></tr>`; }).join('') : '<tr><td class="empty">この年の祝日はありません</td></tr>';
+  $('#msHolList').innerHTML = '<tr><th>日付</th><th>祝日の名前</th><th></th></tr>' + (list.length ? list.map(([d, n]) => { const [yy, mm, dd] = d.split('-').map(Number); return `<tr><td style="width:10em">${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）</td><td>${esc(n)}</td><td style="width:5em"><button class="btn sm h-del" data-day="${d}">削除</button></td></tr>`; }).join('') : '<tr><td colspan="3" class="empty">この年の祝日はありません</td></tr>');
 }
 async function adminDo(fn, okMsg) {
   if (!(await ensureAdmin())) return false;
