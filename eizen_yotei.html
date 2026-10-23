@@ -362,7 +362,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>上の「◀ 前の月／次の月 ▶」で月を選びます。はじめは来月が出ます。</li>
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
-      <li>何日か続く予定は、始まりの日に書いて、右の「1日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
+      <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
@@ -518,7 +518,7 @@ function continuations(mid) {
 }
 function untilSelect(k, day, val) {
   const [y, m, d] = day.split('-').map(Number), nd = dim(y, m);
-  let o = `<option value="">1日だけ</option>`;
+  let o = `<option value="">当日だけ</option>`;
   for (let x = d + 1; x <= nd; x++) { const v = dstr(y, m, x); o += `<option value="${v}" ${v === val ? 'selected' : ''}>〜${x}日</option>`; }
   return `<select class="until ${val ? 'set' : ''}" title="この予定が続く最後の日（予定表に矢印が出ます）">${o}</select>`;
 }
@@ -931,7 +931,7 @@ function openEntryEditor(mid, day, clickX) {
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
-    <p class="note" style="margin:4px 0 0">右の「1日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
+    <p class="note" style="margin:4px 0 0">右の「当日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
     ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
     ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、その欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
