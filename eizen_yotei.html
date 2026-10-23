@@ -20,6 +20,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 header{display:flex;align-items:center;gap:12px;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;position:sticky;top:0;z-index:20}
 body.nav-hidden nav{display:none!important}
+/* 提出の印（済・未）は、管理者メニューを開いているときだけ出す */
+body:not(.is-admin) .admin-sub{display:none!important}
 .navtoggle{font-size:18px;line-height:1;padding:5px 10px}
 header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.05em}
 header .who{color:var(--sub);font-size:14px}
@@ -127,8 +129,10 @@ h3{font-size:16px;margin:18px 0 8px}
   .navtoggle{font-size:16px}
   /* スマホで先生ごとのURLから予定表を見るときは、その先生の列だけ（印刷ボタンは出さない） */
   body.personal #btnPrintTable{display:none}
+  body.personal #v-table .toolbar{display:none}
 }
 .sheet.a4l.solo{width:auto;height:auto}
+.solo table.yt th,.solo table.yt td{border-width:1px}
 .solo .s-title{height:auto;padding:4px 6px;font-size:15px}
 .solo table.yt thead th{height:auto;padding:4px 0;font-size:14px}
 .solo table.yt thead th.dh{font-size:11px}
@@ -273,11 +277,11 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <!-- 予定表 -->
   <section id="v-table">
     <div class="toolbar">
-      <span>提出：</span><span id="tbChips"></span>
+      <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
-    <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。「未」の印をクリックすると、受け取り済み（「済」）にできます。</p>
+    <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。<span class="admin-sub">「未」の印をクリックすると、受け取り済み（「済」）にできます。</span></p>
     <div class="sheet-wrap"><div id="sheet"></div></div>
   </section>
 
@@ -347,7 +351,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <ol>
       <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表」のマスをクリックして入力します。</li>
-      <li><b>提出の確認</b>：「予定表」の上の「提出」の印で、誰が提出済みかが分かります。紙で受け取ったときは、印をクリックして受け取り済みにできます。</li>
+      <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
     </ol>
     <h3>予定入力のしかた</h3>
@@ -1059,7 +1063,7 @@ async function ensureAdmin() {
     setTimeout(() => $('#admPw').focus(), 30);
   });
 }
-function setAdmin(on) { st.isAdmin = on; document.body.classList.toggle('is-admin', on); }
+function setAdmin(on) { st.isAdmin = on; document.body.classList.toggle('is-admin', on); updSticky(); }
 $('#navAdminOpen').addEventListener('click', async () => { if (await ensureAdmin()) showView('master'); });
 $('#navAdminClose').addEventListener('click', async () => {
   await adminSb.auth.signOut().catch(() => {});
