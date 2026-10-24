@@ -113,6 +113,7 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .contnote:empty{display:none}
 .sheet{position:relative}
 .yarrow{position:absolute;width:0;border-left:0.35mm solid #000;pointer-events:none}
+.yarrow.nohead::after{display:none}
 .yarrow::after{content:"";position:absolute;left:calc(-1.1mm - 0.175mm);bottom:-0.2mm;border-left:1.1mm solid transparent;border-right:1.1mm solid transparent;border-top:2mm solid #000}
 @media (max-width:760px){
   .layout{display:block}
@@ -392,6 +393,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
+      <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
@@ -692,7 +694,7 @@ function updateContNotes() {
     const sd = Number(c.start.slice(8)), ud = Number(c.until.slice(8));
     for (let x = sd + 1; x <= ud; x++) {
       const n = $(`#inRows .row[data-d="${x}"] .contnote`); if (!n) continue;
-      n.textContent += (n.textContent ? '　' : '') + `${x === ud ? '↓ ここまで' : '↓ 続き'}：${sd}日〜${ud}日の${SLOT_LABEL[c.k]}「${c.text}」`;
+      n.textContent += (n.textContent ? '　' : '') + `${x === ud ? '↓ ここまで' : '↓ 続き'}：${sd}日〜${ud}日の${SLOT_LABEL[c.k]}「${c.text}」` + (x === ud ? `（この日の欄に書くと、予定表の${ud}日にはその文字が出ます）` : '（この日の欄に別の予定も書けます）');
     }
   }
 }
@@ -878,9 +880,29 @@ function drawArrows() {
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     const x = (ra.left + ra.width / 2 - base.left) * MM + c.arrow * INDENT_MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
     if (y2 - y1 < 1) continue;
-    const el = document.createElement('div'); el.className = 'yarrow';
-    el.style.left = x + 'mm'; el.style.top = y1 + 'mm'; el.style.height = (y2 - y1) + 'mm';
-    page.appendChild(el);
+    // 途中の日に別の予定があるときは、その文字のところだけ線を切って、文字をよける
+    const gaps = [];
+    const sd = Number(c.start.slice(8)), ud = Number(c.until.slice(8));
+    for (let d = sd + 1; d < ud; d++) {
+      $$(`td.c[data-mid="${c.mid}"][data-day="${c.start.slice(0, 8)}${pad(d)}"] .fit`, page).forEach(f => {
+        if (!f.textContent.trim()) return;
+        const rg = document.createRange(); rg.selectNodeContents(f);
+        const r = rg.getBoundingClientRect();
+        const l = (r.left - base.left) * MM - 0.8, rr = (r.right - base.left) * MM + 0.8;
+        if (x < l || x > rr) return;
+        gaps.push([(r.top - base.top) * MM - 0.5, (r.bottom - base.top) * MM + 0.5]);
+      });
+    }
+    gaps.sort((p, q) => p[0] - q[0]);
+    const segs = []; let cur = y1;
+    for (const [g1, g2] of gaps) { if (g1 > cur) segs.push([cur, Math.min(g1, y2)]); cur = Math.max(cur, g2); }
+    if (cur < y2) segs.push([cur, y2]);
+    segs.forEach(([s1, s2], i) => {
+      if (s2 - s1 < 0.6) return;
+      const el = document.createElement('div'); el.className = 'yarrow' + (i === segs.length - 1 && s2 === y2 ? '' : ' nohead');
+      el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm';
+      page.appendChild(el);
+    });
   }
 }
 // 長い予定は文字を小さくして1行に収める（Excelの「縮小して全体を表示」と同じ考え方）
