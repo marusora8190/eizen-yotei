@@ -98,6 +98,15 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .slot input.is-red{color:var(--red);font-weight:700}
 .redbtn{flex:none;border:1px solid var(--line);background:#fff;color:#999;border-radius:5px;padding:4px 6px;font-size:12px}
 .redbtn.on{background:var(--red);border-color:var(--red);color:#fff}
+/* 「、」で区切った一部だけ赤字のとき */
+.redbtn.on.part{background:#fff;color:var(--red);font-weight:700}
+.slot input.is-part{border-left:4px solid var(--red)}
+#redPick{position:absolute;z-index:70;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:8px 10px;max-width:min(420px,92vw);font-size:14px}
+#redPick .rp-t{font-size:12.5px;color:var(--sub);margin:0 0 6px}
+#redPick .rp-parts{display:flex;flex-wrap:wrap;gap:6px}
+#redPick .rp-p{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer}
+#redPick .rp-p.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+#redPick .rp-acts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
 .row .slot-ad{display:none}
 .row.is-allday .slot-am,.row.is-allday .slot-pm{display:none}
 .row.is-allday .slot-ad{display:flex}
@@ -207,6 +216,7 @@ table.yt td.half-l{border-left:1.4px solid #000}
 .k-body td.k26{background:#fbe5d6}
 .k-body td.kt{font-size:9pt;white-space:nowrap}
 .k-body td.kt.r{color:var(--red)}
+.k-body td.kt .r{color:var(--red)}
 .k-body td.km{text-align:center;padding:0}
 .k-body table + table{border-left:0}
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
@@ -393,6 +403,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>午前・午後に分けて書きます。1日中の予定は「終日」にチェックを入れます。</li>
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
+      <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -484,6 +495,74 @@ const nextYM = (y, m) => (m === 12 ? [y + 1, 1] : [y, m + 1]);
 function monthTitle(y, m) { return `立教${reiki(y)}年${m}月度`; }
 function deadlineText(y, m) { const [py, pm] = prevYM(y, m); return `${pm}月${st.settings.deadline_day}日までに提出お願いします`; }
 function autoRed(text) { const t = (text || '').trim(); return !!t && st.settings.red_keywords.some(k => k && t.includes(k)); }
+// 「、」で区切った部分（一部だけ赤字にするときに使う）
+const RED_SEP = /([、，])/;
+function textParts(t) { return String(t || '').split(RED_SEP).filter((x, i) => i % 2 === 0).map(x => x.trim()).filter(Boolean); }
+// 予定の文字を、赤字の部分だけ <span class="r"> で囲んで返す（parts が空なら、そのまま）
+function redHtml(t, red, parts) {
+  const ps = red && parts ? String(parts).split('\n').filter(Boolean) : null;
+  if (!ps || !ps.length) return esc(t);
+  return String(t || '').split(RED_SEP).map((x, i) => i % 2 === 1 ? esc(x) : (ps.includes(x.trim()) && x.trim() ? `<span class="r">${esc(x)}</span>` : esc(x))).join('');
+}
+// 赤ボタンの状態を決める（parts：赤字にする部分。空なら全部）
+function setRed(btn, inp, on, parts) {
+  const all = textParts(inp.value);
+  let ps = on && parts && parts.length ? parts.filter(x => all.includes(x)) : [];
+  if (on && parts && parts.length && !ps.length) on = false;
+  if (ps.length && ps.length >= all.length) ps = [];
+  btn.classList.toggle('on', !!on); btn.classList.toggle('part', !!on && ps.length > 0);
+  btn.textContent = on && ps.length ? '一部' : '赤';
+  btn.dataset.parts = on && ps.length ? JSON.stringify(ps) : '';
+  btn.title = on && ps.length ? '赤字：' + ps.join('、') + '（押すと選び直せます）' : '予定表で赤字にする（「、」で区切った予定は、一部だけ赤字にもできます）';
+  inp.classList.toggle('is-red', !!on && !ps.length); inp.classList.toggle('is-part', !!on && ps.length > 0);
+}
+function redPartsOf(btn) { try { return btn.dataset.parts ? JSON.parse(btn.dataset.parts) : []; } catch (e) { return []; } }
+// 赤ボタンを押したとき：「、」で区切った予定なら、どの部分を赤字にするかを選ぶ小さな画面を出す
+function pressRed(btn, inp, done) {
+  const all = textParts(inp.value);
+  btn.dataset.manual = '1';
+  if (all.length < 2) { setRed(btn, inp, !btn.classList.contains('on'), []); done(); return; }
+  closeRedPick();
+  const on = btn.classList.contains('on'), cur = redPartsOf(btn);
+  let sel = new Set(on ? (cur.length ? cur : all) : []);
+  const box = document.createElement('div'); box.id = 'redPick';
+  const draw = () => {
+    box.innerHTML = `<p class="rp-t">赤字にする部分を押してください（もう一度押すと元に戻ります）</p><div class="rp-parts">${all.map((x, i) => `<button type="button" class="rp-p ${sel.has(x) ? 'on' : ''}" data-i="${i}">${esc(x)}</button>`).join('')}</div><div class="rp-acts"><button type="button" class="btn sm" data-a="all">全部赤</button><button type="button" class="btn sm" data-a="none">全部黒</button><button type="button" class="btn sm pri" data-a="ok">閉じる</button></div>`;
+  };
+  const apply = () => { setRed(btn, inp, sel.size > 0, sel.size >= all.length ? [] : [...sel]); done(); };
+  draw();
+  box.addEventListener('mousedown', ev => ev.stopPropagation());
+  box.addEventListener('click', ev => {
+    const p = ev.target.closest('.rp-p'), a = ev.target.closest('[data-a]');
+    if (p) { const x = all[Number(p.dataset.i)]; sel.has(x) ? sel.delete(x) : sel.add(x); draw(); apply(); }
+    else if (a) { if (a.dataset.a === 'all') sel = new Set(all); else if (a.dataset.a === 'none') sel = new Set(); draw(); apply(); if (a.dataset.a === 'ok') closeRedPick(); }
+  });
+  document.body.appendChild(box);
+  const r = btn.getBoundingClientRect();
+  box.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  box.style.left = Math.max(8, Math.min(r.right + window.scrollX - box.offsetWidth, window.scrollX + document.documentElement.clientWidth - box.offsetWidth - 8)) + 'px';
+}
+function initRedBtns(root) {
+  $$('.redbtn', root).forEach(b => { let p = []; try { p = b.dataset.init ? JSON.parse(b.dataset.init) : []; } catch (e) {} setRed(b, $('input', b.closest('.slot')), b.classList.contains('on'), p); });
+}
+function closeRedPick() { const b = $('#redPick'); if (b) b.remove(); }
+document.addEventListener('mousedown', ev => { if (!ev.target.closest('#redPick') && !ev.target.closest('.redbtn')) closeRedPick(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeRedPick(); });
+// 午前・午後をまとめて終日にするときの赤字（どちらかが一部だけ・片方だけ赤なら、その部分だけ赤字）
+function mergeRed(items, text) {
+  const all = textParts(text), red = new Set();
+  let anyBlack = false;
+  for (const it of items) {
+    if (!it.t) continue;
+    const ps = textParts(it.t);
+    if (!it.on) { anyBlack = true; continue; }
+    (it.parts && it.parts.length ? it.parts : ps).forEach(x => red.add(x));
+    if (it.parts && it.parts.length) anyBlack = true;
+  }
+  if (!red.size) return { on: false, parts: [] };
+  if (!anyBlack) return { on: true, parts: [] };
+  return { on: true, parts: all.filter(x => red.has(x)) };
+}
 
 let toastTimer = null;
 function toast(msg, ng = false) {
@@ -500,6 +579,7 @@ function errMsg(error) {
 function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
 let modalOnClose = null;
 function closeModal() {
+  closeRedPick();
   $('#modal').classList.remove('show', 'side', 'left', 'right'); $('#modalBox').innerHTML = '';
   if (modalOnClose) { const f = modalOnClose; modalOnClose = null; f(); }
 }
@@ -542,7 +622,7 @@ function continuations(mid) {
     if (mid != null && e.member_id !== mid) continue;
     for (const k of ['am', 'pm', 'allday']) {
       const u = e[k + '_until'];
-      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0, arrow: e[k + '_arrow'] || 0 });
+      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], redParts: e[k + '_red_parts'] || null, indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0, arrow: e[k + '_arrow'] || 0 });
     }
   }
   return out;
@@ -566,6 +646,9 @@ function makeRec(mid, day, data) {
     member_id: mid, day,
     am: data.am || null, pm: data.pm || null, allday: data.allday || null,
     am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
+    am_red_parts: data.am && data.am_red && data.am_red_parts ? data.am_red_parts : null,
+    pm_red_parts: data.pm && data.pm_red && data.pm_red_parts ? data.pm_red_parts : null,
+    allday_red_parts: data.allday && data.allday_red && data.allday_red_parts ? data.allday_red_parts : null,
     am_until: data.am && data.am_until > day ? data.am_until : null,
     pm_until: data.pm && data.pm_until > day ? data.pm_until : null,
     allday_until: data.allday && data.allday_until > day ? data.allday_until : null,
@@ -661,7 +744,7 @@ function renderInput() {
     const e = effEntry(mem.id, day);
     const isAd = !!e.allday;
     const cls = ['row', w === 0 ? 'sun' : w === 6 ? 'sat' : '', hol ? 'hol' : '', isAd ? 'is-allday' : ''].join(' ');
-    const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
+    const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}" title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
@@ -672,6 +755,7 @@ function renderInput() {
     </div>`;
   }
   $('#inRows').innerHTML = html;
+  initRedBtns($('#inRows'));
   updateContNotes();
 }
 function renderInputStatus() {
@@ -700,10 +784,10 @@ function updateContNotes() {
 }
 function rowData(row) {
   const isAd = $('.adcb', row).checked;
-  const v = k => { const s = $(`.slot[data-k="${k}"]`, row); return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null }; };
+  const v = k => { const s = $(`.slot[data-k="${k}"]`, row), b = $('.redbtn', s); return { t: $('input', s).value.trim(), r: b.classList.contains('on'), p: redPartsOf(b).join('\n') || null, u: $('.until', s).value || null }; };
   const am = v('am'), pm = v('pm'), ad = v('allday');
   const meal = $('.mealsel', row) ? $('.mealsel', row).value : (getEntry(st.inMember, row.dataset.day) || {}).meal || null;
-  return isAd ? { allday: ad.t, allday_red: ad.r, allday_until: ad.u, meal } : { am: am.t, am_red: am.r, am_until: am.u, pm: pm.t, pm_red: pm.r, pm_until: pm.u, meal };
+  return isAd ? { allday: ad.t, allday_red: ad.r, allday_red_parts: ad.p, allday_until: ad.u, meal } : { am: am.t, am_red: am.r, am_red_parts: am.p, am_until: am.u, pm: pm.t, pm_red: pm.r, pm_red_parts: pm.p, pm_until: pm.u, meal };
 }
 const rowTimers = new WeakMap();
 function scheduleSave(row, delay = 700) {
@@ -726,8 +810,9 @@ async function doSaveRow(row) {
 $('#inRows').addEventListener('input', e => {
   const inp = e.target.closest('.slot input'); if (!inp) return;
   const slot = inp.closest('.slot'), btn = $('.redbtn', slot);
-  if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
-  if (!inp.value.trim()) { btn.classList.remove('on'); inp.classList.remove('is-red'); delete btn.dataset.manual; }
+  if (!btn.dataset.manual) setRed(btn, inp, autoRed(inp.value), []);
+  else if (btn.dataset.parts) { const keep = redPartsOf(btn).filter(x => textParts(inp.value).includes(x)); if (keep.length) setRed(btn, inp, true, keep); }
+  if (!inp.value.trim()) { setRed(btn, inp, false, []); delete btn.dataset.manual; }
   scheduleSave(inp.closest('.row'));
 });
 $('#inRows').addEventListener('change', e => {
@@ -736,18 +821,23 @@ $('#inRows').addEventListener('change', e => {
     const sA = $('.slot[data-k="am"] input', row), sP = $('.slot[data-k="pm"] input', row), sD = $('.slot[data-k="allday"] input', row);
     const bA = $('.slot[data-k="am"] .redbtn', row), bP = $('.slot[data-k="pm"] .redbtn', row), bD = $('.slot[data-k="allday"] .redbtn', row);
     if (e.target.checked) {
-      if (!sD.value.trim()) { sD.value = [sA.value.trim(), sP.value.trim()].filter(Boolean).join('、'); const r = bA.classList.contains('on') || bP.classList.contains('on') || autoRed(sD.value); bD.classList.toggle('on', r); sD.classList.toggle('is-red', r); }
+      if (!sD.value.trim()) {
+        sD.value = [sA.value.trim(), sP.value.trim()].filter(Boolean).join('、');
+        const mr = mergeRed([{ t: sA.value.trim(), on: bA.classList.contains('on'), parts: redPartsOf(bA) }, { t: sP.value.trim(), on: bP.classList.contains('on'), parts: redPartsOf(bP) }], sD.value);
+        if (!mr.on && autoRed(sD.value)) mr.on = true;
+        setRed(bD, sD, mr.on, mr.parts);
+      }
       const uA = $('.slot[data-k="am"] .until', row), uP = $('.slot[data-k="pm"] .until', row), uD = $('.slot[data-k="allday"] .until', row);
       if (!uD.value) uD.value = uA.value || uP.value || '';
       uD.classList.toggle('set', !!uD.value); uA.value = ''; uP.value = ''; uA.classList.remove('set'); uP.classList.remove('set');
-      sA.value = ''; sP.value = '';
+      sA.value = ''; sP.value = ''; setRed(bA, sA, false, []); setRed(bP, sP, false, []);
       row.classList.add('is-allday'); sD.focus();
     } else {
-      if (!sA.value.trim() && !sP.value.trim()) { sA.value = sD.value; const r = bD.classList.contains('on'); bA.classList.toggle('on', r); sA.classList.toggle('is-red', r); }
+      if (!sA.value.trim() && !sP.value.trim()) { sA.value = sD.value; setRed(bA, sA, bD.classList.contains('on'), redPartsOf(bD)); }
       const uA = $('.slot[data-k="am"] .until', row), uD = $('.slot[data-k="allday"] .until', row);
       if (!uA.value && uD.value) { uA.value = uD.value; uA.classList.add('set'); }
       uD.value = ''; uD.classList.remove('set');
-      sD.value = '';
+      sD.value = ''; setRed(bD, sD, false, []);
       row.classList.remove('is-allday'); sA.focus();
     }
     scheduleSave(row, 0);
@@ -765,9 +855,8 @@ $('#inRows').addEventListener('change', e => {
 $('#inRows').addEventListener('click', e => {
   const btn = e.target.closest('.redbtn');
   if (btn) {
-    const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1';
-    $('input', btn.closest('.slot')).classList.toggle('is-red', on);
-    scheduleSave(btn.closest('.row'), 0); return;
+    const row = btn.closest('.row');
+    pressRed(btn, $('input', btn.closest('.slot')), () => scheduleSave(row, 0)); return;
   }
 });
 $('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value); renderInput(); });
@@ -786,11 +875,12 @@ const PER_PAGE = 6; // 予定表は1ページに6人まで。7人目からは次
 function halves(list) { const n = list.length, k = Math.ceil(n / 2); return [list.slice(0, k), list.slice(k)]; }
 // AM・PM の文字は小さく（元のExcelのマクロと同じ）。indent の分だけ AM・PM ごと右・左にずらす。size は予定の文字だけ
 const INDENT_MM = 1.5;
-function cellText(t, red, prefix, indent, size) {
+function cellText(t, red, prefix, indent, size, parts) {
   if (!t) return '';
   const mv = indent ? ` style="position:relative;left:${indent * INDENT_MM}mm"` : '';
   const sz = size ? ` style="font-size:${(1 + size * 0.1).toFixed(2)}em"` : '';
-  return `<span class="${red ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${esc(t)}</span></span>`;
+  const part = red && parts;
+  return `<span class="${red && !part ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${redHtml(t, red, parts)}</span></span>`;
 }
 function renderTable() {
   const { y, m } = st, nd = dim(y, m);
@@ -818,10 +908,10 @@ function renderTable() {
     const real = getEntry(mid, day) || {};
     const e = { ...real };
     const ea = ends.get(key(mid, day) + '|allday'), em = ends.get(key(mid, day) + '|am'), ep = ends.get(key(mid, day) + '|pm');
-    if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; e.allday_indent = ea.indent; e.allday_size = ea.size; }
+    if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; e.allday_red_parts = ea.redParts; e.allday_indent = ea.indent; e.allday_size = ea.size; }
     if (!e.allday) {
-      if (em && !e.am) { e.am = em.text; e.am_red = em.red; e.am_indent = em.indent; e.am_size = em.size; }
-      if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; e.pm_indent = ep.indent; e.pm_size = ep.size; }
+      if (em && !e.am) { e.am = em.text; e.am_red = em.red; e.am_red_parts = em.redParts; e.am_indent = em.indent; e.am_size = em.size; }
+      if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; e.pm_red_parts = ep.redParts; e.pm_indent = ep.indent; e.pm_size = ep.size; }
     }
     if (!e.am && !e.pm && !e.allday) return effEntry(mid, day);
     return e;
@@ -842,13 +932,13 @@ function renderTable() {
     const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_JA[w]})</td>`;
     const cell1 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
-      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size)}</div></td>`;
-      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size)}</div></td>`;
+      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`;
+      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size, e.am_red_parts)}</div></td>`;
     };
     const cell2 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
       if (e.allday) return '';
-      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size)}</div></td>`;
+      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`;
     };
     const rh = solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
     body += `<tr style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
@@ -974,7 +1064,7 @@ function openEntryEditor(mid, day, clickX) {
   const mem = memberById(mid), e = effEntry(mid, day);
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
-  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''}>赤</button>${untilSelect(k, day, until)}</div>
+  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
     <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印をマスの真ん中にする">真ん中</button></div>`;
@@ -987,13 +1077,14 @@ function openEntryEditor(mid, day, clickX) {
     ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、その欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
+  initRedBtns(box);
   // 予定表が見えるように、クリックした場所と反対側に画面を出す
   $('#modal').classList.add('side', clickX != null && clickX > window.innerWidth / 2 ? 'left' : 'right');
-  const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
+  const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), p: redPartsOf($('.redbtn', s)).join('\n') || null, u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
   const collect = () => {
     const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
-    return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
-      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
+    return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_red_parts: o.p, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_red_parts: a.p, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_red_parts: p.p, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
   };
   // 保存する前に、予定表にそのまま映す（やめたときは元に戻す）
   let pvTimer = null;
@@ -1009,7 +1100,8 @@ function openEntryEditor(mid, day, clickX) {
   box.addEventListener('input', ev => {
     const inp = ev.target.closest('.slot input'); if (!inp) return;
     const btn = $('.redbtn', inp.closest('.slot'));
-    if (!btn.dataset.manual) { const r = autoRed(inp.value); btn.classList.toggle('on', r); inp.classList.toggle('is-red', r); }
+    if (!btn.dataset.manual) setRed(btn, inp, autoRed(inp.value), []);
+    else if (btn.dataset.parts) { const keep = redPartsOf(btn).filter(x => textParts(inp.value).includes(x)); if (keep.length) setRed(btn, inp, true, keep); }
     preview(250);
   });
   box.addEventListener('change', ev => {
@@ -1033,12 +1125,21 @@ function openEntryEditor(mid, day, clickX) {
   });
   box.addEventListener('click', ev => {
     const btn = ev.target.closest('.redbtn');
-    if (btn) { const on = !btn.classList.contains('on'); btn.classList.toggle('on', on); btn.dataset.manual = '1'; $('input', btn.closest('.slot')).classList.toggle('is-red', on); preview(); }
+    if (btn) pressRed(btn, $('input', btn.closest('.slot')), () => preview());
   });
   $('#edAd').addEventListener('change', ev => {
     const a = $('#edNormal .slot[data-k="am"] input'), p = $('#edNormal .slot[data-k="pm"] input'), d = $('#edAllday input');
-    if (ev.target.checked) { if (!d.value.trim()) d.value = [a.value.trim(), p.value.trim()].filter(Boolean).join('、'); const r = autoRed(d.value) || $('#edNormal .redbtn.on') != null; $('#edAllday .redbtn').classList.toggle('on', r); d.classList.toggle('is-red', r); }
-    else if (!a.value.trim() && !p.value.trim()) { a.value = d.value; const r = $('#edAllday .redbtn').classList.contains('on'); $('#edNormal .slot[data-k="am"] .redbtn').classList.toggle('on', r); a.classList.toggle('is-red', r); }
+    const bA = $('#edNormal .slot[data-k="am"] .redbtn'), bP = $('#edNormal .slot[data-k="pm"] .redbtn'), bD = $('#edAllday .redbtn');
+    closeRedPick();
+    if (ev.target.checked) {
+      if (!d.value.trim()) {
+        d.value = [a.value.trim(), p.value.trim()].filter(Boolean).join('、');
+        const mr = mergeRed([{ t: a.value.trim(), on: bA.classList.contains('on'), parts: redPartsOf(bA) }, { t: p.value.trim(), on: bP.classList.contains('on'), parts: redPartsOf(bP) }], d.value);
+        if (!mr.on && autoRed(d.value)) mr.on = true;
+        setRed(bD, d, mr.on, mr.parts);
+      }
+    }
+    else if (!a.value.trim() && !p.value.trim()) { a.value = d.value; setRed(bA, a, bD.classList.contains('on'), redPartsOf(bD)); }
     const uA = $('#edNormal .slot[data-k="am"] .until'), uD = $('#edAllday .until');
     if (ev.target.checked) { if (!uD.value) uD.value = uA.value || $('#edNormal .slot[data-k="pm"] .until').value || ''; }
     else if (!uA.value) uA.value = uD.value;
@@ -1083,11 +1184,11 @@ function renderForm() {
         const e = fill ? effEntry(mem.id, day) : evEntry(ev);
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
-        const tx = k => esc(e[k]) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
-        if (e.allday) ad = `<td colspan="2" class="kt${e.allday_red ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
+        const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
+        if (e.allday) ad = `<td colspan="2" class="kt${e.allday_red && !e.allday_red_parts ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
-          am = e.am ? `<td class="kt${e.am_red ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
-          pm = e.pm ? `<td class="kt${e.pm_red ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
+          am = e.am ? `<td class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
+          pm = e.pm ? `<td class="kt${e.pm_red && !e.pm_red_parts ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
         h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
       }
