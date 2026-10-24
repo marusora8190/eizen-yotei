@@ -74,7 +74,7 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 
 /* ===== 予定入力 ===== */
 .rows{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--line2)}
+.row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:0.5px solid #eef0f3}
 .row:first-child{border-top:0}
 .row.sun .date,.row.hol .date{color:var(--red)}
 .row.sat .date{color:var(--sat)}
@@ -147,7 +147,8 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
   body.personal #v-table .toolbar{display:none}
 }
 .sheet.a4l.solo{width:auto;height:auto}
-.solo table.yt th,.solo table.yt td{border-width:1px}
+.solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
+.solo table.yt{border-top-width:1px;border-bottom-width:1px}
 .solo .s-title{height:auto;padding:4px 6px;font-size:15px}
 .solo table.yt thead th{height:auto;padding:4px 0;font-size:14px}
 .solo table.yt thead th.dh{font-size:11px}
@@ -166,6 +167,9 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .s-title{height:7mm;font-size:12pt;display:flex;align-items:flex-end;padding:0 0 1mm 1mm}
 table.yt{border-collapse:collapse;table-layout:fixed;width:100%}
 table.yt th,table.yt td{border:0.6px solid #000;padding:0;overflow:hidden}
+/* 表の中の横の罫線は細く・薄く（外わくは黒のまま） */
+table.yt{border-top:0.6px solid #000;border-bottom:0.6px solid #000}
+table.yt th,table.yt td{border-top:0.3px solid #b0b0b0;border-bottom:0.3px solid #b0b0b0}
 table.yt thead th{height:5.5mm;font-size:10pt;font-weight:400;letter-spacing:.3em}
 table.yt thead th.dh{font-size:6.5pt;letter-spacing:0}
 table.yt td.dn{font-size:8.5pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
@@ -190,6 +194,9 @@ table.yt td.half-l{border-left:1.4px solid #000}
 .k-body{display:flex;gap:0;flex:none}
 .k-body table{border-collapse:collapse;table-layout:fixed;width:50%}
 .k-body th,.k-body td{border:0.8px solid #000;padding:0 1.2mm;overflow:hidden}
+/* 表の中の横の罫線は細く・薄く（外わくは黒のまま） */
+.k-body table{border-top:0.8px solid #000;border-bottom:0.8px solid #000}
+.k-body th,.k-body td{border-top:0.3px solid #b0b0b0;border-bottom:0.3px solid #b0b0b0}
 .k-body th{height:9mm;font-size:9.5pt;font-weight:400}
 .k-body th.mealh{font-size:7.5pt;line-height:1.05;padding:0}
 .k-body td{height:10.5mm;font-size:10pt}
