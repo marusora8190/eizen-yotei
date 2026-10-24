@@ -52,6 +52,16 @@ h3{font-size:16px;margin:18px 0 8px}
 .monthbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:var(--st);z-index:12;background:var(--bg);margin:-16px -20px 0;padding:14px 20px 12px}
 .monthbar .mlabel{font-size:18px;font-weight:700;min-width:15em;text-align:center}
 .monthbar .msub{color:var(--sub);font-size:13px}
+/* 月の切り替え・提出の欄は上の帯（header）の中に置く */
+header{flex-wrap:wrap;row-gap:6px}
+header .monthbar{position:static;margin:0;padding:0;background:none;flex-wrap:nowrap}
+header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
+.inbar{display:flex;align-items:center;gap:10px;flex:1 0 auto;flex-wrap:nowrap;margin-left:8px}
+.inbar .status{white-space:nowrap}
+.inbar label{white-space:nowrap}
+.inbar .sp{flex:1}
+.navupd{padding:10px 18px 4px}
+.navupd .btn{width:100%}
 .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;position:sticky;top:calc(var(--st) + var(--mb));z-index:11;box-shadow:0 0 0 6px var(--bg)}
 .note{color:var(--sub);font-size:13.5px;margin:0 0 10px}
 .chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 10px;font-size:13px;border:1px solid var(--line);background:#fff;cursor:pointer}
@@ -126,6 +136,11 @@ h3{font-size:16px;margin:18px 0 8px}
   header{padding:5px 10px;gap:8px}
   header h1{font-size:16px}
   header .btn{padding:4px 10px}
+  header .monthbar{flex-basis:100%;order:5}
+  header .inbar{flex-basis:100%;order:6;margin-left:0;flex-wrap:wrap;gap:4px 10px}
+  header .inbar .status{white-space:normal;font-size:13px}
+  .navupd{padding:4px;width:auto}
+  .navupd .btn{width:auto}
   .navtoggle{font-size:16px}
   /* スマホで先生ごとのURLから予定表を見るときは、その先生の列だけ（印刷ボタンは出さない） */
   body.personal #btnPrintTable{display:none}
@@ -240,8 +255,19 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <button class="btn navtoggle" id="btnNav" title="サイドバーを隠す・出す">☰</button>
   <h1>営繕部予定表</h1>
   <span class="who" id="whoLabel"></span>
-  <span class="sp"></span>
-  <button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button>
+  <div class="monthbar" id="monthbar" style="display:none">
+    <button class="btn" id="mPrev">◀<span class="lg"> 前の月</span></button>
+    <span class="mlabel" id="mLabel"></span>
+    <button class="btn" id="mNext"><span class="lg">次の月 </span>▶</button>
+    <button class="btn sm" id="mNextMonth">来月へ</button>
+  </div>
+  <!-- 予定入力のときだけ出す（先生・提出の状態・提出ボタン） -->
+  <div class="inbar" id="inBar" style="display:none">
+    <label id="inMemberWrap"><select id="inMember"></select> 先生</label>
+    <span class="status" id="inStatus"></span>
+    <span class="sp"></span>
+    <button class="btn pri" id="btnSubmit">提出する</button>
+  </div>
 </header>
 <div class="layout">
 <nav id="nav">
@@ -253,27 +279,13 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <a id="navAdminOpen" class="admin-open hide-personal">🔑 管理者メニュー</a>
   <a data-view="master" class="admin-only hide-personal">⚙️ マスター</a>
   <a id="navAdminClose" class="admin-only hide-personal">🔒 管理者メニューを閉じる</a>
+  <div class="navupd"><button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button></div>
 </nav>
 <main>
   <div id="loading">読み込み中…</div>
 
-  <div class="monthbar" id="monthbar" style="display:none">
-    <button class="btn" id="mPrev">◀<span class="lg"> 前の月</span></button>
-    <span class="mlabel" id="mLabel"></span>
-    <button class="btn" id="mNext"><span class="lg">次の月 </span>▶</button>
-    <button class="btn sm" id="mNextMonth">来月へ</button>
-  </div>
-
   <!-- 予定入力 -->
   <section id="v-input">
-    <div class="toolbar">
-      <label id="inMemberWrap"><select id="inMember"></select> 先生</label>
-      <span class="status" id="inStatus"></span>
-      <span class="sp" style="flex:1"></span>
-      <button class="btn pri" id="btnSubmit">提出する</button>
-    </div>
-    <p class="note">午前・午後の欄に予定を書きます。1日中の予定は「終日」にチェックを入れて1つの欄に書きます。書いた内容は自動で保存されます（右端に ✓ が出ます）。<br>予定表で<span style="color:var(--red);font-weight:700">赤字</span>にしたい予定は「赤」を押します（「本番」「別席」などの言葉が入ると自動で赤になります）。入力が終わったら、上の「提出する」を押してください。</p>
-    <div class="mealnote" id="inMealNote" style="display:none">昼食は、はじめは「○」（いる）になっています。いらない日だけ「✖」を選んでください。</div>
     <div class="rows" id="inRows"></div>
   </section>
 
@@ -384,7 +396,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・昼食の欄を出す先生・赤字にする言葉・祝日・提出の期限を変えられます。提出の印を取り消すときも、管理者パスワードがいります。</p>
     <h3>困ったとき</h3>
     <ul>
-      <li>画面が古いまま・おかしいときは、右上の赤い「Update」を押します。</li>
+      <li>画面が古いまま・おかしいときは、サイドバーの赤い「Update」を押します。</li>
       <li>予定表が1枚に収まらないときは、印刷の画面で「余白：なし」または「倍率：用紙に合わせる」を選んでください。</li>
     </ul>
   </section>
@@ -570,7 +582,7 @@ function updSticky() {
   const r = document.documentElement.style, h = $('header').offsetHeight;
   const mobile = window.matchMedia('(max-width:760px)').matches;
   const st = h + (mobile ? $('#nav').offsetHeight : 0);
-  const mbEl = $('#monthbar'), mb = mbEl.style.display === 'none' ? 0 : mbEl.offsetHeight;
+  const mb = 0; // 月の切り替えは上の帯（header）の中にある
   r.setProperty('--hdr', h + 'px'); r.setProperty('--st', st + 'px'); r.setProperty('--mb', mb + 'px');
 }
 window.addEventListener('resize', updSticky);
@@ -593,6 +605,7 @@ function showView(v) {
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   $$('nav a[data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
   $('#monthbar').style.display = ['input', 'table', 'form'].includes(v) ? 'flex' : 'none';
+  $('#inBar').style.display = v === 'input' ? 'flex' : 'none';
   try { history.replaceState(null, '', location.pathname + location.search + '#' + v); } catch (e) {}
   render();
   updSticky();
@@ -650,7 +663,6 @@ function renderInput() {
     </div>`;
   }
   $('#inRows').innerHTML = html;
-  $('#inMealNote').style.display = mem.meal_survey ? '' : 'none';
   updateContNotes();
 }
 function renderInputStatus() {
@@ -1294,7 +1306,7 @@ $('#msHolAdd').addEventListener('click', async () => {
     $('#loading').style.display = 'none';
     showView((location.hash || '#input').slice(1));
   } catch (e) {
-    $('#loading').innerHTML = '読み込めませんでした：' + esc(errMsg(e)) + '<br>右上の「Update」を押すか、しばらくしてからもう一度開いてください。';
+    $('#loading').innerHTML = '読み込めませんでした：' + esc(errMsg(e)) + '<br>サイドバーの「Update」を押すか、しばらくしてからもう一度開いてください。';
   }
 })();
 </script>
