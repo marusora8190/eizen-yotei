@@ -143,6 +143,12 @@ body.real-mobile .spvbtn{display:none}
 .sheet{position:relative}
 .yarrow{position:absolute;width:0;border-left:0.35mm solid #000;pointer-events:none}
 .yarrow.nohead::after{display:none}
+.marrows{margin-top:10px;border-top:1px solid var(--line2);padding-top:8px;font-size:14px}
+.marrows .ma-head{display:flex;align-items:center;gap:10px;font-weight:700}
+.marrow{border:1px solid var(--line);border-radius:6px;padding:6px 8px;margin-top:6px;background:#fafbfc}
+.marrow select{padding:2px 4px}
+.marrow .indrow{margin:4px 0 0}
+.marrow .ma-del{border-color:#c62828;color:#c62828;margin-left:6px}
 .yarrow::after{content:"";position:absolute;left:calc(-1.1mm - 0.175mm);bottom:-0.2mm;border-left:1.1mm solid transparent;border-right:1.1mm solid transparent;border-top:2mm solid #000}
 @media (max-width:760px){
   .layout{display:block}
@@ -511,6 +517,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ画面になります（上の「🖥」で戻ります）。</li>
+      <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -548,7 +555,7 @@ const adminSb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: safeSes
 // ===== 状態 =====
 const st = {
   members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [] },
-  y: 0, m: 0, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null,
+  y: 0, m: 0, arrows: [], entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null,
 };
 
 // ===== 小道具 =====
@@ -718,11 +725,13 @@ async function loadMasters() {
 async function loadMonth() {
   const { y, m } = st;
   const from = dstr(y, m, 1), to = dstr(y, m, dim(y, m));
-  const [ent, sub] = await Promise.all([
+  const [ent, sub, arr] = await Promise.all([
     sb.from('yotei_entries').select('*').gte('day', from).lte('day', to).range(0, 4999),
     sb.from('yotei_submissions').select('*').eq('ym', ymStr(y, m)),
+    sb.from('yotei_arrows').select('*').eq('active', true).gte('day_from', from).lte('day_from', to).order('id').range(0, 4999),
   ]);
-  if (ent.error) throw ent.error; if (sub.error) throw sub.error;
+  if (ent.error) throw ent.error; if (sub.error) throw sub.error; if (arr.error) throw arr.error;
+  st.arrows = arr.data;
   st.entries = new Map(ent.data.map(e => [key(e.member_id, e.day), e]));
   st.subs = new Map(sub.data.map(s => [s.member_id, s]));
 }
@@ -735,7 +744,7 @@ function continuations(mid) {
     if (mid != null && e.member_id !== mid) continue;
     for (const k of ['am', 'pm', 'allday']) {
       const u = e[k + '_until'];
-      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], redParts: e[k + '_red_parts'] || null, indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0, arrow: e[k + '_arrow'] || 0 });
+      if (e[k] && u && u > e.day) out.push({ mid: e.member_id, k, start: e.day, until: u, text: e[k], red: e[k + '_red'], redParts: e[k + '_red_parts'] || null, indent: e[k + '_indent'] || 0, size: e[k + '_size'] || 0, arrow: e[k + '_arrow'] || 0, top: e[k + '_arrow_top'] || 0, bot: e[k + '_arrow_bot'] || 0 });
     }
   }
   return out;
@@ -756,6 +765,8 @@ function makeRec(mid, day, data) {
     am_indent: keep('am', 'indent'), pm_indent: keep('pm', 'indent'), allday_indent: keep('allday', 'indent'),
     am_size: keep('am', 'size'), pm_size: keep('pm', 'size'), allday_size: keep('allday', 'size'),
     am_arrow: keep('am', 'arrow'), pm_arrow: keep('pm', 'arrow'), allday_arrow: keep('allday', 'arrow'),
+    am_arrow_top: keep('am', 'arrow_top'), pm_arrow_top: keep('pm', 'arrow_top'), allday_arrow_top: keep('allday', 'arrow_top'),
+    am_arrow_bot: keep('am', 'arrow_bot'), pm_arrow_bot: keep('pm', 'arrow_bot'), allday_arrow_bot: keep('allday', 'arrow_bot'),
     member_id: mid, day,
     am: data.am || null, pm: data.pm || null, allday: data.allday || null,
     am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
@@ -1177,31 +1188,25 @@ function drawArrows() {
     if (k === 'allday') return pick('ad') || pick('am');
     return pick(k) || pick('ad');
   };
-  for (const c of continuations(null)) {
-    const a = cellOf(c.mid, c.start, c.k), b = cellOf(c.mid, c.until, c.k);
-    if (!a || !b) continue;
-    const page = a.closest('.ypage'), base = page.getBoundingClientRect();
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    // 矢印は、始まりの日の予定の1文字目（AM・PM のすぐあとの文字）のまん中から引く。文字が見つからないときはマスのまん中
-    const rt = firstCharRect($('.tx', a)) || ra;
+  // 1本の矢印を引く（あいだのマスに文字があれば、その文字のところだけ線を切ってよける）
+  const draw = (mid, a, b, xRaw, top, bot) => {
+    const page = a.closest('.ypage'); if (!page || b.closest('.ypage') !== page) return;
+    const base = page.getBoundingClientRect(), ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     // 左右に動かしても、その先生の列（マス）の中に収める（日付の列などの下に隠れないように）
-    const xRaw = (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM;
     const xMin = (ra.left - base.left) * MM + 0.8, xMax = (ra.right - base.left) * MM - 0.8;
-    const x = Math.max(xMin, Math.min(xMax, xRaw)), y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
-    if (y2 - y1 < 1) continue;
-    // 途中の日に別の予定があるときは、その文字のところだけ線を切って、文字をよける
+    const x = Math.max(xMin, Math.min(xMax, xRaw));
+    const y1 = (ra.bottom - base.top) * MM + 0.3 + top, y2 = (rb.top - base.top) * MM - 0.2 + bot;
+    if (y2 - y1 < 1) return;
     const gaps = [];
-    const sd = Number(c.start.slice(8)), ud = Number(c.until.slice(8));
-    for (let d = sd + 1; d < ud; d++) {
-      $$(`td.c[data-mid="${c.mid}"][data-day="${c.start.slice(0, 8)}${pad(d)}"] .fit`, page).forEach(f => {
-        if (!f.textContent.trim()) return;
-        const rg = document.createRange(); rg.selectNodeContents(f);
-        const r = rg.getBoundingClientRect();
-        const l = (r.left - base.left) * MM - 0.8, rr = (r.right - base.left) * MM + 0.8;
-        if (x < l || x > rr) return;
-        gaps.push([(r.top - base.top) * MM - 0.5, (r.bottom - base.top) * MM + 0.5]);
-      });
-    }
+    $$(`td.c[data-mid="${mid}"] .fit`, page).forEach(f => {
+      const td = f.closest('td'); if (td === a || td === b || !f.textContent.trim()) return;
+      const rg = document.createRange(); rg.selectNodeContents(f);
+      const r = rg.getBoundingClientRect(); if (!r.width) return;
+      const l = (r.left - base.left) * MM - 0.8, rr = (r.right - base.left) * MM + 0.8;
+      const t = (r.top - base.top) * MM - 0.5, bt = (r.bottom - base.top) * MM + 0.5;
+      if (x < l || x > rr || bt < y1 || t > y2) return;
+      gaps.push([t, bt]);
+    });
     gaps.sort((p, q) => p[0] - q[0]);
     const segs = []; let cur = y1;
     for (const [g1, g2] of gaps) { if (g1 > cur) segs.push([cur, Math.min(g1, y2)]); cur = Math.max(cur, g2); }
@@ -1212,8 +1217,24 @@ function drawArrows() {
       el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm';
       page.appendChild(el);
     });
+  };
+  // 「〜日まで続く」予定の矢印（自動）：始まりの日の予定の1文字目（AM・PM のすぐあとの文字）のまん中から
+  for (const c of continuations(null)) {
+    const a = cellOf(c.mid, c.start, c.k), b = cellOf(c.mid, c.until, c.k);
+    if (!a || !b) continue;
+    const base = a.closest('.ypage').getBoundingClientRect();
+    const rt = firstCharRect($('.tx', a)) || a.getBoundingClientRect();
+    draw(c.mid, a, b, (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM, c.top * ARROW_END_MM, c.bot * ARROW_END_MM);
+  }
+  // 手で引いた矢印（予定の文字とは別）：始まりのマスのまん中から
+  for (const r of st.arrows || []) {
+    const a = cellOf(r.member_id, r.day_from, r.slot_from), b = cellOf(r.member_id, r.day_to, r.slot_to);
+    if (!a || !b) continue;
+    const base = a.closest('.ypage').getBoundingClientRect(), ra = a.getBoundingClientRect();
+    draw(r.member_id, a, b, (ra.left + ra.width / 2 - base.left) * MM + (r.x || 0) * INDENT_MM, (r.top_adj || 0) * ARROW_END_MM, (r.bot_adj || 0) * ARROW_END_MM);
   }
 }
+const ARROW_END_MM = 1; // 矢印の上の端・下の端を動かすとき、1回で1mm
 // 長い予定は文字を小さくして1行に収める（Excelの「縮小して全体を表示」と同じ考え方）
 // 左・右へ動かしきったとき、文字の端をマスの端（午前の AM と同じ位置）にぴったり合わせる
 const EDGE_MM = 0.8;
@@ -1278,6 +1299,66 @@ function indentLimits(mid, day, k) {
   // 最後の1回は、端にぴったり合わせる（snapToEdges）
   return [Math.min(0, -Math.ceil(leftSpace / step - 0.01)), Math.max(0, Math.ceil(rightSpace / step - 0.01))];
 }
+// ===== 手で引く矢印（予定の文字とは別に、好きな日から好きな日まで引ける） =====
+function setupManualArrows(box, mid, day) {
+  const wrap = $('#edArrows', box); if (!wrap) return;
+  const [y, m, d0] = day.split('-').map(Number), nd = dim(y, m);
+  const mine = () => (st.arrows || []).filter(r => r.member_id === mid && r.day_from === day);
+  const lbl = v => v === 0 ? '標準' : v > 0 ? `下へ${v}` : `上へ${-v}`;
+  const lblx = v => v === 0 ? '真ん中' : v > 0 ? `右へ${v}` : `左へ${-v}`;
+  const draw = () => {
+    const list = mine();
+    let h = `<div class="ma-head">手で引く矢印（この日から）<button type="button" class="btn sm" data-ma="add" ${d0 >= nd ? 'disabled' : ''}>＋ 矢印を引く</button></div>`;
+    if (!list.length) h += `<p class="note" style="margin:2px 0 0">予定の文字とは別に、矢印だけを引けます。押すとすぐ保存されます（「やめる」では元に戻りません）。</p>`;
+    list.forEach(r => {
+      let opt = ''; for (let x = d0 + 1; x <= nd; x++) { const v = dstr(y, m, x); opt += `<option value="${v}" ${v === r.day_to ? 'selected' : ''}>${x}日</option>`; }
+      h += `<div class="marrow" data-id="${r.id}">
+        <div>始まり：${d0}日の <select data-ma="slot_from"><option value="am" ${r.slot_from === 'am' ? 'selected' : ''}>午前の下</option><option value="pm" ${r.slot_from === 'pm' ? 'selected' : ''}>午後の下</option></select>
+          → 終わり：<select data-ma="day_to">${opt}</select> の <select data-ma="slot_to"><option value="am" ${r.slot_to === 'am' ? 'selected' : ''}>午前の上</option><option value="pm" ${r.slot_to === 'pm' ? 'selected' : ''}>午後の上</option></select>
+          <button type="button" class="btn sm ma-del" data-ma="del">消す</button></div>
+        <div class="indrow"><span>左右の位置：</span><button type="button" class="btn sm ind" data-ma="x" data-d="-1">◀ 左へ</button><span class="indv">今：${lblx(r.x || 0)}</span><button type="button" class="btn sm ind" data-ma="x" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-ma="x" data-d="0">真ん中</button></div>
+        <div class="indrow"><span>上の端：</span><button type="button" class="btn sm ind" data-ma="top_adj" data-d="-1">▲ 上へ</button><span class="indv">今：${lbl(r.top_adj || 0)}</span><button type="button" class="btn sm ind" data-ma="top_adj" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-ma="top_adj" data-d="0">標準</button></div>
+        <div class="indrow"><span>下の端：</span><button type="button" class="btn sm ind" data-ma="bot_adj" data-d="-1">▲ 上へ</button><span class="indv">今：${lbl(r.bot_adj || 0)}</span><button type="button" class="btn sm ind" data-ma="bot_adj" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-ma="bot_adj" data-d="0">標準</button></div>
+      </div>`;
+    });
+    wrap.innerHTML = h;
+  };
+  // 保存して、予定表に映す
+  const save = async (r, patch) => {
+    const old = { ...r }; Object.assign(r, patch, { updated_at: new Date().toISOString() });
+    draw(); renderTable();
+    const { error } = await sb.from('yotei_arrows').update({ ...patch, updated_at: r.updated_at }).eq('id', r.id);
+    if (error) { Object.assign(r, old); draw(); renderTable(); toast('矢印を保存できませんでした：' + errMsg(error), true); }
+  };
+  wrap.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-ma]'); if (!b || b.tagName === 'SELECT') return;
+    const act = b.dataset.ma;
+    if (act === 'add') {
+      const isAd = !!effEntry(mid, day).allday;
+      const rec = { member_id: mid, day_from: day, slot_from: isAd ? 'pm' : 'am', day_to: dstr(y, m, Math.min(nd, d0 + 1)), slot_to: 'am', x: 0, top_adj: 0, bot_adj: 0, active: true };
+      b.disabled = true;
+      const { data, error } = await sb.from('yotei_arrows').insert(rec).select().single();
+      b.disabled = false;
+      if (error) { toast('矢印を足せませんでした：' + errMsg(error), true); return; }
+      st.arrows.push(data); draw(); renderTable(); return;
+    }
+    const r = (st.arrows || []).find(x => x.id === Number(b.closest('.marrow').dataset.id)); if (!r) return;
+    if (act === 'del') {
+      if (!confirm('この矢印を消します。よろしいですか？')) return;
+      const { error } = await sb.from('yotei_arrows').update({ active: false, updated_at: new Date().toISOString() }).eq('id', r.id);
+      if (error) { toast('消せませんでした：' + errMsg(error), true); return; }
+      st.arrows = st.arrows.filter(x => x !== r); draw(); renderTable(); return;
+    }
+    const d = Number(b.dataset.d), lim = act === 'x' ? 15 : 10;
+    save(r, { [act]: d === 0 ? 0 : Math.max(-lim, Math.min(lim, (r[act] || 0) + d)) });
+  });
+  wrap.addEventListener('change', ev => {
+    const sel = ev.target.closest('select[data-ma]'); if (!sel) return;
+    const r = (st.arrows || []).find(x => x.id === Number(sel.closest('.marrow').dataset.id)); if (!r) return;
+    save(r, { [sel.dataset.ma]: sel.value });
+  });
+  draw();
+}
 function openEntryEditor(mid, day, clickX) {
   const orig = getEntry(mid, day) ? { ...getEntry(mid, day) } : null;
   const mem = memberById(mid), e = effEntry(mid, day);
@@ -1286,24 +1367,28 @@ function openEntryEditor(mid, day, clickX) {
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" enterkeyhint="done" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
     <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
-    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>`;
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow_top" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の上の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_top'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow_bot" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の下の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_bot'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
     <p class="note" style="margin:4px 0 0">右の「当日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
+    <div class="marrows" id="edArrows"></div>
     ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
     ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、その欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
   initRedBtns(box);
+  setupManualArrows(box, mid, day);
   // 予定表が見えるように、クリックした場所と反対側に画面を出す
   $('#modal').classList.add('side', clickX != null && clickX > window.innerWidth / 2 ? 'left' : 'right');
-  const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), p: redPartsOf($('.redbtn', s)).join('\n') || null, u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0 }; };
+  const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), p: redPartsOf($('.redbtn', s)).join('\n') || null, u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0, at: Number($(`.indrow[data-k="${k}"][data-f="arrow_top"] .indv`, box).dataset.v) || 0, ab: Number($(`.indrow[data-k="${k}"][data-f="arrow_bot"] .indv`, box).dataset.v) || 0 }; };
   const collect = () => {
     const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
-    return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_red_parts: o.p, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, meal }))(g('#edAllday .slot'))
-      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_red_parts: a.p, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, pm: p.t, pm_red: p.r, pm_red_parts: p.p, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, meal }; })();
+    return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_red_parts: o.p, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, allday_arrow_top: o.at, allday_arrow_bot: o.ab, meal }))(g('#edAllday .slot'))
+      : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_red_parts: a.p, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, am_arrow_top: a.at, am_arrow_bot: a.ab, pm: p.t, pm_red: p.r, pm_red_parts: p.p, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, pm_arrow_top: p.at, pm_arrow_bot: p.ab, meal }; })();
   };
   // 保存する前に、予定表にそのまま映す（やめたときは元に戻す）
   let pvTimer = null;
@@ -1326,19 +1411,20 @@ function openEntryEditor(mid, day, clickX) {
   box.addEventListener('change', ev => {
     if (!ev.target.classList.contains('until')) return;
     ev.target.classList.toggle('set', !!ev.target.value);
-    const k = ev.target.closest('.slot').dataset.k, ar = $(`.arrowrow[data-k="${k}"]`, box); if (ar) ar.style.display = ev.target.value ? '' : 'none';
+    const k = ev.target.closest('.slot').dataset.k; $$(`.arrowrow[data-k="${k}"]`, box).forEach(ar => (ar.style.display = ev.target.value ? '' : 'none'));
     preview();
   });
   const showInd = sp => {
     const v = Number(sp.dataset.v), f = sp.closest('.indrow').dataset.f;
+    if (/^(arrow_top|arrow_bot|m_top|m_bot)$/.test(f)) { sp.textContent = '今：' + (v === 0 ? '標準' : v > 0 ? `下へ${v}` : `上へ${-v}`); return; }
     sp.textContent = '今：' + (v === 0 ? (f === 'arrow' ? '真ん中' : '標準') : f === 'size' ? (v > 0 ? `大${v}` : `小${-v}`) : (v > 0 ? `右へ${v}` : `左へ${-v}`));
   };
-  $$('.indv', box).forEach(showInd);
+  $$('.indv', box).filter(sp => !sp.closest('.marrow')).forEach(showInd);
   box.addEventListener('click', ev => {
-    const b = ev.target.closest('.ind'); if (!b) return;
+    const b = ev.target.closest('.ind'); if (!b || b.closest('.marrow')) return;
     const sp = $('.indv', b.closest('.indrow')), d = Number(b.dataset.d);
     const row = b.closest('.indrow'), f = row.dataset.f;
-    const [lo, hi] = f === 'size' ? [-5, 5] : f === 'arrow' ? [-15, 15] : indentLimits(mid, day, row.dataset.k);
+    const [lo, hi] = f === 'size' ? [-5, 5] : f === 'arrow' ? [-15, 15] : (f === 'arrow_top' || f === 'arrow_bot') ? [-10, 10] : indentLimits(mid, day, row.dataset.k);
     sp.dataset.v = d === 0 ? 0 : Math.max(lo, Math.min(hi, Number(sp.dataset.v) + d)); showInd(sp);
     preview();
   });
@@ -1507,12 +1593,13 @@ async function clInfo() {
 }
 async function clCount(d) {
   const ym = d.slice(0, 7);
-  const [ent, sub] = await Promise.all([
+  const [ent, sub, arr] = await Promise.all([
     sb.from('yotei_entries').select('*', { count: 'exact', head: true }).lt('day', d),
     sb.from('yotei_submissions').select('*', { count: 'exact', head: true }).lt('ym', ym),
+    sb.from('yotei_arrows').select('*', { count: 'exact', head: true }).lt('day_from', d),
   ]);
-  if (ent.error) throw ent.error; if (sub.error) throw sub.error;
-  return { ent: ent.count || 0, sub: sub.count || 0 };
+  if (ent.error) throw ent.error; if (sub.error) throw sub.error; if (arr.error) throw arr.error;
+  return { ent: ent.count || 0, sub: sub.count || 0, arr: arr.count || 0 };
 }
 const jpDate = d => d.replace(/^(\d+)-0?(\d+)-0?(\d+)$/, '$1年$2月$3日');
 $('#clCheck').addEventListener('click', async () => {
@@ -1522,8 +1609,8 @@ $('#clCheck').addEventListener('click', async () => {
   if (d > todayJst()) { toast('今日より後の日付は選べません', true); return; }
   try {
     const c = await clCount(d);
-    if (!c.ent && !c.sub) { $('#clResult').innerHTML = `<p class="note">${jpDate(d)}より前のデータはありません。</p>`; return; }
-    $('#clResult').innerHTML = `<p style="margin:0 0 6px">${jpDate(d)}より前：予定 <b>${c.ent}件</b>・提出の印 <b>${c.sub}件</b></p><button class="btn" id="clDel" data-d="${d}" style="border-color:#c62828;color:#c62828">削除する</button>`;
+    if (!c.ent && !c.sub && !c.arr) { $('#clResult').innerHTML = `<p class="note">${jpDate(d)}より前のデータはありません。</p>`; return; }
+    $('#clResult').innerHTML = `<p style="margin:0 0 6px">${jpDate(d)}より前：予定 <b>${c.ent}件</b>・提出の印 <b>${c.sub}件</b>${c.arr ? `・手で引いた矢印 <b>${c.arr}件</b>` : ''}</p><button class="btn" id="clDel" data-d="${d}" style="border-color:#c62828;color:#c62828">削除する</button>`;
   } catch (err) { toast('数えられませんでした：' + errMsg(err), true); }
 });
 $('#clResult').addEventListener('click', async e => {
@@ -1532,11 +1619,12 @@ $('#clResult').addEventListener('click', async e => {
   if (!(await ensureAdmin())) return;
   let c;
   try { c = await clCount(d); } catch (err) { toast('数えられませんでした：' + errMsg(err), true); return; }
-  if (!confirm(`${jpDate(d)}より前の、予定 ${c.ent}件・提出の印 ${c.sub}件を、全員分削除します。\n元に戻せません。よろしいですか？`)) return;
+  if (!confirm(`${jpDate(d)}より前の、予定 ${c.ent}件・提出の印 ${c.sub}件${c.arr ? `・手で引いた矢印 ${c.arr}件` : ''}を、全員分削除します。\n元に戻せません。よろしいですか？`)) return;
   e.target.disabled = true;
   const r1 = await adminSb.from('yotei_entries').delete().lt('day', d);
   const r2 = r1.error ? null : await adminSb.from('yotei_submissions').delete().lt('ym', d.slice(0, 7));
-  const err = r1.error || (r2 && r2.error);
+  const r3 = r1.error || (r2 && r2.error) ? null : await adminSb.from('yotei_arrows').delete().lt('day_from', d);
+  const err = r1.error || (r2 && r2.error) || (r3 && r3.error);
   if (err) { e.target.disabled = false; toast('削除できませんでした：' + errMsg(err), true); return; }
   const left = await clCount(d).catch(() => null);
   $('#clResult').innerHTML = left && (left.ent || left.sub)
