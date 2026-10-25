@@ -319,6 +319,9 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 #modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2933;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;display:none;z-index:60;max-width:90vw}
 #toast.ng{background:#b91c1c}
+#updCover{position:fixed;inset:0;z-index:80;background:rgba(244,245,247,.75);display:none;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--ink)}
+#updCover.show{display:flex}
+#updCover div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 22px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
 #loading{padding:40px;text-align:center;color:var(--sub)}
 
 @media print{
@@ -506,6 +509,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="clipBar"><span class="cb-t" id="clipText"></span><button type="button" class="btn sm" id="clipCancel">やめる</button></div>
+<div id="updCover"><div>🔄 最新の画面を読み込んでいます…</div></div>
 <div id="toast"></div>
 
 <script>
@@ -822,6 +826,11 @@ $('#mPrev').addEventListener('click', () => changeMonth(...prevYM(st.y, st.m)));
 $('#mNext').addEventListener('click', () => changeMonth(...nextYM(st.y, st.m)));
 $('#mNextMonth').addEventListener('click', () => { const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1)); });
 $('#btnUpdate').addEventListener('click', () => {
+  if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
+  // 押したことが分かるように、ボタンを「更新中…」にして、画面に「読み込み中」を出す
+  ['#btnUpdate', '#btnUpdateM'].forEach(id => { const b = $(id); b.textContent = '更新中…'; b.disabled = true; });
+  $('#updCover').classList.add('show');
+  try { sessionStorage.setItem('yotei-updated', '1'); } catch (e) {}
   const p = new URLSearchParams(location.search); p.set('_', Date.now());
   // 読み込み直したあとも、今の月・今の先生のままにする
   if (st.y) p.set('m', ymStr(st.y, st.m));
@@ -1581,6 +1590,7 @@ $('#msHolAdd').addEventListener('click', async () => {
     await loadMonth();
     $('#loading').style.display = 'none';
     showView((location.hash || '#input').slice(1));
+    try { if (sessionStorage.getItem('yotei-updated')) { sessionStorage.removeItem('yotei-updated'); toast('✓ 最新の画面にしました'); } } catch (e) {}
   } catch (e) {
     $('#loading').innerHTML = '読み込めませんでした：' + esc(errMsg(e)) + '<br>サイドバーの「Update」を押すか、しばらくしてからもう一度開いてください。';
   }
