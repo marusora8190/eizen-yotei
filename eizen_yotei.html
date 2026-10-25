@@ -109,6 +109,11 @@ body.has-clip #clipBar{display:flex}
 #clipBar .cb-t{min-width:0;line-height:1.35}
 #clipBar .cb-t small{display:block;color:#cbd2da;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #clipBar .btn{flex:none;background:#fff;color:var(--ink)}
+.mnav{display:none;gap:5px;align-items:center;margin-left:auto}
+.mnav .btn{padding:4px 10px;font-size:14px;white-space:nowrap}
+.mnav .btn.act{background:var(--nav-act);border-color:var(--nav-act);color:#fff;font-weight:700}
+#btnSpvBack{display:none}
+body.spv:not(.real-mobile) #btnSpvBack{display:inline-block}
 .spvbtn{margin-top:6px;color:var(--ink)!important;font-size:13px}
 body.has-clip #toast{bottom:74px}
 body.spv #clipBar{max-width:410px}
@@ -175,6 +180,10 @@ body.real-mobile .spvbtn{display:none}
   header .inbar .sp{display:none}
   header .inbar .status{flex:1 1 0;min-width:0;line-height:1.3}
   header .inbar .btn{padding:4px 10px}
+  /* スマホ：メニューは「予定入力」「予定表」「Update」の3つだけ（営繕部予定表の文字の横）。サイドバー・印刷は出さない */
+  .mnav{display:flex}
+  nav,.navtoggle{display:none!important}
+  #v-table .toolbar{display:none!important}
 }
 /* パソコンでも「📱 スマホ用の画面」に切り替えたとき（上の @media と同じ中身） */
 body.spv{background:#cfd5dd}
@@ -215,6 +224,10 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
   body.spv header .inbar .sp{display:none}
   body.spv header .inbar .status{flex:1 1 0;min-width:0;line-height:1.3}
   body.spv header .inbar .btn{padding:4px 10px}
+  /* スマホ：メニューは「予定入力」「予定表」「Update」の3つだけ（営繕部予定表の文字の横）。サイドバー・印刷は出さない */
+  body.spv .mnav{display:flex}
+  body.spv nav,body.spv .navtoggle{display:none!important}
+  body.spv #v-table .toolbar{display:none!important}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
@@ -331,6 +344,13 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 <header>
   <button class="btn navtoggle" id="btnNav" title="サイドバーを隠す・出す">☰</button>
   <h1>営繕部予定表</h1>
+  <!-- スマホのときだけ出すボタン（予定入力・予定表・Update） -->
+  <div class="mnav" id="mnav">
+    <button type="button" class="btn" data-view="input">予定入力</button>
+    <button type="button" class="btn" data-view="table">予定表</button>
+    <button type="button" class="btn upd" id="btnUpdateM" title="最新の画面を読み込み直します">Update</button>
+    <button type="button" class="btn" id="btnSpvBack" title="パソコン用の画面に戻します">🖥</button>
+  </div>
   <span class="who" id="whoLabel"></span>
   <div class="monthbar" id="monthbar" style="display:none">
     <button class="btn" id="mPrev">◀<span class="lg"> 前の月</span></button>
@@ -464,7 +484,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
-      <li>パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ並びの画面になります（「🖥 パソコン用の画面」で戻ります）。</li>
+      <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ画面になります（上の「🖥」で戻ります）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -748,14 +768,15 @@ function setSpv(on) {
   document.body.classList.toggle('spv', on);
   $('#btnSpv').textContent = on ? '🖥 パソコン用の画面' : '📱 スマホ用の画面';
   try { localStorage.setItem('yotei-spv', on ? '1' : ''); } catch (e) {}
-  if (st.view === 'table' && st.personal) renderTable();
+  if (st.view && !['input', 'table'].includes(st.view) && isMobile()) showView('input');
+  else if (st.view === 'table' && st.personal) renderTable();
   updSticky(); window.scrollTo(0, 0);
 }
 $('#btnSpv').addEventListener('click', () => setSpv(!document.body.classList.contains('spv')));
 const markRealMobile = () => document.body.classList.toggle('real-mobile', MQ.matches);
 markRealMobile(); MQ.addEventListener('change', markRealMobile);
 try { if (localStorage.getItem('yotei-spv') === '1') { document.body.classList.add('spv'); $('#btnSpv').textContent = '🖥 パソコン用の画面'; } } catch (e) {}
-MQ.addEventListener('change', () => { if (st.view === 'table' && st.personal) renderTable(); updSticky(); });
+MQ.addEventListener('change', () => { if (st.view && !['input', 'table'].includes(st.view) && isMobile()) showView('input'); else if (st.view === 'table' && st.personal) renderTable(); updSticky(); });
 // サイドバーを隠す・出す（このパソコンのこのブラウザで覚えておく）
 function setNavHidden(on) {
   document.body.classList.toggle('nav-hidden', on);
@@ -770,9 +791,10 @@ function showView(v) {
   if (!VIEWS.includes(v)) v = 'input';
   if (st.personal && !['input', 'table', 'form', 'help'].includes(v)) v = 'input';
   if (v === 'master' && !st.isAdmin) v = 'input';
+  if (isMobile() && !['input', 'table'].includes(v)) v = 'input'; // スマホは予定入力・予定表だけ
   st.view = v;
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
-  $$('nav a[data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
+  $$('nav a[data-view], .mnav [data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
   $('#monthbar').style.display = ['input', 'table', 'form'].includes(v) ? 'flex' : 'none';
   $('#inBar').style.display = v === 'input' ? 'flex' : 'none';
   try { history.replaceState(null, '', location.pathname + location.search + '#' + v); } catch (e) {}
@@ -786,7 +808,9 @@ function render() {
   else if (st.view === 'form') renderForm();
   else if (st.view === 'master') renderMaster();
 }
-$$('nav a[data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
+$$('nav a[data-view], .mnav [data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
+$('#btnUpdateM').addEventListener('click', () => $('#btnUpdate').click());
+$('#btnSpvBack').addEventListener('click', () => setSpv(false));
 
 async function changeMonth(y, m) {
   if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
