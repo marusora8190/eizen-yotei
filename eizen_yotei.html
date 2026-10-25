@@ -184,6 +184,9 @@ body.real-mobile .spvbtn{display:none}
   .mnav{display:flex}
   nav,.navtoggle{display:none!important}
   #v-table .toolbar{display:none!important}
+  /* スマホで見る予定表：日付ごとの横の線・名前ごとの縦の線を、薄い灰色の線で見やすく（印刷には関係しない） */
+  .sheet table.yt th,.sheet table.yt td{border-left:1px solid #cfcfcf;border-right:1px solid #cfcfcf;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6}
+  .sheet table.yt td.half-l,.sheet table.yt th.half-l{border-left:1.5px solid #9a9a9a!important}
 }
 /* パソコンでも「📱 スマホ用の画面」に切り替えたとき（上の @media と同じ中身） */
 body.spv{background:#cfd5dd}
@@ -228,6 +231,9 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
   body.spv .mnav{display:flex}
   body.spv nav,body.spv .navtoggle{display:none!important}
   body.spv #v-table .toolbar{display:none!important}
+  /* スマホで見る予定表：日付ごとの横の線・名前ごとの縦の線を、薄い灰色の線で見やすく（印刷には関係しない） */
+  body.spv .sheet table.yt th,body.spv .sheet table.yt td{border-left:1px solid #cfcfcf;border-right:1px solid #cfcfcf;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6}
+  body.spv .sheet table.yt td.half-l,body.spv .sheet table.yt th.half-l{border-left:1.5px solid #9a9a9a!important}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
