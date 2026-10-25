@@ -187,6 +187,7 @@ body.real-mobile .spvbtn{display:none}
   /* スマホで見る予定表：日付ごとの横の線・名前ごとの縦の線を、薄い灰色の線で見やすく（印刷には関係しない） */
   .sheet table.yt th,.sheet table.yt td{border-left:1px solid #cfcfcf;border-right:1px solid #cfcfcf;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6}
   .sheet table.yt td.half-l,.sheet table.yt th.half-l{border-left:1.5px solid #9a9a9a!important}
+  #sheet{--stk:#9a9a9a}
 }
 /* パソコンでも「📱 スマホ用の画面」に切り替えたとき（上の @media と同じ中身） */
 body.spv{background:#cfd5dd}
@@ -234,6 +235,7 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
   /* スマホで見る予定表：日付ごとの横の線・名前ごとの縦の線を、薄い灰色の線で見やすく（印刷には関係しない） */
   body.spv .sheet table.yt th,body.spv .sheet table.yt td{border-left:1px solid #cfcfcf;border-right:1px solid #cfcfcf;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6}
   body.spv .sheet table.yt td.half-l,body.spv .sheet table.yt th.half-l{border-left:1.5px solid #9a9a9a!important}
+  body.spv #sheet{--stk:#9a9a9a}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
@@ -248,6 +250,19 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 
 /* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
+/* 予定表（画面）：名前の行と、左端の「日・曜日」の列を固定する（印刷には関係しない） */
+@media screen{
+  #v-table .sheet-wrap{overscroll-behavior:contain;padding:0}
+  #sheet{padding:14px;width:max-content;min-width:100%}
+  #sheet.solo-wrap{width:auto}
+  table.yt thead th{position:sticky;top:0;z-index:3;background:#fff;background-clip:padding-box;box-shadow:inset 0 -1px 0 var(--stk,#000)}
+  table.yt td.dn1,table.yt td.dw1{position:sticky;z-index:2;background:#fff;background-clip:padding-box}
+  table.yt td.dn1{left:0}
+  table.yt td.dw1{left:var(--dnw,7mm);box-shadow:inset -1px 0 0 var(--stk,#000)}
+  table.yt thead th.dh1{left:0;z-index:4;box-shadow:inset 0 -1px 0 var(--stk,#000),inset -1px 0 0 var(--stk,#000)}
+  .solo table.yt td.dn1,.solo table.yt td.dw1,.solo table.yt thead th.dh1{position:static;box-shadow:none}
+  .solo table.yt thead th.dh1{position:sticky}
+}
 .sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
 .sheet.a4l{width:287mm;height:200mm;padding:0}
 .ypage + .ypage{margin-top:14px}
@@ -337,7 +352,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   main{padding:0;margin:0}
   section{display:none!important}
   section.active{display:block!important}
-  .sheet-wrap{overflow:visible;border:0;padding:0;background:none;border-radius:0}
+  .sheet-wrap{overflow:visible;border:0;padding:0;background:none;border-radius:0;max-height:none!important}
   .sheet,.kpage,.mpage{box-shadow:none;margin:0}
   .kpage{break-after:page;page-break-after:always}
   .kpage:last-child{break-after:auto;page-break-after:auto}
@@ -1084,12 +1099,12 @@ function renderTable() {
   const tableW = sideW + pw * pc;
   let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
-  let head = `<th colspan="2" class="dh">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
   if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:1.4px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
-    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? '' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}">(${WD_JA[w]})</td>`;
+    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? ' dn1' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}${first ? ' dw1' : ''}">(${WD_JA[w]})</td>`;
     const cell1 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
       if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`;
@@ -1108,11 +1123,22 @@ function renderTable() {
   return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title">${monthTitle(y, m)} 予定表${pg}</div><table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   };
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
+  $('#sheet').classList.toggle('solo-wrap', solo);
+  fitTableBox();
   fitTexts($('#sheet'));
   snapToEdges($('#sheet'));
   drawArrows();
   $$('.hide-personal-note').forEach(n => (n.style.display = st.personal ? 'none' : ''));
 }
+// 予定表の枠の高さを、画面の下の端までにする（枠の中で上下・左右に動かすと、名前の行と日付の列が残る）
+function fitTableBox() {
+  const w = $('#v-table .sheet-wrap'); if (!w || st.view !== 'table') return;
+  w.style.maxHeight = '';
+  const top = w.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0);
+  w.style.maxHeight = Math.max(260, window.innerHeight - top - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0) - 12) + 'px';
+  const dn = $('#sheet td.dn1'); if (dn) $('#sheet').style.setProperty('--dnw', dn.getBoundingClientRect().width + 'px');
+}
+window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox(); });
 // 「〜日まで続く」予定の矢印（黒）。始まりの日のマスの下から、最後の日のマスの上まで
 function drawArrows() {
   const sheet = $('#sheet'); $$('.yarrow', sheet).forEach(a => a.remove());
