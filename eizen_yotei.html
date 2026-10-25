@@ -823,6 +823,9 @@ $('#mNext').addEventListener('click', () => changeMonth(...nextYM(st.y, st.m)));
 $('#mNextMonth').addEventListener('click', () => { const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1)); });
 $('#btnUpdate').addEventListener('click', () => {
   const p = new URLSearchParams(location.search); p.set('_', Date.now());
+  // 読み込み直したあとも、今の月・今の先生のままにする
+  if (st.y) p.set('m', ymStr(st.y, st.m));
+  if (st.inMember && !st.personal) p.set('t', st.inMember); else p.delete('t');
   location.href = location.pathname + '?' + p.toString() + location.hash;
 });
 
@@ -1566,6 +1569,13 @@ $('#msHolAdd').addEventListener('click', async () => {
     if (p && st.members.some(x => x.id === p)) {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
       $('#whoLabel').textContent = memberById(p).name + '先生';
+    }
+    const tq = Number(params.get('t'));
+    if (!st.personal && tq && st.members.some(x => x.id === tq)) st.inMember = tq;
+    // Update で付けた印（m・t・_）は、URLから消しておく（ブックマークしても、いつもの開き方になるように）
+    if (params.has('_') || params.has('t')) {
+      ['_', 't', 'm'].forEach(k => params.delete(k));
+      try { const q = params.toString(); history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch (e) {}
     }
     try { const { data } = await adminSb.auth.getSession(); if (data && data.session && data.session.user && data.session.user.email === ADMIN_EMAIL) setAdmin(true); } catch (e) {}
     await loadMonth();
