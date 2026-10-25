@@ -98,6 +98,21 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .slot input.is-red{color:var(--red);font-weight:700}
 .redbtn{flex:none;border:1px solid var(--line);background:#fff;color:#999;border-radius:5px;padding:4px 6px;font-size:12px}
 .redbtn.on{background:var(--red);border-color:var(--red);color:#fff}
+/* 1日分の予定のコピー・貼り付け */
+.cp{flex:none;display:flex;gap:4px}
+.cp .btn{padding:3px 8px;font-size:12.5px;white-space:nowrap}
+.cp .pst{display:none;background:#eef4ff;border-color:#9cb8e3;color:var(--accent);font-weight:700}
+body.has-clip .cp .pst{display:inline-block}
+.row.cp-src{outline:2px solid #9cb8e3;outline-offset:-2px;background:#eef4ff}
+#clipBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:55;background:#1f2933;color:#fff;border-radius:10px;padding:8px 10px 8px 14px;display:none;align-items:center;gap:10px;font-size:14px;max-width:min(680px,94vw);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+body.has-clip #clipBar{display:flex}
+#clipBar .cb-t{min-width:0;line-height:1.35}
+#clipBar .cb-t small{display:block;color:#cbd2da;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#clipBar .btn{flex:none;background:#fff;color:var(--ink)}
+.spvbtn{margin-top:6px;color:var(--ink)!important;font-size:13px}
+body.has-clip #toast{bottom:74px}
+body.spv #clipBar{max-width:410px}
+body.real-mobile .spvbtn{display:none}
 /* 「、」で区切った一部だけ赤字のとき */
 .redbtn.on.part{background:#fff;color:var(--red);font-weight:700}
 .slot input.is-part{border-left:4px solid var(--red)}
@@ -155,7 +170,51 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
   /* スマホで先生ごとのURLから予定表を見るときは、その先生の列だけ（印刷ボタンは出さない） */
   body.personal #btnPrintTable{display:none}
   body.personal #v-table .toolbar{display:none}
+  /* スマホ：メニューの帯は上に固定しない（予定を書く場所を広く）。先生・提出の欄を1段に */
+  nav{position:static}
+  header .inbar .sp{display:none}
+  header .inbar .status{flex:1 1 0;min-width:0;line-height:1.3}
+  header .inbar .btn{padding:4px 10px}
 }
+/* パソコンでも「📱 スマホ用の画面」に切り替えたとき（上の @media と同じ中身） */
+body.spv{background:#cfd5dd}
+body.spv header,body.spv .layout{max-width:430px;margin-left:auto;margin-right:auto}
+body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
+  body.spv .layout{display:block}
+  body.spv nav{width:auto;display:flex;flex-wrap:wrap;padding:4px;height:auto;align-self:auto}
+  body.spv nav a{padding:6px 10px;font-size:14px}
+  body.spv nav .sep{display:none}
+  body.spv main{padding:12px 10px 40px}
+  body.spv .monthbar{margin:-12px -10px 0;padding:10px 10px 8px}
+  body.spv .toolbar{position:static;box-shadow:none}
+  body.spv .row{flex-wrap:wrap}
+  body.spv .date{width:auto;flex:1}
+  body.spv .slots{flex-basis:100%;flex-direction:column;order:5}
+  body.spv .contnote{order:6;padding-left:0}
+  body.spv .slot .tag{width:2.6em}
+  body.spv .monthbar .mlabel{min-width:0;font-size:16px}
+  /* スマホ：月の切り替えを1段に、上の帯も小さく */
+  body.spv .monthbar{flex-wrap:nowrap;gap:6px;padding:6px 10px}
+  body.spv .monthbar .lg,body.spv .monthbar .msub{display:none}
+  body.spv .monthbar .btn{padding:4px 12px}
+  body.spv .monthbar .mlabel{flex:1;font-size:15px;white-space:nowrap}
+  body.spv header{padding:5px 10px;gap:8px}
+  body.spv header h1{font-size:16px}
+  body.spv header .btn{padding:4px 10px}
+  body.spv header .monthbar{flex-basis:100%;order:5}
+  body.spv header .inbar{flex-basis:100%;order:6;margin-left:0;flex-wrap:wrap;gap:4px 10px}
+  body.spv header .inbar .status{white-space:normal;font-size:13px}
+  body.spv .navupd{padding:4px;width:auto}
+  body.spv .navupd .btn{width:auto}
+  body.spv .navtoggle{font-size:16px}
+  /* スマホで先生ごとのURLから予定表を見るときは、その先生の列だけ（印刷ボタンは出さない） */
+  body.spv.personal #btnPrintTable{display:none}
+  body.spv.personal #v-table .toolbar{display:none}
+  /* スマホ：メニューの帯は上に固定しない（予定を書く場所を広く）。先生・提出の欄を1段に */
+  body.spv nav{position:static}
+  body.spv header .inbar .sp{display:none}
+  body.spv header .inbar .status{flex:1 1 0;min-width:0;line-height:1.3}
+  body.spv header .inbar .btn{padding:4px 10px}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
@@ -297,7 +356,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <a id="navAdminOpen" class="admin-open hide-personal">🔑 管理者メニュー</a>
   <a data-view="master" class="admin-only hide-personal">⚙️ マスター</a>
   <a id="navAdminClose" class="admin-only hide-personal">🔒 管理者メニューを閉じる</a>
-  <div class="navupd"><button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button></div>
+  <div class="navupd"><button class="btn upd" id="btnUpdate" title="最新の画面を読み込み直します">Update</button><button class="btn spvbtn" id="btnSpv" title="スマホ用の画面とパソコン用の画面を切り替えます">📱 スマホ用の画面</button></div>
 </nav>
 <main>
   <div id="loading">読み込み中…</div>
@@ -404,6 +463,8 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
+      <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
+      <li>パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ並びの画面になります（「🖥 パソコン用の画面」で戻ります）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -424,6 +485,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 </div>
 
 <div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="clipBar"><span class="cb-t" id="clipText"></span><button type="button" class="btn sm" id="clipCancel">やめる</button></div>
 <div id="toast"></div>
 
 <script>
@@ -672,13 +734,28 @@ const VIEWS = ['input', 'table', 'form', 'master', 'help'];
 // 上の帯・サイドバー・月の切り替え・ボタンの帯を、下にスクロールしても出たままにする
 function updSticky() {
   const r = document.documentElement.style, h = $('header').offsetHeight;
-  const mobile = window.matchMedia('(max-width:760px)').matches;
-  const st = h + (mobile ? $('#nav').offsetHeight : 0);
+  const mobile = isMobile();
+  const st = h; // スマホではメニューの帯は固定しないので、上の帯の高さだけ（mobile：スマホの並びかどうか）
+  void mobile;
   const mb = 0; // 月の切り替えは上の帯（header）の中にある
   r.setProperty('--hdr', h + 'px'); r.setProperty('--st', st + 'px'); r.setProperty('--mb', mb + 'px');
 }
 window.addEventListener('resize', updSticky);
-window.matchMedia('(max-width:760px)').addEventListener('change', () => { if (st.view === 'table' && st.personal) renderTable(); updSticky(); });
+// スマホの幅のとき、または「📱 スマホ用の画面」に切り替えているとき
+const MQ = window.matchMedia('(max-width:760px)');
+function isMobile() { return MQ.matches || document.body.classList.contains('spv'); }
+function setSpv(on) {
+  document.body.classList.toggle('spv', on);
+  $('#btnSpv').textContent = on ? '🖥 パソコン用の画面' : '📱 スマホ用の画面';
+  try { localStorage.setItem('yotei-spv', on ? '1' : ''); } catch (e) {}
+  if (st.view === 'table' && st.personal) renderTable();
+  updSticky(); window.scrollTo(0, 0);
+}
+$('#btnSpv').addEventListener('click', () => setSpv(!document.body.classList.contains('spv')));
+const markRealMobile = () => document.body.classList.toggle('real-mobile', MQ.matches);
+markRealMobile(); MQ.addEventListener('change', markRealMobile);
+try { if (localStorage.getItem('yotei-spv') === '1') { document.body.classList.add('spv'); $('#btnSpv').textContent = '🖥 パソコン用の画面'; } } catch (e) {}
+MQ.addEventListener('change', () => { if (st.view === 'table' && st.personal) renderTable(); updSticky(); });
 // サイドバーを隠す・出す（このパソコンのこのブラウザで覚えておく）
 function setNavHidden(on) {
   document.body.classList.toggle('nav-hidden', on);
@@ -750,12 +827,14 @@ function renderInput() {
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
+      <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button></span>
       <span class="sv"></span>
       <div class="contnote"></div>
     </div>`;
   }
   $('#inRows').innerHTML = html;
   initRedBtns($('#inRows'));
+  markClipSrc();
   updateContNotes();
 }
 function renderInputStatus() {
@@ -852,7 +931,40 @@ $('#inRows').addEventListener('change', e => {
     scheduleSave(row, 0);
   }
 });
+// ===== 1日分の予定のコピー・貼り付け（予定の文字・赤字・終日だけ。昼食・「〜日まで続く」・位置・大きさは写さない） =====
+let clip = null;
+function slotVal(row, k) { const s = $(`.slot[data-k="${k}"]`, row), b = $('.redbtn', s); return { t: $('input', s).value.trim(), on: b.classList.contains('on'), parts: redPartsOf(b) }; }
+function clipLabel(c) { return c.isAd ? c.ad.t : [c.am.t && '午前：' + c.am.t, c.pm.t && '午後：' + c.pm.t].filter(Boolean).join('　'); }
+function markClipSrc() { $$('#inRows .row').forEach(r => r.classList.toggle('cp-src', !!clip && clip.mid === st.inMember && clip.day === r.dataset.day)); }
+function clearClip() { clip = null; document.body.classList.remove('has-clip'); markClipSrc(); }
+$('#clipCancel').addEventListener('click', clearClip);
+function copyRow(row) {
+  const isAd = $('.adcb', row).checked;
+  const c = { mid: st.inMember, day: row.dataset.day, d: Number(row.dataset.d), isAd, am: slotVal(row, 'am'), pm: slotVal(row, 'pm'), ad: slotVal(row, 'allday') };
+  if (!clipLabel(c)) { toast('この日には予定が書かれていません'); return; }
+  clip = c;
+  $('#clipText').innerHTML = `📋 ${c.d}日の予定をコピーしました。写し先の日の「貼り付け」を押してください<small>${esc(clipLabel(c))}</small>`;
+  document.body.classList.add('has-clip'); markClipSrc();
+}
+function pasteRow(row) {
+  if (!clip) return;
+  if (clip.mid === st.inMember && clip.day === row.dataset.day) { toast('コピーした日と同じ日です'); return; }
+  const cur = rowData(row), had = cur.allday || cur.am || cur.pm;
+  if (had && !confirm(`${row.dataset.d}日の予定を、コピーした予定に書き換えます。よろしいですか？`)) return;
+  const put = (k, v) => {
+    const s = $(`.slot[data-k="${k}"]`, row), inp = $('input', s), b = $('.redbtn', s), u = $('.until', s);
+    inp.value = v ? v.t : ''; u.value = ''; u.classList.remove('set');
+    if (v && v.t) { b.dataset.manual = '1'; setRed(b, inp, v.on, v.parts); } else { delete b.dataset.manual; setRed(b, inp, false, []); }
+  };
+  $('.adcb', row).checked = clip.isAd; row.classList.toggle('is-allday', clip.isAd);
+  if (clip.isAd) { put('allday', clip.ad); put('am', null); put('pm', null); }
+  else { put('am', clip.am); put('pm', clip.pm); put('allday', null); }
+  scheduleSave(row, 0);
+  toast(`${row.dataset.d}日に貼り付けました`);
+}
 $('#inRows').addEventListener('click', e => {
+  const cb = e.target.closest('.cpy, .pst');
+  if (cb) { const row = cb.closest('.row'); cb.classList.contains('cpy') ? copyRow(row) : pasteRow(row); return; }
   const btn = e.target.closest('.redbtn');
   if (btn) {
     const row = btn.closest('.row');
@@ -894,7 +1006,7 @@ function renderTable() {
   const titleH = 7, headH = 5.5, avail = 200 - titleH - headH - 1.5;
   const rowH = Math.min(5.2, avail / (nd * 2));
   // スマホで先生ごとのURLを開いているときは、その先生の列だけを、画面の幅に合わせて出す
-  const solo = !!st.personal && window.matchMedia('(max-width:760px)').matches;
+  const solo = !!st.personal && isMobile();
   const groups = [];
   if (solo) groups.push([memberById(st.personal)]);
   else for (let i = 0; i < st.members.length; i += PER_PAGE) groups.push(st.members.slice(i, i + PER_PAGE));
