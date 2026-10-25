@@ -792,6 +792,20 @@ function updSticky() {
   r.setProperty('--hdr', h + 'px'); r.setProperty('--st', st + 'px'); r.setProperty('--mb', mb + 'px');
 }
 window.addEventListener('resize', updSticky);
+// スマホ（とくにiPhone）でキーボードが出ると、画面全体が上にずれて、上の帯（月・先生・提出）が隠れることがある。
+// そのときは、見えている所のいちばん上に上の帯を合わせる
+(function keepHeaderOnKeyboard() {
+  const vv = window.visualViewport; if (!vv) return;
+  let raf = 0;
+  const fix = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const off = isMobile() ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+      $('header').style.top = off ? off + 'px' : '';
+    });
+  };
+  vv.addEventListener('resize', fix); vv.addEventListener('scroll', fix); window.addEventListener('scroll', fix, { passive: true });
+})();
 // スマホの幅のとき、または「📱 スマホ用の画面」に切り替えているとき
 const MQ = window.matchMedia('(max-width:760px)');
 function isMobile() { return MQ.matches || document.body.classList.contains('spv'); }
