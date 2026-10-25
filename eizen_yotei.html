@@ -255,13 +255,15 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
   #v-table .sheet-wrap{overscroll-behavior:contain;padding:0}
   #sheet{padding:14px;width:max-content;min-width:100%}
   #sheet.solo-wrap{width:auto}
-  table.yt thead th{position:sticky;top:0;z-index:3;background:#fff;background-clip:padding-box;box-shadow:inset 0 -1px 0 var(--stk,#000)}
+  .ypage .s-title{position:sticky;top:0;z-index:5;background:#fff}
+  .ypage .s-tt{position:sticky;left:1mm}
+  table.yt thead th{position:sticky;top:calc(var(--tth,7mm) - 1px);z-index:3;background:#fff;background-clip:padding-box;box-shadow:inset 0 -1px 0 var(--stk,#000)}
   table.yt td.dn1,table.yt td.dw1{position:sticky;z-index:2;background:#fff;background-clip:padding-box}
   table.yt td.dn1{left:0}
   table.yt td.dw1{left:var(--dnw,7mm);box-shadow:inset -1px 0 0 var(--stk,#000)}
   table.yt thead th.dh1{left:0;z-index:4;box-shadow:inset 0 -1px 0 var(--stk,#000),inset -1px 0 0 var(--stk,#000)}
   .solo table.yt td.dn1,.solo table.yt td.dw1,.solo table.yt thead th.dh1{position:static;box-shadow:none}
-  .solo table.yt thead th.dh1{position:sticky}
+  .solo table.yt thead th.dh1{position:sticky;box-shadow:inset 0 -1px 0 var(--stk,#000)}
 }
 .sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
 .sheet.a4l{width:287mm;height:200mm;padding:0}
@@ -1120,7 +1122,7 @@ function renderTable() {
     body += `<tr style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
   }
   const pg = groups.length > 1 ? `<span class="s-page">（${pageNo}／${groups.length}）</span>` : '';
-  return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title">${monthTitle(y, m)} 予定表${pg}</div><table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div><table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
   };
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
   $('#sheet').classList.toggle('solo-wrap', solo);
@@ -1137,6 +1139,7 @@ function fitTableBox() {
   const top = w.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0);
   w.style.maxHeight = Math.max(260, window.innerHeight - top - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0) - 12) + 'px';
   const dn = $('#sheet td.dn1'); if (dn) $('#sheet').style.setProperty('--dnw', dn.getBoundingClientRect().width + 'px');
+  const tt = $('#sheet .s-title'); if (tt) $('#sheet').style.setProperty('--tth', tt.getBoundingClientRect().height + 'px');
 }
 window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox(); });
 // 「〜日まで続く」予定の矢印（黒）。始まりの日のマスの下から、最後の日のマスの上まで
