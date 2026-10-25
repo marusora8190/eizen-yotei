@@ -885,7 +885,7 @@ function renderInputStatus() {
   if (s) {
     const t = new Date(s.submitted_at);
     el.className = 'status done';
-    el.innerHTML = `${who}提出済み（${t.getMonth() + 1}月${t.getDate()}日 ${pad(t.getHours())}:${pad(t.getMinutes())}）<span style="font-weight:400;color:var(--sub)">　提出のあとも直せます</span>`;
+    el.innerHTML = `<span title="提出：${t.getMonth() + 1}月${t.getDate()}日 ${pad(t.getHours())}:${pad(t.getMinutes())}（提出のあとも直せます）">${who}提出済${t.getMonth() + 1}/${t.getDate()}</span>`;
     $('#btnSubmit').textContent = '再提出';
   } else {
     el.className = 'status not';
