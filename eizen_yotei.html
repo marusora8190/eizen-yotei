@@ -634,6 +634,10 @@ function initRedBtns(root) {
 function closeRedPick() { const b = $('#redPick'); if (b) b.remove(); }
 document.addEventListener('mousedown', ev => { if (!ev.target.closest('#redPick') && !ev.target.closest('.redbtn')) closeRedPick(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeRedPick(); });
+// 予定の欄で「完了」（Enter）を押したら、キーボードを閉じるだけにする（次の「当日だけ」などへ移らない）
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && !ev.isComposing && ev.keyCode !== 229 && ev.target.matches('.slot input[type=text]')) { ev.preventDefault(); ev.target.blur(); }
+});
 // 午前・午後をまとめて終日にするときの赤字（どちらかが一部だけ・片方だけ赤なら、その部分だけ赤字）
 function mergeRed(items, text) {
   const all = textParts(text), red = new Set();
@@ -857,7 +861,7 @@ function renderInput() {
     const e = effEntry(mem.id, day);
     const isAd = !!e.allday;
     const cls = ['row', w === 0 ? 'sun' : w === 6 ? 'sat' : '', hol ? 'hol' : '', isAd ? 'is-allday' : ''].join(' ');
-    const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}" title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
+    const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off" enterkeyhint="done"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}" title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
@@ -870,6 +874,8 @@ function renderInput() {
   }
   $('#inRows').innerHTML = html;
   initRedBtns($('#inRows'));
+  // スマホでは、キーボードの「次へ」で「赤」「当日だけ」に移らないようにする（押せばふつうに使える）
+  if (isMobile()) $$('#inRows .until, #inRows .redbtn, #inRows .mealsel, #inRows .adcb').forEach(x => x.tabIndex = -1);
   markClipSrc();
   updateContNotes();
 }
@@ -1212,7 +1218,7 @@ function openEntryEditor(mid, day, clickX) {
   const mem = memberById(mid), e = effEntry(mid, day);
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
-  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
+  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" enterkeyhint="done" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
     <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印をマスの真ん中にする">真ん中</button></div>`;
