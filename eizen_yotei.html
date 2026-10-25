@@ -1184,7 +1184,10 @@ function drawArrows() {
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     // 矢印は、始まりの日の予定の1文字目（AM・PM のすぐあとの文字）のまん中から引く。文字が見つからないときはマスのまん中
     const rt = firstCharRect($('.tx', a)) || ra;
-    const x = (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
+    // 左右に動かしても、その先生の列（マス）の中に収める（日付の列などの下に隠れないように）
+    const xRaw = (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM;
+    const xMin = (ra.left - base.left) * MM + 0.8, xMax = (ra.right - base.left) * MM - 0.8;
+    const x = Math.max(xMin, Math.min(xMax, xRaw)), y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
     if (y2 - y1 < 1) continue;
     // 途中の日に別の予定があるときは、その文字のところだけ線を切って、文字をよける
     const gaps = [];
