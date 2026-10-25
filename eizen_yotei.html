@@ -1157,7 +1157,9 @@ function drawArrows() {
     if (!a || !b) continue;
     const page = a.closest('.ypage'), base = page.getBoundingClientRect();
     const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    const x = (ra.left + ra.width / 2 - base.left) * MM + c.arrow * INDENT_MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
+    // 矢印は、始まりの日の予定の文字（AM・PM のあとの文字）のまん中から引く。文字が見つからないときはマスのまん中
+    const tx = $('.tx', a), rt = tx && tx.getBoundingClientRect().width > 0 ? tx.getBoundingClientRect() : ra;
+    const x = (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM, y1 = (ra.bottom - base.top) * MM + 0.3, y2 = (rb.top - base.top) * MM - 0.2;
     if (y2 - y1 < 1) continue;
     // 途中の日に別の予定があるときは、その文字のところだけ線を切って、文字をよける
     const gaps = [];
@@ -1256,7 +1258,7 @@ function openEntryEditor(mid, day, clickX) {
   const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" enterkeyhint="done" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
     <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
-    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印をマスの真ん中にする">真ん中</button></div>`;
+    <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の文字の真ん中にする">真ん中</button></div>`;
   openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
