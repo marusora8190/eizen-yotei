@@ -312,6 +312,14 @@ table.yt td.half-l{border-left:0.6px solid #000}
 /* 縦の罫線は、どれも右側の欄の左の罫線だけで描く（2つの欄の線が重ならないので、どの線も同じ太さ・午前と午後で途切れない）。いちばん右の先生の欄だけ右の罫線（表の右端）も描く */
 table.yt th,table.yt td{border-right:0}
 table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
+/* 印刷のときの縦の罫線（renderTable の vlines）：画面では出さない */
+.ytw{position:relative}
+.vlines{display:none}
+@media print{
+  .ytw .vlines{display:block;position:absolute;left:0;top:0;bottom:0;width:0;pointer-events:none;z-index:1}
+  .ytw .vlines i{position:absolute;top:0;bottom:0;width:0;border-left:0.6px solid #000;margin-left:-0.3px}
+  .ytw table.yt th,.ytw table.yt td{border-left:0!important;border-right:0!important}
+}
 
 /* ===== 記入表（A4横） ===== */
 .kpage{width:281mm;height:194mm;background:#fff;color:#000;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif;display:flex;flex-direction:column}
@@ -1182,7 +1190,16 @@ function renderTable() {
     body += `<tr style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
   }
   const pg = groups.length > 1 ? `<span class="s-page">（${pageNo}／${groups.length}）</span>` : '';
-  return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div><table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  const tbl = `<table class="yt" style="width:${solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  // 印刷のときの縦の罫線：マスの線ではなく、表の上から下まで1本ずつの線で描く（どの線も同じ描き方になり、プリンターで太さがそろう）
+  let vl = '';
+  if (!solo) {
+    const xs = [0]; let x = dw + ww; xs.push(x);
+    L.forEach(() => { x += pw; xs.push(x); });
+    if (R.length) { x += dw + ww; xs.push(x); R.forEach(() => { x += pw; xs.push(x); }); }
+    vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}</div>`;
+  }
+  return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div>${solo ? tbl : `<div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div>`}</div>`;
   };
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
   $('#sheet').classList.toggle('solo-wrap', solo);
