@@ -523,7 +523,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
-      <li>マスターで「昼食」にチェックした先生（今は今村・増野先生）は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています。いらない日だけ「✖」を選びます。</li>
+      <li>マスターで「昼食」にチェックした先生（今は今村・増野先生）は、日付の右の「昼食」の欄が、はじめは「○」（いる）になっています（日曜・祝日と、年末年始の12月28日〜1月4日は、はじめから「✖」〔いらない〕）。はじめと違う日だけ選び直します。</li>
     </ul>
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。先生ごとのURLでも「記入表の印刷」が使え、その先生の記入表だけを印刷できます。</p>
@@ -569,7 +569,17 @@ const dim = (y, m) => new Date(y, m, 0).getDate();
 const wdOf = (y, m, d) => new Date(y, m - 1, d).getDay();
 const WD_JA = ['日', '月', '火', '水', '木', '金', '土'];
 const reiki = y => y - 1837;
-const mealMark = v => (v === '不要' ? '✖' : '○'); // 昼食：何も入っていなければ「○」（いる）
+// 昼食：何も入っていなければ、ふつうの日は「○」（いる）、日曜・祝日と年末年始（12月28日〜1月4日）は「✖」（いらない）
+// データベースには、その日のはじめの値と違うときだけ「要」「不要」を入れる（はじめの値と同じときは空）
+function mealOffDay(day) {
+  const [y, m, d] = String(day).split('-').map(Number);
+  if (!y) return false;
+  return wdOf(y, m, d) === 0 || st.holidays.has(day) || (m === 12 && d >= 28) || (m === 1 && d <= 4);
+}
+const mealDefault = day => (mealOffDay(day) ? '不要' : '要');
+const mealVal = (v, day) => (v === '要' || v === '不要' ? v : mealDefault(day)); // その日の昼食（要／不要）
+const mealSave = (v, day) => (!v || v === mealDefault(day) ? null : v); // 保存する値（はじめの値と同じなら空）
+const mealMark = (v, day) => (mealVal(v, day) === '不要' ? '✖' : '○');
 // マスターの「行事」。終日・午前・午後ごとに、その月だけの行事があれば、同じ日の「毎月」の行事より優先する
 // 終日の行事がある日は、午前・午後の行事は出さない
 const EV_SLOTS = { allday: '終日', am: '午前', pm: '午後' };
@@ -913,7 +923,7 @@ function renderInput() {
     const slot = (k, tag, val, red, until) => `<div class="slot slot-${k === 'allday' ? 'ad' : k}" data-k="${k}"><span class="tag">${tag}</span><input type="text" value="${esc(val || '')}" class="${red ? 'is-red' : ''}" autocomplete="off" enterkeyhint="done"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}" title="予定表で赤字にする">赤</button>${untilSelect(k, day, until)}</div>`;
     html += `<div class="${cls}" data-day="${day}" data-d="${d}">
       <div class="date">${d}<small>(${WD_JA[w]})</small>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}</div>
-      ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${e.meal === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="">○</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
+      ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${mealVal(e.meal, day) === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="要">○</option><option value="不要" ${mealVal(e.meal, day) === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
       <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button></span>
@@ -956,7 +966,7 @@ function rowData(row) {
   const isAd = $('.adcb', row).checked;
   const v = k => { const s = $(`.slot[data-k="${k}"]`, row), b = $('.redbtn', s); return { t: $('input', s).value.trim(), r: b.classList.contains('on'), p: redPartsOf(b).join('\n') || null, u: $('.until', s).value || null }; };
   const am = v('am'), pm = v('pm'), ad = v('allday');
-  const meal = $('.mealsel', row) ? $('.mealsel', row).value : (getEntry(st.inMember, row.dataset.day) || {}).meal || null;
+  const meal = $('.mealsel', row) ? mealSave($('.mealsel', row).value, row.dataset.day) : (getEntry(st.inMember, row.dataset.day) || {}).meal || null;
   return isAd ? { allday: ad.t, allday_red: ad.r, allday_red_parts: ad.p, allday_until: ad.u, meal } : { am: am.t, am_red: am.r, am_red_parts: am.p, am_until: am.u, pm: pm.t, pm_red: pm.r, pm_red_parts: pm.p, pm_until: pm.u, meal };
 }
 const rowTimers = new WeakMap();
@@ -1381,7 +1391,7 @@ function openEntryEditor(mid, day, clickX) {
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
     <p class="note" style="margin:4px 0 0">右の「当日だけ」を「〜○日」にすると、その日まで続く予定として、予定表に矢印が出ます。</p>
     <div class="marrows" id="edArrows"></div>
-    ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="">○（いる）</option><option value="不要" ${e.meal === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
+    ${mem.meal_survey ? `<div style="margin-top:8px">昼食：<select id="edMeal"><option value="要">○（いる）</option><option value="不要" ${mealVal(e.meal, day) === '不要' ? 'selected' : ''}>✖（いらない）</option></select></div>` : ''}
     ${eventFor(day) ? `<p class="note" style="margin:6px 0 0">この日の行事：「${esc(eventFor(day).text)}」（予定が空いているときは、その欄にはじめから入ります。消すと、この先生だけ出なくなります）</p>` : ''}
     <div class="acts"><button class="btn" id="edCancel">やめる</button><button class="btn pri" id="edSave">保存</button></div>`);
   const box = $('#modalBox');
@@ -1391,7 +1401,7 @@ function openEntryEditor(mid, day, clickX) {
   $('#modal').classList.add('side', clickX != null && clickX > window.innerWidth / 2 ? 'left' : 'right');
   const g = sel => { const s = $(sel), k = s.dataset.k; return { t: $('input', s).value.trim(), r: $('.redbtn', s).classList.contains('on'), p: redPartsOf($('.redbtn', s)).join('\n') || null, u: $('.until', s).value || null, i: Number($(`.indrow[data-k="${k}"][data-f="indent"] .indv`, box).dataset.v) || 0, z: Number($(`.indrow[data-k="${k}"][data-f="size"] .indv`, box).dataset.v) || 0, w: Number($(`.indrow[data-k="${k}"][data-f="arrow"] .indv`, box).dataset.v) || 0, at: Number($(`.indrow[data-k="${k}"][data-f="arrow_top"] .indv`, box).dataset.v) || 0, ab: Number($(`.indrow[data-k="${k}"][data-f="arrow_bot"] .indv`, box).dataset.v) || 0 }; };
   const collect = () => {
-    const meal = $('#edMeal') ? $('#edMeal').value : (e.meal || null);
+    const meal = $('#edMeal') ? mealSave($('#edMeal').value, day) : (e.meal || null);
     return $('#edAd').checked ? (o => ({ allday: o.t, allday_red: o.r, allday_red_parts: o.p, allday_until: o.u, allday_indent: o.i, allday_size: o.z, allday_arrow: o.w, allday_arrow_top: o.at, allday_arrow_bot: o.ab, meal }))(g('#edAllday .slot'))
       : (() => { const a = g('#edNormal .slot[data-k="am"]'), p = g('#edNormal .slot[data-k="pm"]'); return { am: a.t, am_red: a.r, am_red_parts: a.p, am_until: a.u, am_indent: a.i, am_size: a.z, am_arrow: a.w, am_arrow_top: a.at, am_arrow_bot: a.ab, pm: p.t, pm_red: p.r, pm_red_parts: p.p, pm_until: p.u, pm_indent: p.i, pm_size: p.z, pm_arrow: p.w, pm_arrow_top: p.at, pm_arrow_bot: p.ab, meal }; })();
   };
@@ -1500,7 +1510,7 @@ function renderForm() {
           am = e.am ? `<td class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
           pm = e.pm ? `<td class="kt${e.pm_red && !e.pm_red_parts ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
         }
-        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal) : ''}</td>` : ''}${ad || am + pm}</tr>`;
+        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal, day) : ''}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
