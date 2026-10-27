@@ -260,6 +260,11 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 
 /* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
+/* 予定表をマウスでつかんで動かす（マジックハンド。2026年10月27日〜）。マスの上はクリックで直せるので指の形のまま */
+@media screen{
+  #v-table .sheet-wrap{cursor:grab}
+  #v-table .sheet-wrap.grabbing,#v-table .sheet-wrap.grabbing *{cursor:grabbing!important;user-select:none}
+}
 /* 予定表（画面）：名前の行と、左端の「日・曜日」の列を固定する（印刷には関係しない） */
 @media screen{
   #v-table .sheet-wrap{overscroll-behavior:contain;padding:0}
@@ -527,6 +532,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ画面になります（上の「🖥」で戻ります）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
+      <li>予定表は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます（パソコン用・スマホ用の画面のどちらでも）。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
@@ -1202,6 +1208,41 @@ function fitTableBox() {
   const tt = $('#sheet .s-title'); if (tt) $('#sheet').style.setProperty('--tth', tt.getBoundingClientRect().height + 'px');
 }
 window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox(); });
+// 予定表をマウスでつかんで動かす（マジックハンド。2026年10月27日〜）。パソコン用・スマホ用の画面のどちらでも。
+// 少し（5px）動かしたらつかんで動かす形になり、そのときはマスのクリック（直し画面）は開かない。
+// 指で触る画面（スマホ・タブレット）は、もとからブラウザーの動きで動くので、マウスのときだけ。
+(function () {
+  const w = $('#v-table .sheet-wrap'); if (!w) return;
+  let down = null, moved = false;
+  w.addEventListener('pointerdown', e => {
+    moved = false;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (e.target.closest('button,input,select,textarea,a,label')) return;
+    down = { x: e.clientX, y: e.clientY, sl: w.scrollLeft, st: w.scrollTop, wy: window.scrollY, id: e.pointerId };
+  });
+  w.addEventListener('pointermove', e => {
+    if (!down || e.pointerId !== down.id) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (!moved) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      moved = true; w.classList.add('grabbing');
+      try { w.setPointerCapture(down.id); } catch (_) {}
+      try { window.getSelection().removeAllRanges(); } catch (_) {}
+    }
+    e.preventDefault();
+    w.scrollLeft = down.sl - dx;
+    // 枠の中で上下に動かせないとき（予定表が枠に収まっているとき）は、画面全体を上下に動かす
+    if (w.scrollHeight > w.clientHeight + 1) w.scrollTop = down.st - dy;
+    else window.scrollTo(window.scrollX, down.wy - dy);
+  });
+  const end = () => { if (!down) return; try { w.releasePointerCapture(down.id); } catch (_) {} down = null; w.classList.remove('grabbing'); };
+  w.addEventListener('pointerup', end);
+  w.addEventListener('pointercancel', end);
+  w.addEventListener('lostpointercapture', end);
+  // つかんで動かしたあとのクリックは、マスの直し画面を開かない
+  w.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  w.addEventListener('dragstart', e => e.preventDefault());
+})();
 // 「〜日まで続く」予定の矢印（黒）。始まりの日のマスの下から、最後の日のマスの上まで
 function drawArrows() {
   const sheet = $('#sheet'); $$('.yarrow', sheet).forEach(a => a.remove());
