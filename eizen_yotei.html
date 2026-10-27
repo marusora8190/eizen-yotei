@@ -532,6 +532,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。パソコンでも、サイドバーの「📱 スマホ用の画面」を押すと、スマホと同じ画面になります（上の「🖥」で戻ります）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
+      <li>予定入力の「○○先生」で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
       <li>予定表は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます（パソコン用・スマホ用の画面のどちらでも）。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -1085,7 +1086,10 @@ $('#inRows').addEventListener('click', e => {
     pressRed(btn, $('input', btn.closest('.slot')), () => scheduleSave(row, 0)); return;
   }
 });
-$('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value); renderInput(); });
+$('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value);
+  // 選んだ先生を、この端末（ブラウザー）に覚えておき、次に開いたときもその先生にする（2026年10月27日〜。先生ごとのURLでは使わない）
+  if (!st.personal) { try { localStorage.setItem('yotei-in-member', String(st.inMember)); } catch (e) {} }
+  renderInput(); });
 $('#btnSubmit').addEventListener('click', async () => {
   if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
   const mem = memberById(st.inMember);
@@ -1803,6 +1807,8 @@ $('#msHolAdd').addEventListener('click', async () => {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
       $('#whoLabel').textContent = memberById(p).name + '先生';
     }
+    // 前にこの端末で選んでいた先生（予定入力の「○○先生」）。いなくなった先生なら、いつもの最初の先生
+    if (!st.personal) { try { const sm = Number(localStorage.getItem('yotei-in-member')); if (sm && st.members.some(x => x.id === sm)) st.inMember = sm; } catch (e) {} }
     const tq = Number(params.get('t'));
     if (!st.personal && tq && st.members.some(x => x.id === tq)) st.inMember = tq;
     // Update で付けた印（m・t・_）は、URLから消しておく（ブックマークしても、いつもの開き方になるように）
