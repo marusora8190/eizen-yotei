@@ -297,7 +297,8 @@ table.yt td.c .ap{font-size:4.5pt}
 table.yt .r{color:var(--red)}
 table.yt td.c.editable{cursor:pointer}
 table.yt td.c.editable:hover{background:#eef4ff}
-table.yt td.half-l{border-left:1.4px solid #000}
+/* 左右の半分の境目（植谷と日・曜日の間）も、ほかの縦の罫線と同じ太さ */
+table.yt td.half-l{border-left:0.6px solid #000}
 
 /* ===== 記入表（A4横） ===== */
 .kpage{width:281mm;height:194mm;background:#fff;color:#000;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif;display:flex;flex-direction:column}
@@ -1095,7 +1096,8 @@ function renderTable() {
     return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${esc(x.name)}</span>`;
   }).join(' ');
   const editable = !st.personal;
-  const W = 287, dw = 7, ww = 6.5;
+  // 表の幅は紙の幅（287mm）より少しだけ狭く。ちょうどだと、印刷のときにいちばん右の縦の罫線の半分が切れて細くなるため
+  const W = 286.4, dw = 7, ww = 6.5;
   const titleH = 7, headH = 5.5, avail = 200 - titleH - headH - 1.5;
   const rowH = Math.min(5.2, avail / (nd * 2));
   // スマホで先生ごとのURLを開いているときは、その先生の列だけを、画面の幅に合わせて出す
@@ -1130,7 +1132,7 @@ function renderTable() {
   let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
   let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
-  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:1.4px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
