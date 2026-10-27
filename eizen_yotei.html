@@ -299,7 +299,9 @@ table.yt td.c.editable{cursor:pointer}
 table.yt td.c.editable:hover{background:#eef4ff}
 /* 左右の半分の境目（植谷と日・曜日の間）も、ほかの縦の罫線と同じ太さ。線は右半分の「日」の欄だけで描く（左の先生の欄の右の罫線は描かない） */
 table.yt td.half-l{border-left:0.6px solid #000}
-table.yt td.lend,table.yt th.lend{border-right:0}
+/* 縦の罫線は、どれも右側の欄の左の罫線だけで描く（2つの欄の線が重ならないので、どの線も同じ太さ・午前と午後で途切れない）。いちばん右の先生の欄だけ右の罫線（表の右端）も描く */
+table.yt th,table.yt td{border-right:0}
+table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 
 /* ===== 記入表（A4横） ===== */
 .kpage{width:281mm;height:194mm;background:#fff;color:#000;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif;display:flex;flex-direction:column}
@@ -1142,14 +1144,14 @@ function renderTable() {
   const tableW = sideW + pw * pc;
   let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
-  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${R.length && i === L.length - 1 ? ' class="lend"' : ''}>${esc(x.header_name)}</th>`).join('');
-  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${!R.length && i === L.length - 1 ? ' class="redge"' : ''}>${esc(x.header_name)}</th>`).join('');
+  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map((x, i) => `<th${i === R.length - 1 ? ' class="redge"' : ''}>${esc(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
     const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? ' dn1' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}${first ? ' dw1' : ''}">(${WD_JA[w]})</td>`;
-    // 左半分のいちばん右の先生（右半分があるとき）：右の罫線は描かず、右半分の「日」の欄の左の罫線だけにする（午前・午後で線の太さが変わって見えないように）
-    const le = x => (R.length && x === L[L.length - 1] ? ' lend' : '');
+    // いちばん右の先生の欄だけ、右の罫線（表の右端）を描く
+    const le = x => (x === (R.length ? R[R.length - 1] : L[L.length - 1]) ? ' redge' : '');
     const cell1 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
       if (e.allday) return `<td rowspan="2" class="c ad${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`;
