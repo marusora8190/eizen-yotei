@@ -297,8 +297,9 @@ table.yt td.c .ap{font-size:4.5pt}
 table.yt .r{color:var(--red)}
 table.yt td.c.editable{cursor:pointer}
 table.yt td.c.editable:hover{background:#eef4ff}
-/* 左右の半分の境目（植谷と日・曜日の間）も、ほかの縦の罫線と同じ太さ */
+/* 左右の半分の境目（植谷と日・曜日の間）も、ほかの縦の罫線と同じ太さ。線は右半分の「日」の欄だけで描く（左の先生の欄の右の罫線は描かない） */
 table.yt td.half-l{border-left:0.6px solid #000}
+table.yt td.lend,table.yt th.lend{border-right:0}
 
 /* ===== 記入表（A4横） ===== */
 .kpage{width:281mm;height:194mm;background:#fff;color:#000;margin:0 auto 14px;box-shadow:0 1px 4px rgba(0,0,0,.15);padding:0;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif;display:flex;flex-direction:column}
@@ -1141,21 +1142,23 @@ function renderTable() {
   const tableW = sideW + pw * pc;
   let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
-  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map(x => `<th>${esc(x.header_name)}</th>`).join('');
+  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${R.length && i === L.length - 1 ? ' class="lend"' : ''}>${esc(x.header_name)}</th>`).join('');
   if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map(x => `<th>${esc(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
     const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? ' dn1' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}${first ? ' dw1' : ''}">(${WD_JA[w]})</td>`;
+    // 左半分のいちばん右の先生（右半分があるとき）：右の罫線は描かず、右半分の「日」の欄の左の罫線だけにする（午前・午後で線の太さが変わって見えないように）
+    const le = x => (R.length && x === L[L.length - 1] ? ' lend' : '');
     const cell1 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
-      if (e.allday) return `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`;
-      return `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size, e.am_red_parts)}</div></td>`;
+      if (e.allday) return `<td rowspan="2" class="c ad${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`;
+      return `<td class="c am${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size, e.am_red_parts)}</div></td>`;
     };
     const cell2 = x => {
       const e = withEnds(x.id, day), ed = editable ? ' editable' : '';
       if (e.allday) return '';
-      return `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`;
+      return `<td class="c pm${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`;
     };
     const rh = solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
     body += `<tr style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
