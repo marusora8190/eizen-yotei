@@ -319,6 +319,12 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
   .ytw .vlines{display:block;position:absolute;left:0;top:0;bottom:0;width:0;pointer-events:none;z-index:1}
   .ytw .vlines i{position:absolute;top:0;bottom:0;width:0;border-left:0.6px solid #000;margin-left:-0.3px}
   .ytw table.yt th,.ytw table.yt td{border-left:0!important;border-right:0!important}
+  .ytw .vlines b{position:absolute;left:0;height:0;border-top:0.6px solid #000;margin-top:-0.3px;margin-left:-0.3px}
+  .ytw .vlines b.ht{top:0}
+  .ytw .vlines b.hb{bottom:0;margin-top:0;margin-bottom:-0.3px}
+  .ytw table.yt{border-top:0!important;border-bottom:0!important}
+  .ytw table.yt thead th{border-top:0!important}
+  .ytw table.yt tbody tr:nth-last-child(-n+2) td{border-bottom:0!important}
 }
 
 /* ===== 記入表（A4横） ===== */
@@ -1197,7 +1203,8 @@ function renderTable() {
     const xs = [0]; let x = dw + ww; xs.push(x);
     L.forEach(() => { x += pw; xs.push(x); });
     if (R.length) { x += dw + ww; xs.push(x); R.forEach(() => { x += pw; xs.push(x); }); }
-    vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}</div>`;
+    // 外わくのいちばん上・いちばん下の線も、同じ描き方の1本の線にする
+    vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}<b class="ht" style="width:calc(${tableW}mm + 0.6px)"></b><b class="hb" style="width:calc(${tableW}mm + 0.6px)"></b></div>`;
   }
   return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div>${solo ? tbl : `<div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div>`}</div>`;
   };
