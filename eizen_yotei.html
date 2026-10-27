@@ -1082,8 +1082,11 @@ function cellText(t, red, prefix, indent, size, parts) {
   const mv = indent ? ` style="position:relative;left:${indent * INDENT_MM}mm"` : '';
   const sz = size ? ` style="font-size:${(1 + size * 0.1).toFixed(2)}em"` : '';
   const part = red && parts;
-  return `<span class="${red && !part ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${redHtml(t, red, parts)}</span></span>`;
+  return `<span class="${red && !part ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${smallWords(redHtml(t, red, parts))}</span></span>`;
 }
+// 予定表では「委員会」「会議」の文字を、AM・PM と同じ大きさで出す（予定の文字の大きさを変えても、この2つは AM・PM と同じまま）
+const SMALL_WORDS = /委員会|会議/g;
+function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
 function renderTable() {
   const { y, m } = st, nd = dim(y, m);
   // 提出の印
