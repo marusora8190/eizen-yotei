@@ -269,6 +269,10 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .solo table.yt td.c .fit{font-size:13px;padding:2px 6px;white-space:normal;line-height:1.25}
 .solo table.yt td.c.ad .fit{font-size:14px}
 .solo table.yt td.c .ap{font-size:10px}
+/* スマホで見る予定表（先生1人ずつ）：日付ごとに、薄い灰色の横の罫線を引く（2026年11月4日〜。午前と午後の間には引かない） */
+/* 罫線（border）だけだと、スマホ（とくにiPhone）では細すぎて見えないことがあるため、マスの下の端に1点の線の絵も重ねて描く */
+.solo table.yt tbody td.dn,.solo table.yt tbody td.dw,.solo table.yt tbody td.c.pm,.solo table.yt tbody td.c.ad{border-bottom:1px solid #c4c4c4!important;background-image:linear-gradient(#c4c4c4,#c4c4c4)!important;background-size:100% 1px!important;background-position:left bottom!important;background-repeat:no-repeat!important}
+.solo table.yt tbody td.c.am{border-top:1px solid #c4c4c4!important}
 
 /* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
