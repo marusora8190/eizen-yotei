@@ -157,7 +157,8 @@ body.real-mobile .spvbtn{display:none}
 .marrow .indrow{margin:4px 0 0}
 .marrow .ma-del{border-color:#c62828;color:#c62828;margin-left:6px}
 .yarrow::after{content:"";position:absolute;left:calc(-1.1mm - 0.175mm);bottom:-0.2mm;border-left:1.1mm solid transparent;border-right:1.1mm solid transparent;border-top:2mm solid #000}
-@media (max-width:760px){
+/* スマホの見た目は画面だけ（印刷には使わない。2026年11月4日〜） */
+@media screen and (max-width:760px){
   .layout{display:block}
   nav{width:auto;display:flex;flex-wrap:wrap;padding:4px;height:auto;align-self:auto}
   nav a{padding:6px 10px;font-size:14px}
@@ -261,7 +262,7 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .tbswitch .tbs-hint{font-size:11.5px;color:var(--sub);text-align:center;margin-top:4px}
 @media print{.tbswitch{display:none!important}}
 /* スマホの予定表では、上の説明文（「予定のマスをクリックすると…」）を出さない（2026年11月4日〜。パソコンでは出す） */
-@media (max-width:760px){#v-table .hide-personal-note{display:none!important}}
+@media screen and (max-width:760px){#v-table .hide-personal-note{display:none!important}}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
@@ -905,11 +906,16 @@ function setSpv(on) {
   updSticky(); window.scrollTo(0, 0);
 }
 $('#btnSpv').addEventListener('click', () => setSpv(!document.body.classList.contains('spv')));
-const markRealMobile = () => document.body.classList.toggle('real-mobile', MQ.matches);
+// 印刷の準備中は、紙の幅でスマホの幅と判断されて画面が「予定入力」に切り替わってしまうことがあるため、何もしない（2026年11月4日〜）
+let printing = false;
+window.addEventListener('beforeprint', () => { printing = true; });
+window.addEventListener('afterprint', () => { printing = false; });
+const isPrinting = () => printing || window.matchMedia('print').matches;
+const markRealMobile = () => { if (!isPrinting()) document.body.classList.toggle('real-mobile', MQ.matches); };
 markRealMobile(); MQ.addEventListener('change', markRealMobile);
 // 「📱 スマホ用の画面」ボタンはなくした（2026年11月4日〜）。前にスマホ用の画面にしていたパソコンも、パソコン用の画面に戻す
 try { localStorage.removeItem('yotei-spv'); } catch (e) {}
-MQ.addEventListener('change', () => { if (st.view && !['input', 'table'].includes(st.view) && isMobile()) showView('input'); else if (st.view === 'table') renderTable(); updSticky(); });
+MQ.addEventListener('change', () => { if (isPrinting()) return; if (st.view && !['input', 'table'].includes(st.view) && isMobile()) showView('input'); else if (st.view === 'table') renderTable(); updSticky(); });
 // サイドバーを隠す・出す（このパソコンのこのブラウザで覚えておく）
 function setNavHidden(on) {
   document.body.classList.toggle('nav-hidden', on);
@@ -1692,7 +1698,8 @@ $('#fmFill').addEventListener('change', renderForm);
 // ===== 印刷 =====
 function doPrint(pageCss) {
   $('#pageStyle').textContent = `@page{${pageCss}}`;
-  setTimeout(() => window.print(), 50);
+  printing = true;
+  setTimeout(() => { window.print(); setTimeout(() => { printing = false; }, 1000); }, 50);
 }
 $('#btnPrintTable').addEventListener('click', () => doPrint('size:297mm 210mm;margin:5mm'));
 $('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
