@@ -493,7 +493,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <h2>マスター</h2>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
-      <p class="note">並び順の小さい順に、予定表の左から並びます（前半の人数が左半分、残りが右半分）。「在籍」のチェックを外すと、入力・予定表・記入表に出なくなります（これまでの予定は残ります）。「個人用URL」を先生に渡すと、その先生の入力画面がすぐ開きます。</p>
+      <p class="note">並び順の小さい順に、予定表の左から並びます（前半の人数が左半分、残りが右半分）。「在籍」のチェックを外すと、入力・予定表・記入表に出なくなります（これまでの予定は残ります）。「個人用URL」を先生に渡すと、その先生の入力画面がすぐ開きます。「画面の呼び名」（例：今村部長）は、予定入力・スマホの予定表・直し画面などで名前の代わりに出します（空なら名前を出します。予定表の見出し・記入表の宛名とは別です）。</p>
       <div class="msbox"><table class="grid" id="msMembers"></table></div>
       <div style="margin-top:8px"><button class="btn" id="msAddMember">＋ 先生を追加</button></div>
     </div>
@@ -816,6 +816,8 @@ function untilSelect(k, day, val) {
   return `<select class="until ${val ? 'set' : ''}" title="この予定が続く最後の日（予定表に矢印が出ます）">${o}</select>`;
 }
 function memberById(id) { return st.allMembers.find(x => x.id === id); }
+// 画面に出す呼び名（例：今村部長）。マスターの「画面の呼び名」が空なら、名前（短く）を出す（2026年11月4日〜）
+function dispName(x) { return x ? ((x.display_name || '').trim() || x.name) : ''; }
 
 // ===== 保存 =====
 function makeRec(mid, day, data) {
@@ -959,7 +961,7 @@ function renderInput() {
   const sel = $('#inMember');
   if (!st.members.length) { $('#inRows').innerHTML = '<div class="empty">先生が登録されていません（マスターで追加）</div>'; return; }
   if (!st.inMember || !st.members.some(x => x.id === st.inMember)) st.inMember = st.members[0].id;
-  sel.innerHTML = st.members.map(x => `<option value="${x.id}" ${x.id === st.inMember ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+  sel.innerHTML = st.members.map(x => `<option value="${x.id}" ${x.id === st.inMember ? 'selected' : ''}>${esc(dispName(x))}</option>`).join('');
   $('#inMemberWrap').style.display = st.personal ? 'none' : '';
   const mem = memberById(st.inMember);
   renderInputStatus();
@@ -990,7 +992,7 @@ function renderInput() {
 }
 function renderInputStatus() {
   const s = st.subs.get(st.inMember), el = $('#inStatus'), mem = memberById(st.inMember);
-  const who = st.personal ? `${esc(mem.name)}　` : '';
+  const who = st.personal ? `${esc(dispName(mem))}　` : '';
   if (s) {
     const t = new Date(s.submitted_at);
     el.className = 'status done';
@@ -1129,7 +1131,7 @@ $('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('
 $('#btnSubmit').addEventListener('click', async () => {
   if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
   const mem = memberById(st.inMember);
-  if (!confirm(`${mem.name}の${monthTitle(st.y, st.m)}の予定を提出します。よろしいですか？`)) return;
+  if (!confirm(`${dispName(mem)}の${monthTitle(st.y, st.m)}の予定を提出します。よろしいですか？`)) return;
   const rec = { member_id: st.inMember, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
   const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
   if (error) { toast('提出できませんでした：' + errMsg(error), true); return; }
@@ -1156,7 +1158,7 @@ function renderTable() {
   // 提出の印
   $('#tbChips').innerHTML = st.members.map(x => {
     const s = st.subs.get(x.id);
-    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${esc(x.name)}</span>`;
+    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${esc(dispName(x))}</span>`;
   }).join(' ');
   const editable = !st.personal;
   // 表の幅は紙の幅（287mm）より少しだけ狭く。ちょうどだと、印刷のときにいちばん右の縦の罫線の半分が切れて細くなるため
@@ -1253,9 +1255,9 @@ function renderTbSwitch(cur) {
   const n = st.members.length, i = st.members.findIndex(x => x.id === cur.id);
   box.style.display = '';
   box.innerHTML = `<div class="tbs-top"><button type="button" class="btn" data-tbs="-1" title="前の先生">◀</button>`
-    + `<span class="tbs-name">${esc(cur.name)}<small>（${i + 1}／${n}）</small></span>`
+    + `<span class="tbs-name">${esc(dispName(cur))}<small>（${i + 1}／${n}）</small></span>`
     + `<button type="button" class="btn" data-tbs="1" title="次の先生">▶</button></div>`
-    + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${esc(x.name)}</button>`).join('')}</div>`
+    + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${esc(dispName(x))}</button>`).join('')}</div>`
     + `<div class="tbs-hint">予定表を左右に指でなでても切り替えられます</div>`;
 }
 function setTbMember(id) {
@@ -1438,13 +1440,13 @@ $('#tbChips').addEventListener('click', async e => {
   const c = e.target.closest('.chip'); if (!c || st.personal) return;
   const mid = Number(c.dataset.mid), mem = memberById(mid), s = st.subs.get(mid);
   if (!s) {
-    if (!confirm(`${mem.name}の${monthTitle(st.y, st.m)}を「受け取り済み（提出済み）」にしますか？`)) return;
+    if (!confirm(`${dispName(mem)}の${monthTitle(st.y, st.m)}を「受け取り済み（提出済み）」にしますか？`)) return;
     const rec = { member_id: mid, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
     const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
     if (error) { toast('できませんでした：' + errMsg(error), true); return; }
     st.subs.set(mid, rec); renderTable();
   } else {
-    if (!confirm(`${mem.name}の提出の印を取り消しますか？（管理者パスワードがいります）`)) return;
+    if (!confirm(`${dispName(mem)}の提出の印を取り消しますか？（管理者パスワードがいります）`)) return;
     if (!(await ensureAdmin())) return;
     const { error } = await adminSb.from('yotei_submissions').delete().eq('member_id', mid).eq('ym', ymStr(st.y, st.m));
     if (error) { toast('取り消せませんでした：' + errMsg(error), true); return; }
@@ -1535,7 +1537,7 @@ function openEntryEditor(mid, day, clickX) {
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_top" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の上の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_top'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_bot" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の下の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_bot'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>`;
-  openModal(`<h3>${esc(mem.name)}　${mm}月${dd}日（${WD_JA[w]}）</h3>
+  openModal(`<h3>${esc(dispName(mem))}　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
@@ -1635,7 +1637,7 @@ function openEntryEditor(mid, day, clickX) {
 let fmSelected = null;
 function renderForm() {
   if (!fmSelected) fmSelected = new Set(st.members.map(x => x.id));
-  $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${esc(x.name)}</label>`).join('');
+  $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${esc(dispName(x))}</label>`).join('');
   const fill = $('#fmFill').checked;
   const { y, m } = st, nd = dim(y, m);
   // 先生ごとのURLでは、その先生の記入表だけを出す（印刷する先生の選択欄は出さない）
@@ -1721,13 +1723,14 @@ function renderMaster() {
   const rows = st.allMembers.map(x => `<tr data-id="${x.id}">
     <td style="width:5em"><input type="number" class="f-sort" value="${x.sort_order}"></td>
     <td><input type="text" class="f-name" value="${esc(x.name)}"></td>
+    <td><input type="text" class="f-disp" value="${esc(x.display_name || '')}" placeholder="${esc(x.name)}"></td>
     <td><input type="text" class="f-head" value="${esc(x.header_name)}"></td>
     <td><input type="text" class="f-title" value="${esc(x.form_title)}"></td>
     <td style="text-align:center"><input type="checkbox" class="f-meal" ${x.meal_survey ? 'checked' : ''}></td>
     <td style="text-align:center"><input type="checkbox" class="f-active" ${x.active ? 'checked' : ''}></td>
     <td><button class="btn sm pri f-save">保存</button></td>
     <td class="url">${esc(personalUrl(x.id))} <button class="btn sm f-copy">コピー</button></td></tr>`).join('');
-  $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
+  $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>画面の呼び名</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
   $('#msDeadline').value = st.settings.deadline_day;
   $('#msSubmitTo').value = st.settings.submit_to || '';
   const reds = st.settings.red_keywords || [];
@@ -1815,7 +1818,7 @@ $('#msMembers').addEventListener('click', async e => {
   }
   if (e.target.classList.contains('f-save')) {
     const rec = {
-      sort_order: Number($('.f-sort', tr).value) || 0, name: $('.f-name', tr).value.trim(), header_name: $('.f-head', tr).value.trim(),
+      sort_order: Number($('.f-sort', tr).value) || 0, name: $('.f-name', tr).value.trim(), display_name: $('.f-disp', tr).value.trim(), header_name: $('.f-head', tr).value.trim(),
       form_title: $('.f-title', tr).value.trim(), meal_survey: $('.f-meal', tr).checked, active: $('.f-active', tr).checked,
     };
     if (!rec.name) { toast('名前を入れてください', true); return; }
@@ -1901,7 +1904,7 @@ $('#msHolAdd').addEventListener('click', async () => {
     const p = Number(params.get('p'));
     if (p && st.members.some(x => x.id === p)) {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
-      $('#whoLabel').textContent = memberById(p).name;
+      $('#whoLabel').textContent = dispName(memberById(p));
     }
     // 前にこの端末で選んでいた先生（予定入力の「○○先生」）。いなくなった先生なら、いつもの最初の先生
     if (!st.personal) { try { const sm = Number(localStorage.getItem('yotei-in-member')); if (sm && st.members.some(x => x.id === sm)) st.inMember = sm; } catch (e) {} }
