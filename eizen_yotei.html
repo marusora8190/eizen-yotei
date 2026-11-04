@@ -260,6 +260,8 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .tbswitch .tbs-list .btn.act{background:var(--nav-act);border-color:var(--nav-act);color:#fff;font-weight:700}
 .tbswitch .tbs-hint{font-size:11.5px;color:var(--sub);text-align:center;margin-top:4px}
 @media print{.tbswitch{display:none!important}}
+/* スマホの予定表では、上の説明文（「予定のマスをクリックすると…」）を出さない（2026年11月4日〜。パソコンでは出す） */
+@media (max-width:760px){#v-table .hide-personal-note{display:none!important}}
 .sheet.a4l.solo{width:auto;height:auto}
 .solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
 .solo table.yt{border-top-width:1px;border-bottom-width:1px}
@@ -568,7 +570,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
-      <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」か先生の名前のボタン、または予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
+      <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
@@ -1268,9 +1270,8 @@ function renderTbSwitch(cur) {
   box.style.display = '';
   box.innerHTML = `<div class="tbs-top"><button type="button" class="btn" data-tbs="-1" title="前の先生">◀</button>`
     + `<span class="tbs-name">${ttlHtml(dispName(cur))}<small>（${i + 1}／${n}）</small></span>`
-    + `<button type="button" class="btn" data-tbs="1" title="次の先生">▶</button></div>`
-    + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${ttlHtml(dispName(x))}</button>`).join('')}</div>`
-    + `<div class="tbs-hint">予定表を左右に指でなでても切り替えられます</div>`;
+    + `<button type="button" class="btn" data-tbs="1" title="次の先生">▶</button></div>`;
+  // 名前のボタンの列と「予定表を左右に指でなでても…」の案内は、2026年11月4日に利用者の希望でなくした（「◀」「▶」と指でなでる動きで切り替える）
 }
 function setTbMember(id) {
   if (!st.members.some(x => x.id === id) || id === st.tbMember) return;
