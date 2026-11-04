@@ -437,7 +437,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   </div>
   <!-- 予定入力のときだけ出す（先生・提出の状態・提出ボタン） -->
   <div class="inbar" id="inBar" style="display:none">
-    <label id="inMemberWrap"><select id="inMember"></select> 先生</label>
+    <label id="inMemberWrap"><select id="inMember"></select></label>
     <span class="status" id="inStatus"></span>
     <span class="sp"></span>
     <button class="btn pri" id="btnSubmit">提出する</button>
@@ -567,7 +567,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」か先生の名前のボタン、または予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
-      <li>予定入力の「○○先生」で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
+      <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
       <li>予定表は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。</li>
       <li>予定表で予定の文字の位置を動かしたいときは、予定表のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
@@ -990,7 +990,7 @@ function renderInput() {
 }
 function renderInputStatus() {
   const s = st.subs.get(st.inMember), el = $('#inStatus'), mem = memberById(st.inMember);
-  const who = st.personal ? `${esc(mem.name)}先生　` : '';
+  const who = st.personal ? `${esc(mem.name)}　` : '';
   if (s) {
     const t = new Date(s.submitted_at);
     el.className = 'status done';
@@ -1129,7 +1129,7 @@ $('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('
 $('#btnSubmit').addEventListener('click', async () => {
   if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
   const mem = memberById(st.inMember);
-  if (!confirm(`${mem.name}先生の${monthTitle(st.y, st.m)}の予定を提出します。よろしいですか？`)) return;
+  if (!confirm(`${mem.name}の${monthTitle(st.y, st.m)}の予定を提出します。よろしいですか？`)) return;
   const rec = { member_id: st.inMember, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
   const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
   if (error) { toast('提出できませんでした：' + errMsg(error), true); return; }
@@ -1253,10 +1253,10 @@ function renderTbSwitch(cur) {
   const n = st.members.length, i = st.members.findIndex(x => x.id === cur.id);
   box.style.display = '';
   box.innerHTML = `<div class="tbs-top"><button type="button" class="btn" data-tbs="-1" title="前の先生">◀</button>`
-    + `<span class="tbs-name">${esc(cur.name)}先生<small>（${i + 1}／${n}）</small></span>`
+    + `<span class="tbs-name">${esc(cur.name)}<small>（${i + 1}／${n}）</small></span>`
     + `<button type="button" class="btn" data-tbs="1" title="次の先生">▶</button></div>`
     + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${esc(x.name)}</button>`).join('')}</div>`
-    + `<div class="tbs-hint">予定表を左右に指でなでても、先生を切り替えられます</div>`;
+    + `<div class="tbs-hint">予定表を左右に指でなでても切り替えられます</div>`;
 }
 function setTbMember(id) {
   if (!st.members.some(x => x.id === id) || id === st.tbMember) return;
@@ -1438,13 +1438,13 @@ $('#tbChips').addEventListener('click', async e => {
   const c = e.target.closest('.chip'); if (!c || st.personal) return;
   const mid = Number(c.dataset.mid), mem = memberById(mid), s = st.subs.get(mid);
   if (!s) {
-    if (!confirm(`${mem.name}先生の${monthTitle(st.y, st.m)}を「受け取り済み（提出済み）」にしますか？`)) return;
+    if (!confirm(`${mem.name}の${monthTitle(st.y, st.m)}を「受け取り済み（提出済み）」にしますか？`)) return;
     const rec = { member_id: mid, ym: ymStr(st.y, st.m), submitted_at: new Date().toISOString() };
     const { error } = await sb.from('yotei_submissions').upsert(rec, { onConflict: 'member_id,ym' });
     if (error) { toast('できませんでした：' + errMsg(error), true); return; }
     st.subs.set(mid, rec); renderTable();
   } else {
-    if (!confirm(`${mem.name}先生の提出の印を取り消しますか？（管理者パスワードがいります）`)) return;
+    if (!confirm(`${mem.name}の提出の印を取り消しますか？（管理者パスワードがいります）`)) return;
     if (!(await ensureAdmin())) return;
     const { error } = await adminSb.from('yotei_submissions').delete().eq('member_id', mid).eq('ym', ymStr(st.y, st.m));
     if (error) { toast('取り消せませんでした：' + errMsg(error), true); return; }
@@ -1535,7 +1535,7 @@ function openEntryEditor(mid, day, clickX) {
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_top" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の上の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_top'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_bot" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の下の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_bot'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>`;
-  openModal(`<h3>${esc(mem.name)}先生　${mm}月${dd}日（${WD_JA[w]}）</h3>
+  openModal(`<h3>${esc(mem.name)}　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
@@ -1901,7 +1901,7 @@ $('#msHolAdd').addEventListener('click', async () => {
     const p = Number(params.get('p'));
     if (p && st.members.some(x => x.id === p)) {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
-      $('#whoLabel').textContent = memberById(p).name + '先生';
+      $('#whoLabel').textContent = memberById(p).name;
     }
     // 前にこの端末で選んでいた先生（予定入力の「○○先生」）。いなくなった先生なら、いつもの最初の先生
     if (!st.personal) { try { const sm = Number(localStorage.getItem('yotei-in-member')); if (sm && st.members.some(x => x.id === sm)) st.inMember = sm; } catch (e) {} }
