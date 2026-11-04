@@ -266,6 +266,7 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .solo .s-title{height:auto;padding:4px 6px;font-size:15px}
 .solo table.yt thead th{height:auto;padding:4px 0;font-size:14px}
 .solo table.yt thead th.dh{font-size:11px}
+.sheet.solo table.yt thead th .ttl{font-size:11px}
 .solo table.yt td.dn{font-size:15px}
 .solo table.yt td.dw{font-size:11px}
 .solo table.yt td.c .fit{font-size:13px;padding:2px 6px;white-space:normal;line-height:1.25}
@@ -310,6 +311,9 @@ table.yt{border-top:0.6px solid #000;border-bottom:0.6px solid #000}
 table.yt th,table.yt td{border-top:0.3px solid #b0b0b0;border-bottom:0.3px solid #b0b0b0}
 table.yt thead th{height:5.5mm;font-size:10pt;font-weight:400;letter-spacing:.3em}
 table.yt thead th.dh{font-size:6.5pt;letter-spacing:0}
+/* 呼び名の終わりの「部長」「次長」「課長」「先生」は小さく（予定表の見出しでは「日・曜日」と同じ大きさ。2026年11月4日〜） */
+.ttl{font-size:.65em}
+table.yt thead th .ttl{font-size:6.5pt}
 table.yt td.dn{font-size:8.5pt;text-align:right;padding-right:0.6mm;border-right:0;vertical-align:middle}
 table.yt td.dw{font-size:6pt;text-align:left;padding-left:0.4mm;border-left:0;vertical-align:middle}
 table.yt td.red-day{color:var(--red)}
@@ -818,6 +822,14 @@ function untilSelect(k, day, val) {
 function memberById(id) { return st.allMembers.find(x => x.id === id); }
 // 画面に出す呼び名（例：今村部長）。マスターの「画面の呼び名」が空なら、名前（短く）を出す（2026年11月4日〜）
 function dispName(x) { return x ? ((x.display_name || '').trim() || x.name) : ''; }
+// 呼び名・見出しの終わりの「部長」「次長」「課長」「先生」だけを小さい文字にした形（画面用。2026年11月4日〜）
+// 予定表の見出しでは「日・曜日」と同じ大きさ、ほかの所ではまわりの文字の約3分の2の大きさ。小さくする言葉を増やすときは TITLE_WORDS に足す
+const TITLE_WORDS = ['部長', '次長', '課長', '先生'];
+function ttlHtml(text) {
+  const t = String(text || '');
+  for (const w of TITLE_WORDS) if (t.length > w.length && t.endsWith(w)) return `${esc(t.slice(0, -w.length))}<span class="ttl">${esc(w)}</span>`;
+  return esc(t);
+}
 
 // ===== 保存 =====
 function makeRec(mid, day, data) {
@@ -992,7 +1004,7 @@ function renderInput() {
 }
 function renderInputStatus() {
   const s = st.subs.get(st.inMember), el = $('#inStatus'), mem = memberById(st.inMember);
-  const who = st.personal ? `${esc(dispName(mem))}　` : '';
+  const who = st.personal ? `${ttlHtml(dispName(mem))}　` : '';
   if (s) {
     const t = new Date(s.submitted_at);
     el.className = 'status done';
@@ -1158,7 +1170,7 @@ function renderTable() {
   // 提出の印
   $('#tbChips').innerHTML = st.members.map(x => {
     const s = st.subs.get(x.id);
-    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${esc(dispName(x))}</span>`;
+    return `<span class="chip ${s ? 'done' : 'not'}" data-mid="${x.id}" title="${s ? '提出済み（クリックで取り消し：管理者のみ）' : 'クリックで受け取り済みにする'}"><b>${s ? '済' : '未'}</b> ${ttlHtml(dispName(x))}</span>`;
   }).join(' ');
   const editable = !st.personal;
   // 表の幅は紙の幅（287mm）より少しだけ狭く。ちょうどだと、印刷のときにいちばん右の縦の罫線の半分が切れて細くなるため
@@ -1199,8 +1211,8 @@ function renderTable() {
   const tableW = sideW + pw * pc;
   let cols = solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
-  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${!R.length && i === L.length - 1 ? ' class="redge"' : ''}>${esc(x.header_name)}</th>`).join('');
-  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map((x, i) => `<th${i === R.length - 1 ? ' class="redge"' : ''}>${esc(x.header_name)}</th>`).join('');
+  let head = `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${!R.length && i === L.length - 1 ? ' class="redge"' : ''}>${ttlHtml(x.header_name)}</th>`).join('');
+  if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map((x, i) => `<th${i === R.length - 1 ? ' class="redge"' : ''}>${ttlHtml(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
@@ -1255,9 +1267,9 @@ function renderTbSwitch(cur) {
   const n = st.members.length, i = st.members.findIndex(x => x.id === cur.id);
   box.style.display = '';
   box.innerHTML = `<div class="tbs-top"><button type="button" class="btn" data-tbs="-1" title="前の先生">◀</button>`
-    + `<span class="tbs-name">${esc(dispName(cur))}<small>（${i + 1}／${n}）</small></span>`
+    + `<span class="tbs-name">${ttlHtml(dispName(cur))}<small>（${i + 1}／${n}）</small></span>`
     + `<button type="button" class="btn" data-tbs="1" title="次の先生">▶</button></div>`
-    + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${esc(dispName(x))}</button>`).join('')}</div>`
+    + `<div class="tbs-list">${st.members.map(x => `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}">${ttlHtml(dispName(x))}</button>`).join('')}</div>`
     + `<div class="tbs-hint">予定表を左右に指でなでても切り替えられます</div>`;
 }
 function setTbMember(id) {
@@ -1537,7 +1549,7 @@ function openEntryEditor(mid, day, clickX) {
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_top" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の上の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_top'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow_bot" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の下の端：<button type="button" class="btn sm ind" data-d="-1">▲ 上へ</button><span class="indv" data-v="${e[k + '_arrow_bot'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">下へ ▼</button><button type="button" class="btn sm ind" data-d="0">標準</button></div>`;
-  openModal(`<h3>${esc(dispName(mem))}　${mm}月${dd}日（${WD_JA[w]}）</h3>
+  openModal(`<h3>${ttlHtml(dispName(mem))}　${mm}月${dd}日（${WD_JA[w]}）</h3>
     <label class="adchk" style="margin-bottom:6px"><input type="checkbox" id="edAd" ${isAd ? 'checked' : ''}> 終日（1日中の予定）</label>
     <div id="edNormal" style="${isAd ? 'display:none' : ''}">${fld('am', '午前', e.am, e.am_red, e.am_until)}${fld('pm', '午後', e.pm, e.pm_red, e.pm_until)}</div>
     <div id="edAllday" style="${isAd ? '' : 'display:none'}">${fld('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
@@ -1637,7 +1649,7 @@ function openEntryEditor(mid, day, clickX) {
 let fmSelected = null;
 function renderForm() {
   if (!fmSelected) fmSelected = new Set(st.members.map(x => x.id));
-  $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${esc(dispName(x))}</label>`).join('');
+  $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${ttlHtml(dispName(x))}</label>`).join('');
   const fill = $('#fmFill').checked;
   const { y, m } = st, nd = dim(y, m);
   // 先生ごとのURLでは、その先生の記入表だけを出す（印刷する先生の選択欄は出さない）
@@ -1904,7 +1916,7 @@ $('#msHolAdd').addEventListener('click', async () => {
     const p = Number(params.get('p'));
     if (p && st.members.some(x => x.id === p)) {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
-      $('#whoLabel').textContent = dispName(memberById(p));
+      $('#whoLabel').innerHTML = ttlHtml(dispName(memberById(p)));
     }
     // 前にこの端末で選んでいた先生（予定入力の「○○先生」）。いなくなった先生なら、いつもの最初の先生
     if (!st.personal) { try { const sm = Number(localStorage.getItem('yotei-in-member')); if (sm && st.members.some(x => x.id === sm)) st.inMember = sm; } catch (e) {} }
