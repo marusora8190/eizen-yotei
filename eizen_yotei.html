@@ -292,7 +292,28 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 /* 先生の切り替えの欄は、下に動かしても上の帯のすぐ下に出たままにする（上に隠れないように。2026年11月5日〜） */
 @media screen{.tbswitch{position:sticky;top:var(--hdr);z-index:15;box-shadow:0 2px 6px rgba(0,0,0,.08)}}
 /* パソコンの「予定表（一人ずつ）」：真ん中に、読みやすい幅で出す（2026年11月5日〜） */
-body.tbl-one #tbSwitch,body.tbl-one #sheet.solo-wrap{max-width:640px;min-width:0;margin-left:auto;margin-right:auto}
+body.tbl-one #sheet.solo-wrap{min-width:0}
+/* 予定表②：左に先生1人分の予定表、右に「日付と時間で見る」（2026年11月5日〜） */
+.atpanel{display:none}
+body.tbl-one .tb-cols{display:flex;gap:16px;align-items:flex-start}
+body.tbl-one .tb-left{flex:none;width:640px;min-width:0}
+body.tbl-one .atpanel{display:block;flex:1;min-width:280px;max-width:560px;position:sticky;top:calc(var(--hdr) + 8px);background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.atpanel h3{margin:0 0 8px;font-size:16px}
+.at-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.at-ctl input[type=date]{padding:5px 6px;border:1px solid var(--line);border-radius:5px;font-size:15px}
+.at-ctl .seg .btn{border-radius:0;margin-left:-1px}
+.at-ctl .seg .btn:first-child{border-radius:5px 0 0 5px;margin-left:0}
+.at-ctl .seg .btn:last-child{border-radius:0 5px 5px 0}
+.at-ctl .seg .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.at-when{font-size:15px;font-weight:700;margin:0 0 6px}
+table.attbl{width:100%;border-collapse:collapse;font-size:15px}
+table.attbl th,table.attbl td{border-top:1px solid #e3e6ea;padding:7px 6px;text-align:left;vertical-align:top}
+table.attbl th{width:7.5em;white-space:nowrap}
+table.attbl .r{color:var(--red);font-weight:700}
+.at-lab{display:inline-block;font-size:11.5px;color:var(--sub);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-right:6px;vertical-align:1px}
+.at-tag{font-size:12px;color:var(--sub);margin-left:6px}
+.at-none{color:#aab0b8}
+.at-item + .at-item{margin-top:3px}
 body.tbl-one #v-table .toolbar{display:none}
 body.tbl-one #tbSwitch{margin-bottom:8px}
 body.tbl-one .tbswitch .tbs-name{font-size:17px}
@@ -488,8 +509,8 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 <div class="layout">
 <nav id="nav">
   <a data-view="input">✏️ 予定入力</a>
-  <a data-view="table">📅 予定表（全員）</a>
-  <a data-view="table1">👤 予定表（一人ずつ）</a>
+  <a data-view="table">📅 予定表①</a>
+  <a data-view="table1">👤 予定表②</a>
   <a data-view="form">🖨 記入表の印刷</a>
   <a data-view="help">❓ 使い方</a>
   <div class="sep hide-personal"></div>
@@ -515,8 +536,12 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。<span class="admin-sub">「未」の印をクリックすると、受け取り済み（「済」）にできます。</span></p>
     <!-- スマホで見る予定表：先生を1人ずつ切り替える（2026年11月4日〜） -->
+    <div class="tb-cols"><div class="tb-left">
     <div class="tbswitch" id="tbSwitch" style="display:none"></div>
     <div class="sheet-wrap"><div id="sheet"></div></div>
+    </div>
+    <!-- 予定表②（パソコン）の右側：日付と午前・午後を選ぶと、先生全員の予定を出す（2026年11月5日〜） -->
+    <aside class="atpanel no-print" id="atPanel"></aside></div>
   </section>
 
   <!-- 記入表 -->
@@ -608,7 +633,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。コピーすると、下の黒い帯に予定が「、」で区切った言葉ごとに出ます。貼り付けたくない言葉は押して外します（もう一度押すと戻ります）。例：「午前：部会　午後：委員会」の「委員会」だけを貼り付けるときは、「部会」を押して外します。写し先の日に予定があるときは、そのうしろに「、」でつないで書き加えます（同じ言葉がもうあれば足しません。写し先が終日の予定なら終日に書き加えます）。写るのは予定の文字と赤字で、昼食・「〜日まで続く」は写りません。</li>
       <li>同じ予定が何人かの先生にあるときは、その日の「他の先生へ」を押します。写す欄（午前・午後・終日のどれか）と、写す先生（いくつでも）を選んで「写す」を押すと、選んだ先生の同じ日・同じ欄に入ります。写るのは予定の文字・赤字・「〜日まで続く」で、昼食とほかの欄の予定はそのままです。写し先にすでに予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加えます（例：「出張」に「部会」を写すと「出張、部会」。写し先が終日の予定なら終日に書き加えます）。同じ予定がもう入っている先生には写しません。まちがえて写したときは、その先生の欄を直してください（パソコンだけで使えます。スマホと、先生ごとのURLでは、このボタンは出ません）。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
-      <li>パソコンのサイドバーには「📅 予定表（全員）」と「👤 予定表（一人ずつ）」があります。「一人ずつ」は、先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。印刷は「予定表（全員）」から行います。</li>
+      <li>パソコンのサイドバーには「📅 予定表①」（先生全員の表。印刷もここから）と「👤 予定表②」があります。「予定表②」は、左に先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。右の「日付と時間で見る」で日付と「午前」「午後」を選ぶと、その時間の先生全員の予定が出ます（「◀」「▶」で半日ずつ動きます）。何日か続く予定のあいだの日も、「○日〜○日の続き」として出ます。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
@@ -1431,6 +1456,74 @@ function renderTable() {
   snapToEdges($('#sheet'));
   drawArrows();
   $$('.hide-personal-note').forEach(n => (n.style.display = st.personal ? 'none' : ''));
+  if (st.tblOne && !isMobile()) renderAtPanel();
+}
+// ===== 予定表②の右側：日付と午前・午後を選ぶと、先生全員の予定を出す（2026年11月5日〜） =====
+// 「〜日まで続く」予定の途中・最後の日も、その予定を「○日〜○日の続き」として出す。予定が無い日は、行事（予定入力・予定表と同じ決まり）を出す
+let atSeq = 0;
+function atDefault() { const t = new Date(), td = dstr(t.getFullYear(), t.getMonth() + 1, t.getDate()); return td.slice(0, 7) === ymStr(st.y, st.m) ? td : dstr(st.y, st.m, 1); }
+function atItems(list, mid, day, k) {
+  const mine = list.filter(x => x.member_id === mid);
+  const e = mine.find(x => x.day === day) || null, out = [];
+  const add = (lab, t, red, parts, tag) => { if (!out.some(o => o.t === t && o.lab === lab)) out.push({ lab, t, red, parts, tag }); };
+  if (e && e.allday) add('終日', e.allday, e.allday_red, e.allday_red_parts, '');
+  else if (e && e[k]) add(SLOT_LABEL[k], e[k], e[k + '_red'], e[k + '_red_parts'], '');
+  let inCont = false;
+  for (const x of mine) for (const kk of ['allday', 'am', 'pm']) {
+    const u = x[kk + '_until'];
+    if (!x[kk] || !u || !(x.day < day && day <= u)) continue;
+    inCont = true;
+    if (kk === 'allday' || kk === k) add(SLOT_LABEL[kk], x[kk], x[kk + '_red'], x[kk + '_red_parts'], `${Number(x.day.slice(8))}日〜${Number(u.slice(8))}日の続き`);
+  }
+  if (!out.length && !inCont && !(e && (e.am || e.pm || e.allday || e.event_off))) {
+    const ev = eventFor(day);
+    if (ev && ev.allday) add('終日', ev.allday.text, ev.allday.red, null, '行事');
+    else if (ev && ev[k]) add(SLOT_LABEL[k], ev[k].text, ev[k].red, null, '行事');
+  }
+  return out;
+}
+async function renderAtPanel() {
+  const box = $('#atPanel'); if (!box || !st.tblOne || isMobile()) return;
+  if (!st.atDate) st.atDate = atDefault();
+  if (!st.atK) st.atK = 'am';
+  const day = st.atDate, k = st.atK, [yy, mm, dd] = day.split('-').map(Number);
+  if (!$('#atDate', box)) {
+    box.innerHTML = `<h3>日付と時間で見る</h3>
+      <div class="at-ctl"><input type="date" id="atDate"><span class="seg"><button type="button" class="btn" data-atk="am">午前</button><button type="button" class="btn" data-atk="pm">午後</button></span>
+      <button type="button" class="btn sm" data-atstep="-1" title="半日前">◀</button><button type="button" class="btn sm" data-atstep="1" title="半日後">▶</button><button type="button" class="btn sm" id="atToday">今日</button></div>
+      <div class="at-when" id="atWhen"></div><div id="atList"></div>`;
+    $('#atDate', box).addEventListener('change', e => { if (e.target.value) { st.atDate = e.target.value; renderAtPanel(); } });
+    box.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.atk) { st.atK = b.dataset.atk; renderAtPanel(); }
+      else if (b.dataset.atstep) {
+        const d0 = new Date(st.atDate.slice(0, 4), Number(st.atDate.slice(5, 7)) - 1, Number(st.atDate.slice(8)));
+        if (b.dataset.atstep === '1') { if (st.atK === 'am') st.atK = 'pm'; else { st.atK = 'am'; d0.setDate(d0.getDate() + 1); } }
+        else { if (st.atK === 'pm') st.atK = 'am'; else { st.atK = 'pm'; d0.setDate(d0.getDate() - 1); } }
+        st.atDate = dstr(d0.getFullYear(), d0.getMonth() + 1, d0.getDate()); renderAtPanel();
+      } else if (b.id === 'atToday') { const t = new Date(); st.atDate = dstr(t.getFullYear(), t.getMonth() + 1, t.getDate()); renderAtPanel(); }
+    });
+  }
+  $('#atDate', box).value = day;
+  $$('[data-atk]', box).forEach(b => b.classList.toggle('on', b.dataset.atk === k));
+  $('#atWhen', box).textContent = `${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）${SLOT_LABEL[k]}${st.holidays.get(day) ? '　' + st.holidays.get(day) : ''}`;
+  // 表示している月なら読み込み済みの予定を、ほかの月ならその月の予定を読み込む
+  const seq = ++atSeq;
+  let list;
+  if (day.slice(0, 7) === ymStr(st.y, st.m)) list = [...st.entries.values()];
+  else {
+    $('#atList', box).innerHTML = '<div class="at-none">読み込み中…</div>';
+    const from = dstr(yy, mm, 1), to = dstr(yy, mm, dim(yy, mm));
+    const r = await sb.from('yotei_entries').select('*').gte('day', from).lte('day', to).range(0, 4999);
+    if (seq !== atSeq) return;
+    if (r.error) { $('#atList', box).innerHTML = `<div class="at-none">読み込めませんでした：${esc(errMsg(r.error))}</div>`; return; }
+    list = r.data;
+  }
+  if (seq !== atSeq) return;
+  $('#atList', box).innerHTML = `<table class="attbl"><tbody>${st.members.map(x => {
+    const its = atItems(list, x.id, day, k);
+    return `<tr><th>${ttlHtml(dispName(x))}</th><td>${its.length ? its.map(o => `<div class="at-item"><span class="at-lab">${o.lab}</span>${o.red && !o.parts ? `<span class="r">${esc(o.t)}</span>` : redHtml(o.t, o.red, o.parts)}${o.tag ? `<span class="at-tag">（${esc(o.tag)}）</span>` : ''}</div>`).join('') : '<span class="at-none">予定なし</span>'}</td></tr>`;
+  }).join('')}</tbody></table>`;
 }
 // スマホで見る予定表：いま出している先生（先生ごとのURLならその先生、ふつうのURLなら切り替えで選んだ先生）
 function tbCurrentMember() {
