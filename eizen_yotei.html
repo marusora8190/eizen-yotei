@@ -126,6 +126,16 @@ body.personal .cp .shr{display:none}
 /* 「他の先生へ」はパソコンだけ（スマホでは出さない。2026年11月5日〜。利用者の希望） */
 @media screen and (max-width:760px){.cp .shr{display:none}}
 body.spv .cp .shr{display:none}
+.cp .bulk{background:#fff6ec;border-color:#e8b27a;color:#8a4300}
+body.personal .cp .bulk{display:none}
+@media screen and (max-width:760px){.cp .bulk{display:none}}
+body.spv .cp .bulk{display:none}
+.blk-words{display:flex;flex-wrap:wrap;gap:6px}
+.blk-words label{border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;background:#fff}
+.blk-words label:has(input:checked){border-color:#8a4300;background:#fff6ec;font-weight:700}
+.blk-words .n{color:var(--sub);font-size:12px;font-weight:400;margin-left:4px}
+.blk-act label{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer}
+.blk-list .cur b{color:#8a4300}
 .shr-sec{margin:10px 0 4px;font-weight:700;font-size:14px}
 .shr-list{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;max-height:46vh;overflow:auto}
 .shr-list label{display:flex;align-items:baseline;gap:8px;padding:5px 2px;border-top:0.5px solid #eef0f3;cursor:pointer}
@@ -720,6 +730,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。コピーすると、下の黒い帯に予定が「、」で区切った言葉ごとに出ます。貼り付けたくない言葉は押して外します（もう一度押すと戻ります）。例：「午前：部会　午後：委員会」の「委員会」だけを貼り付けるときは、「部会」を押して外します。写し先の日に予定があるときは、そのうしろに「、」でつないで書き加えます（同じ言葉がもうあれば足しません。写し先が終日の予定なら終日に書き加えます）。写るのは予定の文字と赤字で、昼食・「〜日まで続く」は写りません。</li>
       <li>同じ予定が何人かの先生にあるときは、その日の「他の先生へ」を押します。写す欄（午前・午後・終日のどれか）と、写す先生（いくつでも）を選んで「写す」を押すと、選んだ先生の同じ日・同じ欄に入ります。写るのは予定の文字・赤字・「〜日まで続く」で、昼食とほかの欄の予定はそのままです。写し先にすでに予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加えます（例：「出張」に「部会」を写すと「出張、部会」。写し先が終日の予定なら終日に書き加えます）。同じ予定がもう入っている先生には写しません。まちがえて写したときは、その先生の欄を直してください（パソコンだけで使えます。スマホと、先生ごとのURLでは、このボタンは出ません）。</li>
+      <li>先生全員の同じ予定を、まとめて別の日に移したり、取り消したりするときは、その日の「まとめて変更」を押します。変える予定（「、」で区切った1つ分）・移す日と欄（または「取り消す」）・変える先生を選んで「変える」を押します。選んだ予定だけが動き、ほかの予定と昼食はそのままです（パソコンだけ。行事はマスターで直します）。</li>
       <li>スマホでは、上の「Update」「予定表」「予定入力」の3つのボタンだけが出ます（予定入力は1日ずつ大きく出ます）（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
       <li>パソコンのサイドバーには「📅 予定表①」（先生全員の表。印刷もここから）と「👤 予定表②」があります。「予定表②」は、左に先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。右の「日付と時間で見る」で日付と「午前」「午後」を選ぶと、その時間の先生全員の予定が出ます（「◀」「▶」で半日ずつ動きます。終日の予定には「終日」の印が付きます）。何日か続く予定のあいだの日も、「○日〜○日の続き」として出ます。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
@@ -1154,7 +1165,7 @@ function renderInput() {
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${mealVal(e.meal, day) === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="要">○</option><option value="不要" ${mealVal(e.meal, day) === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
-      <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button>${st.members.length > 1 ? `<button type="button" class="btn shr" title="この日の予定（午前・午後・終日のどれか1つ）を、選んだ先生の同じ日・同じ欄に写します">他の先生へ</button>` : ''}</span>
+      <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button>${st.members.length > 1 ? `<button type="button" class="btn shr" title="この日の予定（午前・午後・終日のどれか1つ）を、選んだ先生の同じ日・同じ欄に写します">他の先生へ</button><button type="button" class="btn bulk" title="この日の同じ予定を、先生全員分まとめて別の日に移したり、取り消したりします">まとめて変更</button>` : ''}</span>
       <span class="sv"></span>
       <div class="contnote"></div>
     </div>`;
@@ -1464,9 +1475,152 @@ async function doShare(row, day, k, ids, skipped = []) {
   if (msg) toast(msg);
   if (ng.length) toast(`${nm(ng)}には写せませんでした。もう一度試してください`, true);
 }
+// ===== 同じ予定を、先生全員分まとめて別の日に移す・取り消す（2026年11月5日〜。パソコンの管理者用URLだけ） =====
+// 対象は、その日に保存してある予定（行事は対象外）。「、」で区切った言葉1つ分ずつ扱い、ほかの言葉はそのまま残す
+// 移す先に予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加える（同じ言葉がもうあれば足さない）
+function bkSlot(e, k) { return e && e[k] ? { k, t: e[k], on: !!e[k + '_red'], parts: e[k + '_red_parts'] ? String(e[k + '_red_parts']).split('\n') : [], u: e[k + '_until'] || null } : null; }
+function bkRedSet(o) { return new Set(o.on ? (o.parts.length ? o.parts : textParts(o.t)) : []); }
+function bkMake(words, reds, u) { const r = words.filter(x => reds.has(x)); return words.length ? { t: words.join('、'), on: r.length > 0, parts: r.length === words.length ? [] : r, u: u || null } : null; }
+function bkAddDays(day, n) { const [y, m, d] = day.split('-').map(Number), t = new Date(Date.UTC(y, m - 1, d + n)); return t.toISOString().slice(0, 10); }
+function bkDiff(a, b) { const f = x => { const [y, m, d] = x.split('-').map(Number); return Date.UTC(y, m - 1, d); }; return Math.round((f(b) - f(a)) / 86400000); }
+// 予定の記録（e）を、保存する形（data）に直す
+function bkData(e) {
+  const data = { meal: e.meal || null };
+  for (const k of ['am', 'pm', 'allday']) { const o = e[k] ? bkSlot(e, k) : null; data[k] = o ? o.t : null; data[k + '_red'] = !!(o && o.on); data[k + '_red_parts'] = o && o.on && o.parts.length ? o.parts.join('\n') : null; data[k + '_until'] = o ? o.u : null; }
+  return data;
+}
+function bkPut(data, k, o) { data[k] = o ? o.t : null; data[k + '_red'] = !!(o && o.on); data[k + '_red_parts'] = o && o.on && o.parts.length ? o.parts.join('\n') : null; data[k + '_until'] = o ? o.u : null; }
+// その日の、先生ごとの言葉の一覧
+function bkWordsOf(day) {
+  const map = new Map(); // 言葉 → [{mid, k}]
+  for (const x of st.members) {
+    const e = getEntry(x.id, day); if (!e) continue;
+    for (const k of ['am', 'pm', 'allday']) for (const w of textParts(e[k])) { if (!map.has(w)) map.set(w, []); const a = map.get(w); if (!a.some(z => z.mid === x.id)) a.push({ mid: x.id, k }); }
+  }
+  return map;
+}
+async function bkFlush() {
+  for (const r of $$('#inRows .row')) { const sv = $('.sv', r); if (sv && sv.classList.contains('ing')) { clearTimeout(rowTimers.get(r)); await doSaveRow(r); } }
+}
+async function openBulk(row) {
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  await bkFlush();
+  const day = row.dataset.day, d = Number(row.dataset.d), [yy, mm] = day.split('-').map(Number);
+  const words = bkWordsOf(day);
+  if (!words.size) { toast(`${d}日には、どの先生にも予定が書かれていません（行事はマスターで直します）`); return; }
+  const list = [...words.entries()].sort((a, b) => b[1].length - a[1].length);
+  let w0 = list[0][0];
+  const drawList = () => {
+    const hs = words.get(w0) || [];
+    const prev = $$('#blkList input').length ? new Set($$('#blkList input:checked').map(x => Number(x.value))) : null;
+    $('#blkList').innerHTML = st.members.filter(x => hs.some(h => h.mid === x.id)).map(x => {
+      const e = getEntry(x.id, day);
+      const where = ['am', 'pm', 'allday'].filter(k => textParts(e[k]).includes(w0)).map(k => `${SLOT_LABEL[k]}「${esc(e[k])}」`).join('　');
+      return `<label><input type="checkbox" value="${x.id}" ${!prev || prev.has(x.id) ? 'checked' : ''}><span class="nm">${ttlHtml(dispName(x))}</span><span class="cur">${where}</span></label>`;
+    }).join('');
+  };
+  openModal(`<h3>${d}日（${WD_JA[wdOf(yy, mm, d)]}）の予定を、まとめて変える</h3>
+    <div style="font-size:13px;color:var(--sub)">先生全員の、この日の同じ予定をまとめて別の日に移したり、取り消したりします</div>
+    <div class="shr-sec">変える予定（「、」で区切った1つ分）</div>
+    <div class="blk-words" id="blkWords">${list.map(([w, hs]) => `<label><input type="radio" name="blkW" value="${esc(w)}" ${w === w0 ? 'checked' : ''} style="display:none">${esc(w)}<span class="n">${hs.length}人</span></label>`).join('')}</div>
+    <div class="shr-sec">どうしますか</div>
+    <div class="blk-act">
+      <label style="flex-wrap:wrap"><input type="radio" name="blkA" value="move" checked><span style="white-space:nowrap">別の日に移す →</span><input type="date" id="blkDay" value="${day}">　<select id="blkK"><option value="same">同じ欄（午前・午後・終日）</option><option value="am">午前</option><option value="pm">午後</option><option value="allday">終日</option></select></label>
+      <label><input type="radio" name="blkA" value="del">取り消す（この予定だけを消す）</label>
+    </div>
+    <div class="shr-sec" style="display:flex;align-items:center;gap:8px">変える先生<button type="button" class="btn sm" id="blkAll" style="margin-left:auto">全員を選ぶ</button><button type="button" class="btn sm" id="blkNone">選ぶのをやめる</button></div>
+    <div class="shr-list blk-list" id="blkList"></div>
+    <div class="shr-note">選んだ予定だけを動かし、同じ欄のほかの予定・昼食はそのまま残します。移す先の日に予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加えます（同じ予定がもうあれば足しません）。行事（マスターで決めたもの）は、ここでは変えられません。まとめて元に戻す仕組みは無いため、まちがえたときは、もう一度この画面で戻してください。</div>
+    <div class="acts"><button type="button" class="btn" id="blkCancel">やめる</button><button type="button" class="btn pri" id="blkGo">変える</button></div>`);
+  drawList();
+  const syncAct = () => { const mv = $('input[name="blkA"]:checked').value === 'move'; $('#blkDay').disabled = !mv; $('#blkK').disabled = !mv; };
+  $('#blkWords').addEventListener('change', e => { if (e.target.name === 'blkW') { w0 = e.target.value; $$('#blkList input').forEach(x => x.remove()); $('#blkList').innerHTML = ''; drawList(); } });
+  $$('input[name="blkA"]').forEach(x => x.addEventListener('change', syncAct));
+  $('#blkDay').addEventListener('focus', () => { $('input[name="blkA"][value="move"]').checked = true; syncAct(); });
+  $('#blkAll').addEventListener('click', () => $$('#blkList input').forEach(x => (x.checked = true)));
+  $('#blkNone').addEventListener('click', () => $$('#blkList input').forEach(x => (x.checked = false)));
+  $('#blkCancel').addEventListener('click', closeModal);
+  $('#blkGo').addEventListener('click', () => {
+    const ids = $$('#blkList input:checked').map(x => Number(x.value));
+    if (!ids.length) { toast('変える先生を選んでください'); return; }
+    const mv = $('input[name="blkA"]:checked').value === 'move';
+    const to = $('#blkDay').value, tk = $('#blkK').value;
+    if (mv && !/^\d{4}-\d{2}-\d{2}$/.test(to)) { toast('移す日を選んでください'); return; }
+    if (mv && to === day && tk === 'same') { toast('移す日か欄を、今と変えてください'); return; }
+    const [ty, tm, td] = mv ? to.split('-').map(Number) : [];
+    const nm = ids.map(id => dispName(memberById(id))).join('・');
+    const what = mv ? `${tm}月${td}日（${WD_JA[wdOf(ty, tm, td)]}）${tk === 'same' ? '' : 'の' + SLOT_LABEL[tk]}に移します` : '取り消します';
+    if (!confirm(`${nm}（${ids.length}人）の、${d}日の「${w0}」を${what}。よろしいですか？`)) return;
+    doBulk(day, w0, ids, mv ? to : null, tk);
+  });
+}
+async function doBulk(day, w, ids, to, tk) {
+  closeModal();
+  const ok = [], ng = [];
+  const inMonth = x => x.slice(0, 7) === day.slice(0, 7);
+  pendingSaves++;
+  try {
+    // 移す先がほかの月のときは、その日の予定を読んでおく
+    let other = new Map();
+    if (to && !inMonth(to)) {
+      const r = await sb.from('yotei_entries').select('*').eq('day', to).in('member_id', ids);
+      if (r.error) throw r.error;
+      other = new Map(r.data.map(e => [e.member_id, e]));
+    }
+    for (const id of ids) {
+      try {
+        const e = getEntry(id, day) || {};
+        // 1) 元の日から、その言葉を消す
+        const src = { ...e }; let firstK = null, carryU = null, wasRed = false;
+        for (const k of ['am', 'pm', 'allday']) {
+          const o = bkSlot(e, k); if (!o || !textParts(o.t).includes(w)) continue;
+          if (!firstK) firstK = k;
+          const reds = bkRedSet(o); if (reds.has(w)) wasRed = true;
+          const rest = textParts(o.t).filter(x => x !== w);
+          if (!rest.length && o.u) carryU = o.u; // その欄がこの言葉だけで「〜日まで続く」なら、日数ごと移す
+          const n = bkMake(rest, reds, o.u);
+          src[k] = n ? n.t : null; src[k + '_red'] = !!(n && n.on); src[k + '_red_parts'] = n && n.on && n.parts.length ? n.parts.join('\n') : null; src[k + '_until'] = n ? n.u : null;
+        }
+        if (!firstK) continue;
+        // 2) 移す先に書き加える
+        let dst = null;
+        if (to) {
+          const k0 = tk === 'same' ? firstK : tk;
+          let base;
+          if (to === day) base = src;
+          else if (inMonth(to)) base = effEntry(id, to);
+          else { const raw = other.get(id) || {}; const ev = (raw.am || raw.pm || raw.allday || raw.event_off) ? null : eventFor(to); base = ev ? { ...raw, ...evEntry(ev) } : raw; }
+          const t = { ...base };
+          let dest, items;
+          if (t.allday) { dest = 'allday'; items = [bkSlot(t, 'allday')]; }
+          else if (k0 === 'allday') { dest = 'allday'; items = ['am', 'pm'].map(k => bkSlot(t, k)).filter(Boolean); }
+          else { dest = k0; items = t[k0] ? [bkSlot(t, k0)] : []; }
+          const have = new Set(items.flatMap(x => textParts(x.t)));
+          const data = bkData(t);
+          if (!have.has(w)) {
+            const mine = { t: w, on: wasRed, parts: [], u: carryU && !items.length ? bkAddDays(carryU, bkDiff(day, to)) : null };
+            if (!items.length) bkPut(data, dest, mine);
+            else { const text = [...items.map(x => x.t), w].join('、'), mr = mergeRed([...items, mine], text); bkPut(data, dest, { t: text, on: mr.on, parts: mr.parts, u: (items.find(x => x.u) || {}).u || null }); }
+            if (dest === 'allday') { bkPut(data, 'am', null); bkPut(data, 'pm', null); }
+          }
+          if (to === day) dst = data; else { await saveEntry(id, to, data); }
+        }
+        await saveEntry(id, day, dst || bkData(src));
+        ok.push(id);
+      } catch (err) { ng.push(id); console.error(err); }
+    }
+  } catch (err) { toast('予定を読み込めませんでした：' + errMsg(err), true); }
+  finally { pendingSaves--; }
+  if (st.view === 'input') renderInput();
+  const nm = a => a.map(id => dispName(memberById(id))).join('・');
+  if (ok.length) toast(`${nm(ok)}の「${w}」を${to ? '移しました' : '取り消しました'}`);
+  if (ng.length) toast(`${nm(ng)}は変えられませんでした。もう一度試してください`, true);
+}
 $('#inRows').addEventListener('click', e => {
   const sb2 = e.target.closest('.shr');
   if (sb2) { openShare(sb2.closest('.row')); return; }
+  const bk = e.target.closest('.bulk');
+  if (bk) { openBulk(bk.closest('.row')); return; }
   const cb = e.target.closest('.cpy, .pst');
   if (cb) { const row = cb.closest('.row'); cb.classList.contains('cpy') ? copyRow(row) : pasteRow(row); return; }
   const btn = e.target.closest('.redbtn');
