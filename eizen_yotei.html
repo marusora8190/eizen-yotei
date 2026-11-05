@@ -111,6 +111,20 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .cp .pst{display:none;background:#eef4ff;border-color:#9cb8e3;color:var(--accent);font-weight:700}
 body.has-clip .cp .pst{display:inline-block}
 .row.cp-src{outline:2px solid #9cb8e3;outline-offset:-2px;background:#eef4ff}
+/* 1つの欄の予定を、ほかの先生の同じ日・同じ欄に写す（2026年11月5日〜） */
+.cp .shr{background:#f3fbf5;border-color:#9fd3ae;color:#0b5a23}
+body.personal .cp .shr{display:none}
+.shr-sec{margin:10px 0 4px;font-weight:700;font-size:14px}
+.shr-list{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;max-height:46vh;overflow:auto}
+.shr-list label{display:flex;align-items:baseline;gap:8px;padding:5px 2px;border-top:0.5px solid #eef0f3;cursor:pointer}
+.shr-list label:first-child{border-top:0}
+.shr-list .nm{flex:none;min-width:6.5em;font-weight:700}
+.shr-list .cur{min-width:0;color:var(--sub);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shr-list .cur.busy{color:#9a5b00}
+.shr-list .cur.same{color:var(--ok)}
+.shr-note{font-size:12.5px;color:var(--sub);margin-top:6px}
+.shr-warn{background:#fff7ed;border:1px solid #f5c68f;border-radius:6px;padding:8px 10px;font-size:14px;color:#7c4a03}
+.shr-warn ul{margin:6px 0 0;padding-left:1.4em}
 #clipBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:55;background:#1f2933;color:#fff;border-radius:10px;padding:8px 10px 8px 14px;display:none;align-items:center;gap:10px;font-size:14px;max-width:min(680px,94vw);box-shadow:0 4px 16px rgba(0,0,0,.25)}
 body.has-clip #clipBar{display:flex}
 #clipBar .cb-t{min-width:0;line-height:1.35}
@@ -574,6 +588,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
+      <li>同じ予定が何人かの先生にあるときは、その日の「他の先生へ」を押します。写す欄（午前・午後・終日のどれか）と、写す先生（いくつでも）を選んで「写す」を押すと、選んだ先生の同じ日・同じ欄に入ります。写るのは予定の文字・赤字・「〜日まで続く」で、昼食とほかの欄の予定はそのままです。写し先にすでに別の予定（行事を含む）があるときは、「書き換える」か「予定のない先生だけに写す」かを聞きます（先生ごとのURLでは、このボタンは出ません）。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
@@ -1002,7 +1017,7 @@ function renderInput() {
       ${mem.meal_survey ? `<div class="meal">昼食<select class="mealsel ${mealVal(e.meal, day) === '不要' ? 'v-ng' : 'v-ok'}" title="昼食（○：いる／✖：いらない）"><option value="要">○</option><option value="不要" ${mealVal(e.meal, day) === '不要' ? 'selected' : ''}>✖</option></select></div>` : ''}
       <div class="slots">${slot('am', '午前', e.am, e.am_red, e.am_until)}${slot('pm', '午後', e.pm, e.pm_red, e.pm_until)}${slot('allday', '終日', e.allday, e.allday_red, e.allday_until)}</div>
       <label class="adchk"><input type="checkbox" class="adcb" ${isAd ? 'checked' : ''}>終日</label>
-      <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button></span>
+      <span class="cp"><button type="button" class="btn cpy" title="この日の予定をコピーします">コピー</button><button type="button" class="btn pst" title="コピーした予定を、この日に貼り付けます">貼り付け</button>${st.members.length > 1 ? `<button type="button" class="btn shr" title="この日の予定（午前・午後・終日のどれか1つ）を、選んだ先生の同じ日・同じ欄に写します">他の先生へ</button>` : ''}</span>
       <span class="sv"></span>
       <div class="contnote"></div>
     </div>`;
@@ -1139,7 +1154,92 @@ function pasteRow(row) {
   scheduleSave(row, 0);
   toast(`${row.dataset.d}日に貼り付けました`);
 }
+// ===== 1つの欄の予定を、ほかの先生の同じ日・同じ欄に写す（2026年11月5日〜） =====
+// 写るのは予定の文字・赤字・「〜日まで続く」。昼食と、写し先のほかの欄はそのまま。写し先の欄に別の予定（行事を含む）があるときは、書き換える前に確かめる
+let lastSlot = null; // 最後に書いていた欄（「他の先生へ」を押したとき、はじめにその欄を選んでおく）
+$('#inRows').addEventListener('focusin', e => { const s = e.target.closest('.slot'), row = e.target.closest('.row'); if (s && row) lastSlot = { day: row.dataset.day, k: s.dataset.k }; });
+// 写し先の先生のその欄に、今あるもの（busy：別の予定がある、same：同じ予定がもうある）
+function shareTargetState(mid, day, k, text) {
+  const t = effEntry(mid, day), list = [];
+  if (k === 'allday') { if (t.allday) list.push(['終日', t.allday]); if (t.am) list.push(['午前', t.am]); if (t.pm) list.push(['午後', t.pm]); }
+  else { if (t[k]) list.push([SLOT_LABEL[k], t[k]]); if (t.allday) list.push(['終日', t.allday]); }
+  const same = list.length === 1 && list[0][0] === SLOT_LABEL[k] && list[0][1] === text;
+  return { busy: list.length > 0 && !same, same, text: list.map(([a, b]) => `${a}「${b}」`).join('　') };
+}
+function openShare(row, keepIds) {
+  const day = row.dataset.day, d = Number(row.dataset.d), [yy, mm] = day.split('-').map(Number);
+  const isAd = $('.adcb', row).checked;
+  const ks = (isAd ? ['allday'] : ['am', 'pm']).filter(k => slotVal(row, k).t);
+  if (!ks.length) { toast('この日には予定が書かれていません'); return; }
+  let k0 = lastSlot && lastSlot.day === day && ks.includes(lastSlot.k) ? lastSlot.k : ks[0];
+  const others = st.members.filter(x => x.id !== st.inMember);
+  const src = memberById(st.inMember);
+  const draw = () => {
+    const v = slotVal(row, k0);
+    const kHtml = ks.map(k => `<label style="display:flex;gap:6px;align-items:baseline;padding:3px 0;cursor:pointer"><input type="radio" name="shrK" value="${k}" ${k === k0 ? 'checked' : ''}><b style="flex:none">${SLOT_LABEL[k]}</b><span style="min-width:0">${redHtml(slotVal(row, k).t, slotVal(row, k).on, slotVal(row, k).parts.join('\n') || null)}</span></label>`).join('');
+    const prev = new Set(keepIds || $$('#shrList input:checked').map(x => Number(x.value))); keepIds = null;
+    const mHtml = others.map(x => { const s2 = shareTargetState(x.id, day, k0, v.t); return `<label><input type="checkbox" value="${x.id}" ${prev.has(x.id) ? 'checked' : ''}><span class="nm">${ttlHtml(dispName(x))}</span><span class="cur ${s2.same ? 'same' : s2.busy ? 'busy' : ''}">${s2.same ? '同じ予定がもう入っています' : s2.busy ? esc(s2.text) : '（空き）'}</span></label>`; }).join('');
+    $('#shrKs').innerHTML = kHtml; $('#shrList').innerHTML = mHtml;
+  };
+  openModal(`<h3>${d}日（${WD_JA[wdOf(yy, mm, d)]}）の予定を、ほかの先生にも写す</h3>
+    <div style="font-size:13px;color:var(--sub)">${ttlHtml(dispName(src))}の予定から写します</div>
+    <div class="shr-sec">写す欄</div><div id="shrKs"></div>
+    <div class="shr-sec" style="display:flex;align-items:center;gap:8px">写す先生<button type="button" class="btn sm" id="shrAll" style="margin-left:auto">全員を選ぶ</button><button type="button" class="btn sm" id="shrNone">選ぶのをやめる</button></div>
+    <div class="shr-list" id="shrList"></div>
+    <div class="shr-note">同じ日（${d}日）の同じ欄に写ります。写るのは予定の文字・赤字・「〜日まで続く」です。昼食と、ほかの欄の予定はそのままです。</div>
+    <div class="acts"><button type="button" class="btn" id="shrCancel">やめる</button><button type="button" class="btn pri" id="shrGo">写す</button></div>`);
+  draw();
+  $('#shrKs').addEventListener('change', e => { if (e.target.name === 'shrK') { k0 = e.target.value; draw(); } });
+  $('#shrAll').addEventListener('click', () => $$('#shrList input').forEach(x => (x.checked = true)));
+  $('#shrNone').addEventListener('click', () => $$('#shrList input').forEach(x => (x.checked = false)));
+  $('#shrCancel').addEventListener('click', closeModal);
+  $('#shrGo').addEventListener('click', () => {
+    const v = slotVal(row, k0); if (!v.t) { toast('この欄の予定が空になっています'); return; }
+    const ids = $$('#shrList input:checked').map(x => Number(x.value));
+    if (!ids.length) { toast('写す先生を選んでください'); return; }
+    const info = ids.map(id => ({ id, s: shareTargetState(id, day, k0, v.t) }));
+    const busy = info.filter(x => x.s.busy), todo = info.filter(x => !x.s.same);
+    if (!todo.length) { toast('選んだ先生には、同じ予定がもう入っています'); return; }
+    if (!busy.length) { doShare(row, day, k0, todo.map(x => x.id)); return; }
+    const free = todo.filter(x => !x.s.busy);
+    $('#modalBox').innerHTML = `<h3>すでに予定がある先生がいます</h3>
+      <div class="shr-warn">次の先生の${d}日の${SLOT_LABEL[k0]}には、別の予定があります。<ul>${busy.map(x => `<li><b>${ttlHtml(dispName(memberById(x.id)))}</b>：${esc(x.s.text)}</li>`).join('')}</ul></div>
+      <div class="shr-note" style="margin-top:8px">「書き換える」を押すと、上の先生の予定は「${esc(v.t)}」に変わります${k0 !== 'allday' ? '（終日の予定があるときは、終日の予定がなくなります）' : '（午前・午後の予定はなくなります）'}。</div>
+      <div class="acts" style="flex-wrap:wrap"><button type="button" class="btn" id="shrBack">戻る</button>${free.length ? `<button type="button" class="btn" id="shrFree">予定のない先生だけに写す（${free.length}人）</button>` : ''}<button type="button" class="btn pri" id="shrOver">書き換える（${todo.length}人に写す）</button></div>`;
+    $('#shrBack').addEventListener('click', () => openShare(row, ids));
+    if (free.length) $('#shrFree').addEventListener('click', () => doShare(row, day, k0, free.map(x => x.id)));
+    $('#shrOver').addEventListener('click', () => doShare(row, day, k0, todo.map(x => x.id)));
+  });
+}
+async function doShare(row, day, k, ids) {
+  const v = slotVal(row, k), u = $(`.slot[data-k="${k}"] .until`, row).value || null;
+  closeModal();
+  const ok = [], ng = [];
+  pendingSaves++;
+  try {
+    for (const id of ids) {
+      const t = effEntry(id, day), saved = getEntry(id, day) || {};
+      const data = { meal: saved.meal || null };
+      const put = (kk, src) => { data[kk] = src.t; data[kk + '_red'] = src.r; data[kk + '_red_parts'] = src.p; data[kk + '_until'] = src.u; };
+      const zero = kk => ['indent', 'size', 'arrow', 'arrow_top', 'arrow_bot'].forEach(f => (data[kk + '_' + f] = 0));
+      const mine = { t: v.t, r: v.on, p: v.on && v.parts.length ? v.parts.join('\n') : null, u };
+      if (k === 'allday') { put('allday', mine); zero('allday'); }
+      else {
+        const other = k === 'am' ? 'pm' : 'am';
+        put(k, mine); zero(k);
+        // ほかの欄（午前なら午後）は今のまま残す。終日の予定があったときは、終日はなくなる
+        if (!t.allday && t[other]) put(other, { t: t[other], r: !!t[other + '_red'], p: t[other + '_red_parts'] || null, u: t[other + '_until'] || null });
+      }
+      try { await saveEntry(id, day, data); ok.push(id); } catch (e) { ng.push(id); console.error(e); }
+    }
+  } finally { pendingSaves--; }
+  const nm = a => a.map(id => dispName(memberById(id))).join('・');
+  if (ok.length) toast(`${nm(ok)}に写しました`);
+  if (ng.length) toast(`${nm(ng)}には写せませんでした。もう一度試してください`, true);
+}
 $('#inRows').addEventListener('click', e => {
+  const sb2 = e.target.closest('.shr');
+  if (sb2) { openShare(sb2.closest('.row')); return; }
   const cb = e.target.closest('.cpy, .pst');
   if (cb) { const row = cb.closest('.row'); cb.classList.contains('cpy') ? copyRow(row) : pasteRow(row); return; }
   const btn = e.target.closest('.redbtn');
