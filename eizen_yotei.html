@@ -128,18 +128,27 @@ body.spv .cp .shr{display:none}
 .shr-note{font-size:12.5px;color:var(--sub);margin-top:6px}
 .shr-warn{background:#fff7ed;border:1px solid #f5c68f;border-radius:6px;padding:8px 10px;font-size:14px;color:#7c4a03}
 .shr-warn ul{margin:6px 0 0;padding-left:1.4em}
-#clipBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:55;background:#1f2933;color:#fff;border-radius:10px;padding:8px 10px 8px 14px;display:none;align-items:center;gap:10px;font-size:14px;max-width:min(680px,94vw);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#clipBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:55;background:#1f2933;color:#fff;border-radius:10px;padding:8px 10px 8px 14px;display:none;align-items:center;gap:10px;font-size:14px;max-width:min(760px,94vw);box-shadow:0 4px 16px rgba(0,0,0,.25)}
 body.has-clip #clipBar{display:flex}
 #clipBar .cb-t{min-width:0;line-height:1.35}
 #clipBar .cb-t small{display:block;color:#cbd2da;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #clipBar .btn{flex:none;background:#fff;color:var(--ink)}
+/* コピーした予定の言葉を選ぶボタン（2026年11月5日〜） */
+#clipBar .cb-words{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px}
+#clipBar .cb-g{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+#clipBar .cb-k{color:#cbd2da;font-size:12.5px}
+#clipBar .cb-w{border:1px solid #6b7785;background:transparent;color:#9aa5b1;border-radius:14px;padding:2px 10px;font-size:13.5px;text-decoration:line-through;cursor:pointer}
+#clipBar .cb-w.on{background:#fff;border-color:#fff;color:var(--ink);text-decoration:none;font-weight:700}
+#clipBar .cb-w.on.red{color:var(--red)}
+@media screen and (max-width:760px){#clipBar{left:8px;right:8px;transform:none;max-width:none;bottom:8px}#clipBar .cb-long{display:none}}
+body.spv #clipBar .cb-long{display:none}
 .mnav{display:none;gap:5px;align-items:center;margin-left:auto}
 .mnav .btn{padding:4px 10px;font-size:14px;white-space:nowrap}
 .mnav .btn.act{background:var(--nav-act);border-color:var(--nav-act);color:#fff;font-weight:700}
 #btnSpvBack{display:none}
 body.spv:not(.real-mobile) #btnSpvBack{display:inline-block}
 .spvbtn{margin-top:6px;color:var(--ink)!important;font-size:13px}
-body.has-clip #toast{bottom:74px}
+body.has-clip #toast{bottom:calc(var(--clipH, 74px) + 6px)}
 body.spv #clipBar{max-width:410px}
 body.real-mobile .spvbtn{display:none}
 /* パソコンのサイドバーの「📱 スマホ用の画面」ボタンは出さない（2026年11月4日〜。利用者の希望） */
@@ -590,7 +599,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>「赤」を押すと、予定表で赤字になります。「神殿本番」「別席」など決まった言葉は自動で赤になります（マスターで言葉を変えられます）。</li>
       <li>何日か続く予定は、始まりの日に書いて、右の「当日だけ」を「〜○日」に変えます。予定表では、始まりの日と最後の日に予定の名前が出て、あいだに黒い矢印が出ます（同じ月の中だけ）。</li>
       <li>「、」で区切って書いた予定は、一部だけを赤字にできます。「赤」を押すと区切った部分が並ぶので、赤字にしたい部分を押します（例：「課安全衛生委員会、祖霊殿夜番」の「祖霊殿夜番」だけ）。一部だけ赤字のときは、ボタンが「一部」になり、入力欄の左が赤くなります。</li>
-      <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。写るのは予定の文字・赤字・終日のチェックで、昼食・「〜日まで続く」は写りません。</li>
+      <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。コピーすると、下の黒い帯に予定が「、」で区切った言葉ごとに出ます。貼り付けたくない言葉は押して外します（もう一度押すと戻ります）。例：「午前：部会　午後：委員会」の「委員会」だけを貼り付けるときは、「部会」を押して外します。写し先の日に予定があるときは、そのうしろに「、」でつないで書き加えます（同じ言葉がもうあれば足しません。写し先が終日の予定なら終日に書き加えます）。写るのは予定の文字と赤字で、昼食・「〜日まで続く」は写りません。</li>
       <li>同じ予定が何人かの先生にあるときは、その日の「他の先生へ」を押します。写す欄（午前・午後・終日のどれか）と、写す先生（いくつでも）を選んで「写す」を押すと、選んだ先生の同じ日・同じ欄に入ります。写るのは予定の文字・赤字・「〜日まで続く」で、昼食とほかの欄の予定はそのままです。写し先にすでに予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加えます（例：「出張」に「部会」を写すと「出張、部会」。写し先が終日の予定なら終日に書き加えます）。同じ予定がもう入っている先生には写しません。まちがえて写したときは、その先生の欄を直してください（パソコンだけで使えます。スマホと、先生ごとのURLでは、このボタンは出ません）。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
@@ -1133,27 +1142,65 @@ function clipLabel(c) { return c.isAd ? c.ad.t : [c.am.t && '午前：' + c.am.t
 function markClipSrc() { $$('#inRows .row').forEach(r => r.classList.toggle('cp-src', !!clip && clip.mid === st.inMember && clip.day === r.dataset.day)); }
 function clearClip() { clip = null; document.body.classList.remove('has-clip'); markClipSrc(); }
 $('#clipCancel').addEventListener('click', clearClip);
+// コピーした予定を「、」で区切った言葉ごとに出し、押して選ぶ・外すことができる（2026年11月5日〜。はじめは全部選んである）
+// 1つの言葉：{ k：欄, t：言葉, red：赤字か, on：貼り付けるか }
+function clipWords(k, v) { return textParts(v.t).map(t => ({ k, t, red: v.on && (!v.parts.length || v.parts.includes(t)), on: true })); }
+function drawClip() {
+  const c = clip; if (!c) return;
+  const groups = (c.isAd ? ['allday'] : ['am', 'pm']).map(k => ({ k, ws: c.words.map((w, i) => ({ ...w, i })).filter(w => w.k === k) })).filter(g => g.ws.length);
+  $('#clipText').innerHTML = `📋 ${c.d}日の予定をコピーしました。<span class="cb-long">貼り付ける言葉を選んで（押すと外れます）、</span>写し先の日の「貼り付け」を押してください`
+    + `<span class="cb-words">${groups.map(g => `<span class="cb-g"><span class="cb-k">${SLOT_LABEL[g.k]}：</span>${g.ws.map(w => `<button type="button" class="cb-w ${w.on ? 'on' : ''} ${w.red ? 'red' : ''}" data-i="${w.i}" title="${w.on ? '押すと、この言葉は貼り付けません' : '押すと、この言葉も貼り付けます'}">${esc(w.t)}</button>`).join('')}</span>`).join('')}</span>`;
+}
+$('#clipText').addEventListener('click', e => {
+  const b = e.target.closest('.cb-w'); if (!b || !clip) return;
+  const w = clip.words[Number(b.dataset.i)]; w.on = !w.on; drawClip();
+});
 function copyRow(row) {
   const isAd = $('.adcb', row).checked;
   const c = { mid: st.inMember, day: row.dataset.day, d: Number(row.dataset.d), isAd, am: slotVal(row, 'am'), pm: slotVal(row, 'pm'), ad: slotVal(row, 'allday') };
   if (!clipLabel(c)) { toast('この日には予定が書かれていません'); return; }
-  clip = c;
-  $('#clipText').innerHTML = `📋 ${c.d}日の予定をコピーしました。写し先の日の「貼り付け」を押してください<small>${esc(clipLabel(c))}</small>`;
+  c.words = isAd ? clipWords('allday', c.ad) : [...clipWords('am', c.am), ...clipWords('pm', c.pm)];
+  clip = c; drawClip();
+  requestAnimationFrame(() => document.documentElement.style.setProperty('--clipH', ($('#clipBar').offsetHeight + 14) + 'px'));
   document.body.classList.add('has-clip'); markClipSrc();
 }
+// 貼り付け：選んだ言葉を、その日の同じ欄のうしろに「、」でつないで書き加える（同じ言葉がもうあれば足さない）
+// 貼り付け先が終日の予定なら終日に、終日の予定を午前・午後に予定がある日に貼り付けるときは、午前・午後をつないで終日にまとめる。「〜日まで続く」・昼食はそのまま
 function pasteRow(row) {
   if (!clip) return;
   if (clip.mid === st.inMember && clip.day === row.dataset.day) { toast('コピーした日と同じ日です'); return; }
-  const cur = rowData(row), had = cur.allday || cur.am || cur.pm;
-  if (had && !confirm(`${row.dataset.d}日の予定を、コピーした予定に書き換えます。よろしいですか？`)) return;
-  const put = (k, v) => {
-    const s = $(`.slot[data-k="${k}"]`, row), inp = $('input', s), b = $('.redbtn', s), u = $('.until', s);
-    inp.value = v ? v.t : ''; u.value = ''; u.classList.remove('set');
-    if (v && v.t) { b.dataset.manual = '1'; setRed(b, inp, v.on, v.parts); } else { delete b.dataset.manual; setRed(b, inp, false, []); }
-  };
-  $('.adcb', row).checked = clip.isAd; row.classList.toggle('is-allday', clip.isAd);
-  if (clip.isAd) { put('allday', clip.ad); put('am', null); put('pm', null); }
-  else { put('am', clip.am); put('pm', clip.pm); put('allday', null); }
+  const sel = clip.words.filter(w => w.on);
+  if (!sel.length) { toast('貼り付ける言葉を選んでください（下の黒い帯の言葉を押します）'); return; }
+  const cur = { am: slotVal(row, 'am'), pm: slotVal(row, 'pm'), allday: slotVal(row, 'allday') };
+  const toItem = (t, on, parts) => ({ t, on, parts }); // mergeRed に渡す形
+  const wordsItem = ws => ({ t: ws.map(w => w.t).join('、'), on: ws.some(w => w.red), parts: ws.every(w => w.red) ? [] : ws.filter(w => w.red).map(w => w.t) });
+  const isAdNow = $('.adcb', row).checked;
+  const plan = []; // [欄, 今ある予定たち, 足す言葉たち]
+  if (isAdNow || clip.isAd) {
+    const items = isAdNow ? (cur.allday.t ? [cur.allday] : []) : ['am', 'pm'].map(k => cur[k]).filter(x => x.t);
+    plan.push(['allday', items, sel]);
+  } else {
+    for (const k of ['am', 'pm']) { const ws = sel.filter(w => w.k === k); if (ws.length) plan.push([k, cur[k].t ? [cur[k]] : [], ws]); }
+  }
+  // 同じ言葉がもうあるものは足さない。足す言葉が1つも無ければ、何も変えない
+  const plan2 = plan.map(([k, items, ws0]) => { const have = new Set(items.flatMap(x => textParts(x.t))); return [k, items, ws0.filter(w => !have.has(w.t) && (have.add(w.t), true))]; });
+  if (!plan2.some(p => p[2].length)) { toast(`${row.dataset.d}日には、選んだ予定がもう入っています`); return; }
+  const toAd = plan2.some(p => p[0] === 'allday') && !isAdNow;
+  for (const [k, items, ws] of plan2) {
+    if (!ws.length) continue;
+    const parts = [...items.map(x => toItem(x.t, x.on, x.parts)), wordsItem(ws)];
+    const text = parts.map(x => x.t).join('、'), mr = mergeRed(parts, text);
+    const s2 = $(`.slot[data-k="${k}"]`, row), inp = $('input', s2), b = $('.redbtn', s2);
+    inp.value = text; b.dataset.manual = '1'; setRed(b, inp, mr.on, mr.parts);
+  }
+  if (toAd) {
+    // 午前・午後の予定を終日にまとめる（「終日」のチェックを入れたときと同じ。「〜日まで続く」は午前・午後のものを終日に移す）
+    const uA = $('.slot[data-k="am"] .until', row), uP = $('.slot[data-k="pm"] .until', row), uD = $('.slot[data-k="allday"] .until', row);
+    if (!uD.value) uD.value = uA.value || uP.value || ''; uD.classList.toggle('set', !!uD.value);
+    for (const k of ['am', 'pm']) { const s2 = $(`.slot[data-k="${k}"]`, row), inp = $('input', s2), b = $('.redbtn', s2); inp.value = ''; delete b.dataset.manual; setRed(b, inp, false, []); }
+    uA.value = ''; uP.value = ''; uA.classList.remove('set'); uP.classList.remove('set');
+    $('.adcb', row).checked = true; row.classList.add('is-allday');
+  }
   scheduleSave(row, 0);
   toast(`${row.dataset.d}日に貼り付けました`);
 }
