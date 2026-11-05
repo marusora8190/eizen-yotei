@@ -291,6 +291,11 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 @media print{.tbswitch{display:none!important}}
 /* 先生の切り替えの欄は、下に動かしても上の帯のすぐ下に出たままにする（上に隠れないように。2026年11月5日〜） */
 @media screen{.tbswitch{position:sticky;top:var(--hdr);z-index:15;box-shadow:0 2px 6px rgba(0,0,0,.08)}}
+/* パソコンの「予定表（一人ずつ）」：真ん中に、読みやすい幅で出す（2026年11月5日〜） */
+body.tbl-one #tbSwitch,body.tbl-one #sheet.solo-wrap{max-width:640px;min-width:0;margin-left:auto;margin-right:auto}
+body.tbl-one #v-table .toolbar{display:none}
+body.tbl-one #tbSwitch{margin-bottom:8px}
+body.tbl-one .tbswitch .tbs-name{font-size:17px}
 /* スマホの予定表では、上の説明文（「予定のマスをクリックすると…」）を出さない（2026年11月4日〜。パソコンでは出す） */
 @media screen and (max-width:760px){#v-table .hide-personal-note{display:none!important}}
 .sheet.a4l.solo{width:auto;height:auto}
@@ -483,7 +488,8 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
 <div class="layout">
 <nav id="nav">
   <a data-view="input">✏️ 予定入力</a>
-  <a data-view="table">📅 予定表</a>
+  <a data-view="table">📅 予定表（全員）</a>
+  <a data-view="table1">👤 予定表（一人ずつ）</a>
   <a data-view="form">🖨 記入表の印刷</a>
   <a data-view="help">❓ 使い方</a>
   <div class="sep hide-personal"></div>
@@ -602,6 +608,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>同じ予定を別の日にも書くときは、写したい日の「コピー」を押してから、写し先の日の「貼り付け」を押します（続けて何日でも貼り付けられます。終わったら下の「やめる」を押します）。コピーすると、下の黒い帯に予定が「、」で区切った言葉ごとに出ます。貼り付けたくない言葉は押して外します（もう一度押すと戻ります）。例：「午前：部会　午後：委員会」の「委員会」だけを貼り付けるときは、「部会」を押して外します。写し先の日に予定があるときは、そのうしろに「、」でつないで書き加えます（同じ言葉がもうあれば足しません。写し先が終日の予定なら終日に書き加えます）。写るのは予定の文字と赤字で、昼食・「〜日まで続く」は写りません。</li>
       <li>同じ予定が何人かの先生にあるときは、その日の「他の先生へ」を押します。写す欄（午前・午後・終日のどれか）と、写す先生（いくつでも）を選んで「写す」を押すと、選んだ先生の同じ日・同じ欄に入ります。写るのは予定の文字・赤字・「〜日まで続く」で、昼食とほかの欄の予定はそのままです。写し先にすでに予定（行事を含む）があるときは、そのうしろに「、」でつないで書き加えます（例：「出張」に「部会」を写すと「出張、部会」。写し先が終日の予定なら終日に書き加えます）。同じ予定がもう入っている先生には写しません。まちがえて写したときは、その先生の欄を直してください（パソコンだけで使えます。スマホと、先生ごとのURLでは、このボタンは出ません）。</li>
       <li>スマホでは、上の「予定入力」「予定表」「Update」の3つのボタンだけが出ます（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
+      <li>パソコンのサイドバーには「📅 予定表（全員）」と「👤 予定表（一人ずつ）」があります。「一人ずつ」は、先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。印刷は「予定表（全員）」から行います。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
       <li>予定表のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
@@ -900,7 +907,7 @@ async function saveEntry(mid, day, data, base) {
 }
 
 // ===== 画面の切り替え =====
-const VIEWS = ['input', 'table', 'form', 'master', 'help'];
+const VIEWS = ['input', 'table', 'table1', 'form', 'master', 'help'];
 // 上の帯・サイドバー・月の切り替え・ボタンの帯を、下にスクロールしても出たままにする
 function updSticky() {
   const r = document.documentElement.style, h = $('header').offsetHeight;
@@ -959,15 +966,19 @@ $('#btnNav').addEventListener('click', () => setNavHidden(!document.body.classLi
 try { if (localStorage.getItem('yotei-nav-hidden') === '1') document.body.classList.add('nav-hidden'); } catch (e) {}
 function showView(v) {
   if (!VIEWS.includes(v)) v = 'input';
+  // 「予定表（一人ずつ）」（パソコンのサイドバー。2026年11月5日〜）は、予定表の画面を先生1人分の形で出す
+  const one = v === 'table1';
+  if (one) v = 'table'; if (v === 'table') st.tblOne = one && !isMobile();
   if (st.personal && !['input', 'table', 'form', 'help'].includes(v)) v = 'input';
   if (v === 'master' && !st.isAdmin) v = 'input';
   if (isMobile() && !['input', 'table'].includes(v)) v = 'input'; // スマホは予定入力・予定表だけ
   st.view = v;
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
-  $$('nav a[data-view], .mnav [data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === v));
+  const nv = v === 'table' && st.tblOne ? 'table1' : v;
+  $$('nav a[data-view], .mnav [data-view]').forEach(a => a.classList.toggle('act', a.dataset.view === nv));
   $('#monthbar').style.display = ['input', 'table', 'form'].includes(v) ? 'flex' : 'none';
   $('#inBar').style.display = v === 'input' ? 'flex' : 'none';
-  try { history.replaceState(null, '', location.pathname + location.search + '#' + v); } catch (e) {}
+  try { history.replaceState(null, '', location.pathname + location.search + '#' + nv); } catch (e) {}
   render();
   updSticky();
 }
@@ -1343,9 +1354,12 @@ function renderTable() {
   const rowH = Math.min(5.2, avail / (nd * 2));
   // スマホでは、先生1人分の列だけを、画面の幅に合わせて出す（2026年11月4日〜。それまでは先生ごとのURLのときだけ）
   // 先生ごとのURLではその先生だけ。ふつうのURLでは、上の切り替えで選んだ先生
-  const solo = isMobile();
+  // パソコンでも、サイドバーの「予定表（一人ずつ）」のときは同じ形（2026年11月5日〜。先生ごとのURLでも、ほかの先生に切り替えて見られる）
+  const solo = isMobile() || !!st.tblOne;
   const soloMem = solo ? tbCurrentMember() : null;
-  renderTbSwitch(solo && !st.personal ? soloMem : null);
+  renderTbSwitch(solo && !(st.personal && isMobile()) ? soloMem : null);
+  $('#btnPrintTable').style.display = st.tblOne && !isMobile() ? 'none' : '';
+  document.body.classList.toggle('tbl-one', solo && !isMobile());
   const groups = [];
   if (solo) { if (soloMem) groups.push([soloMem]); }
   else for (let i = 0; i < st.members.length; i += PER_PAGE) groups.push(st.members.slice(i, i + PER_PAGE));
@@ -1420,7 +1434,7 @@ function renderTable() {
 }
 // スマホで見る予定表：いま出している先生（先生ごとのURLならその先生、ふつうのURLなら切り替えで選んだ先生）
 function tbCurrentMember() {
-  if (st.personal) return memberById(st.personal) || null;
+  if (st.personal && isMobile()) return memberById(st.personal) || null;
   if (!st.members.length) return null;
   if (!st.tbMember || !st.members.some(x => x.id === st.tbMember)) st.tbMember = st.members.some(x => x.id === st.inMember) ? st.inMember : st.members[0].id;
   return memberById(st.tbMember);
@@ -1443,7 +1457,7 @@ function setTbMember(id) {
   const w = $('#v-table .sheet-wrap'); if (w) w.scrollTop = 0;
 }
 function stepTbMember(d) {
-  const n = st.members.length; if (!n || st.personal) return;
+  const n = st.members.length; if (!n || (st.personal && isMobile())) return;
   const cur = tbCurrentMember(); const i = st.members.findIndex(x => x.id === cur.id);
   setTbMember(st.members[(i + d + n) % n].id);
 }
