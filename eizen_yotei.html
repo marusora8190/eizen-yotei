@@ -69,6 +69,11 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .inbar .status{white-space:nowrap}
 .inbar label{white-space:nowrap}
 .inbar .sp{flex:1}
+/* 予定入力の先生を選ぶ欄の名前を、くっきり太字に（パソコンも。2026年11月5日〜。利用者の希望。スマホは下の @media でさらに大きく） */
+#inMember{-webkit-appearance:none;appearance:none;font-size:18px;font-weight:700;color:#000;-webkit-text-fill-color:#000;opacity:1;padding:4px 28px 4px 10px;border:1.5px solid #555;border-radius:6px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 9px center;cursor:pointer}
+#inMember option{font-weight:700;color:#000}
+.selconf{font-size:16px;line-height:1.7}
+.selconf .nm{font-size:26px;font-weight:700;color:#000}
 .navupd{padding:10px 18px 4px}
 .navupd .btn{width:100%}
 .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;position:sticky;top:calc(var(--st) + var(--mb));z-index:11;box-shadow:0 0 0 6px var(--bg)}
@@ -1382,8 +1387,10 @@ function shareTarget(mid, day, k, text) {
   else if (k === 'allday') { dest = 'allday'; items = ['am', 'pm'].filter(kk => t[kk]).map(it); }
   else { dest = k; items = t[k] ? [it(k)] : []; }
   const have = new Set(items.flatMap(x => textParts(x.t)));
-  const same = items.length > 0 && textParts(text).every(x => have.has(x));
-  return { t, dest, items, same, text: items.map(x => `${SLOT_LABEL[x.k]}「${x.t}」`).join('　') };
+  // 写す予定を「、」で区切った1つ分ずつ見て、写し先にまだ無いものだけを書き加える（同じ言葉は二重にしない。2026年11月5日〜）
+  const add = textParts(text).filter(x => !have.has(x) && (have.add(x), true));
+  const same = items.length > 0 && !add.length;
+  return { t, dest, items, same, add, text: items.map(x => `${SLOT_LABEL[x.k]}「${x.t}」`).join('　') };
 }
 function openShare(row) {
   const day = row.dataset.day, d = Number(row.dataset.d), [yy, mm] = day.split('-').map(Number);
@@ -1397,7 +1404,7 @@ function openShare(row) {
     const v = slotVal(row, k0);
     const kHtml = ks.map(k => `<label style="display:flex;gap:6px;align-items:baseline;padding:3px 0;cursor:pointer"><input type="radio" name="shrK" value="${k}" ${k === k0 ? 'checked' : ''}><b style="flex:none">${SLOT_LABEL[k]}</b><span style="min-width:0">${redHtml(slotVal(row, k).t, slotVal(row, k).on, slotVal(row, k).parts.join('\n') || null)}</span></label>`).join('');
     const prev = new Set($$('#shrList input:checked').map(x => Number(x.value)));
-    const mHtml = others.map(x => { const g = shareTarget(x.id, day, k0, v.t); return `<label><input type="checkbox" value="${x.id}" ${prev.has(x.id) ? 'checked' : ''}><span class="nm">${ttlHtml(dispName(x))}</span><span class="cur ${g.same ? 'same' : g.items.length ? 'busy' : ''}">${g.same ? '同じ予定がもう入っています' : g.items.length ? esc(g.text) + ' のうしろに書き加えます' : '（空き）'}</span></label>`; }).join('');
+    const mHtml = others.map(x => { const g = shareTarget(x.id, day, k0, v.t); return `<label><input type="checkbox" value="${x.id}" ${prev.has(x.id) ? 'checked' : ''}><span class="nm">${ttlHtml(dispName(x))}</span><span class="cur ${g.same ? 'same' : g.items.length ? 'busy' : ''}">${g.same ? '同じ予定がもう入っています' : g.items.length ? esc(g.text) + ' のうしろに' + (g.add.length < textParts(v.t).length ? '「' + esc(g.add.join('、')) + '」だけ' : '') + '書き加えます' : '（空き）'}</span></label>`; }).join('');
     $('#shrKs').innerHTML = kHtml; $('#shrList').innerHTML = mHtml;
   };
   openModal(`<h3>${d}日（${WD_JA[wdOf(yy, mm, d)]}）の予定を、ほかの先生にも写す</h3>
@@ -1436,8 +1443,12 @@ async function doShare(row, day, k, ids, skipped = []) {
       if (!g.items.length) { put(g.dest, mine); zero(g.dest); }
       else {
         // 今ある予定のうしろに書き加える。赤字はそれぞれの赤字を残す。「〜日まで続く」は、今ある予定に付いていればそちらを残す
-        const text = [...g.items.map(x => x.t), v.t].join('、');
-        const mr = mergeRed([...g.items, mine], text);
+        // 足すのは、写し先にまだ無い言葉だけ（g.add）。赤字もその言葉の分だけ持っていく
+        const redSet = new Set(v.on ? (v.parts.length ? v.parts : textParts(v.t)) : []);
+        const reds = g.add.filter(x => redSet.has(x));
+        const addItem = { t: g.add.join('、'), on: reds.length > 0, parts: reds.length === g.add.length ? [] : reds };
+        const text = [...g.items.map(x => x.t), addItem.t].join('、');
+        const mr = mergeRed([...g.items, addItem], text);
         put(g.dest, { t: text, on: mr.on, parts: mr.parts, u: (g.items.find(x => x.u) || {}).u || u });
         if (g.items.length > 1 || g.items[0].k !== g.dest) zero(g.dest); // 午前・午後を終日にまとめたとき
         added.push(id);
@@ -1464,10 +1475,20 @@ $('#inRows').addEventListener('click', e => {
     pressRed(btn, $('input', btn.closest('.slot')), () => scheduleSave(row, 0)); return;
   }
 });
-$('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; } st.inMember = Number(e.target.value);
-  // 選んだ先生を、この端末（ブラウザー）に覚えておき、次に開いたときもその先生にする（2026年10月27日〜。先生ごとのURLでは使わない）
-  if (!st.personal) { try { localStorage.setItem('yotei-in-member', String(st.inMember)); } catch (e) {} }
-  renderInput(); });
+$('#inMember').addEventListener('change', e => { if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); e.target.value = st.inMember; return; }
+  // 選んだ先生を確かめる画面を出す（2026年11月5日〜。利用者の希望）。「やめる」・画面の外を押すと、前の先生に戻す
+  const nid = Number(e.target.value), nmem = memberById(nid);
+  let done = false;
+  modalOnClose = () => { if (!done) e.target.value = st.inMember; };
+  openModal(`<div class="selconf"><div><span class="nm">${ttlHtml(dispName(nmem))}</span></div><div>の予定を入力します。よろしいですか？</div></div>
+    <div class="acts"><button type="button" class="btn" id="selNo">やめる</button><button type="button" class="btn pri" id="selYes">はい</button></div>`);
+  $('#selNo').addEventListener('click', closeModal);
+  $('#selYes').addEventListener('click', () => { done = true; closeModal();
+    st.inMember = nid;
+    // 選んだ先生を、この端末（ブラウザー）に覚えておき、次に開いたときもその先生にする（2026年10月27日〜。先生ごとのURLでは使わない）
+    if (!st.personal) { try { localStorage.setItem('yotei-in-member', String(st.inMember)); } catch (e) {} }
+    renderInput(); });
+  setTimeout(() => { const b = $('#selYes'); if (b) b.focus(); }, 0); });
 $('#btnSubmit').addEventListener('click', async () => {
   if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
   const mem = memberById(st.inMember);
