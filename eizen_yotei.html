@@ -91,6 +91,8 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .meal select{padding:4px;border:1px solid var(--line);border-radius:5px;background:#fff}
 .meal{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--sub)}
 .meal select.v-ok{background:#e8f5ec;border-color:#9fd3ae;color:var(--ok);font-weight:700}
+/* 昼食の「○」の線を濃く・太く見せる（2026年11月5日〜。もとの緑は細くて薄く見えたため） */
+.meal select.v-ok{color:#0b5a23;-webkit-text-stroke:0.8px #0b5a23}
 .meal select.v-ng{background:#f2f2f2;color:#555;font-weight:700}
 .mealnote{background:#fff7ed;border:1px solid #f5c68f;border-radius:6px;padding:6px 10px;margin:0 0 8px;font-size:14px;color:#7c4a03}
 .k-head .k-mealnote{font-size:9pt;color:#000;border:0.8px solid #000;padding:0.6mm 2mm;align-self:center}
