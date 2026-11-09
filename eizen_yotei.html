@@ -434,6 +434,8 @@ table.yt th.nthm{padding:0;letter-spacing:0;font-weight:400;vertical-align:top}
 table.yt th.nthm .ntx{white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.3mm 0.8mm;box-sizing:border-box;line-height:1.2}
 table.yt th.nthm.editable{cursor:pointer}
 table.yt th.nthm.editable:hover{background:#fff8e1}
+.ntprevw{margin:8px 0 0;font-size:12px;color:var(--sub)}
+.ntprev{margin-top:3px;border:1px dashed #c9cfd6;border-radius:6px;padding:6px 8px;min-height:32px;white-space:pre-wrap;word-break:break-all;background:#fffef7;color:#000;line-height:1.3;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
 .ntedit textarea{width:100%;min-height:120px;font-size:15px;line-height:1.5;padding:8px;border:1px solid var(--line);border-radius:6px;box-sizing:border-box;font-family:inherit}
 body.tbl-one .tb-cols{display:flex;gap:16px;align-items:flex-start}
 body.tbl-one .tb-left{flex:none;width:640px;min-width:0}
@@ -2274,8 +2276,40 @@ const SIDE_LABEL = { L: '左の特記', R: '右の特記', M: '自分の予定�
 const KW_COLORS = [[/捺印/, '#c62828'], [/請求書/, '#1565c0']];
 function kwColor(t) { for (const [re, c] of KW_COLORS) if (re.test(String(t || ''))) return c; return ''; }
 // 特記の中身：改行・「、」で区切った1つずつのうち、「捺印」「請求書」を含むものだけ色を付ける（ほかはマスの色のまま）
+// 選んだ文字だけの大きさ（2026年11月9日〜）：書く欄では {{-1|予定}} の形で書く（-4〜6。1つで約15％）
+const SEL_SIZE_RE = /\{\{(-?\d+)\|([^{}]*)\}\}/g;
+const plainBody = body => String(body || '').replace(SEL_SIZE_RE, '$2');
 function noteBodyHtml(body) {
-  return String(body || '').split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : kwColor(seg); return c ? `<span style="color:${c}">${esc(seg)}</span>` : esc(seg); }).join('');
+  const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : kwColor(seg); return c ? `<span style="color:${c}">${esc(seg)}</span>` : esc(seg); }).join('');
+  const b = String(body || ''), out = []; let last = 0, m;
+  SEL_SIZE_RE.lastIndex = 0;
+  while ((m = SEL_SIZE_RE.exec(b))) {
+    out.push(kw(b.slice(last, m.index)));
+    out.push(`<span style="font-size:${Math.max(0.3, 1 + Number(m[1]) * 0.15).toFixed(2)}em">${kw(m[2])}</span>`);
+    last = SEL_SIZE_RE.lastIndex;
+  }
+  out.push(kw(b.slice(last)));
+  return out.join('');
+}
+// 書く欄で選んだ文字の大きさを変える（d：−1 か ＋1）。選んだところが印の中なら、その印の大きさを変える
+function selSize(ta, d) {
+  const v = ta.value, a = ta.selectionStart, z = ta.selectionEnd, re = new RegExp(SEL_SIZE_RE.source, 'g');
+  let m;
+  while ((m = re.exec(v))) {
+    const s0 = m.index, e0 = s0 + m[0].length;
+    if (a >= s0 && z <= e0) {
+      const lv = Math.max(-4, Math.min(6, Number(m[1]) + d));
+      ta.value = v.slice(0, s0) + (lv ? `{{${lv}|${m[2]}}}` : m[2]) + v.slice(e0);
+      const ns = lv ? s0 + 3 + String(lv).length : s0; ta.focus(); ta.setSelectionRange(ns, ns + m[2].length);
+      return true;
+    }
+  }
+  if (a === z) { toast('大きさを変えたい文字を、書く欄の中で選んでから押してください', true); ta.focus(); return false; }
+  const sel = v.slice(a, z);
+  if (/[{}|]/.test(sel)) { toast('選んだところに、ほかの大きさの印がまざっています。印の外か中だけを選んでください', true); ta.focus(); return false; }
+  ta.value = v.slice(0, a) + `{{${d}|${sel}}}` + v.slice(z);
+  const ns = a + 3 + String(d).length; ta.focus(); ta.setSelectionRange(ns, ns + sel.length);
+  return true;
 }
 // 予定表③の真ん中の列（自分の予定）の幅：その月の中身の、いちばん長い行がちょうど入る幅（30mm〜45mm）
 function t3MidWidth(nd) {
@@ -2283,7 +2317,7 @@ function t3MidWidth(nd) {
   for (const n of st.notes.values()) {
     if (n.side !== 'M' || String(n.day).slice(0, 7) !== ym || !n.body) continue;
     const f = noteFmt(n), pt = 8 * (1 + f.size * 0.1);
-    for (const ln of String(n.body).split('\n')) need = Math.max(need, t3TextMm(ln, pt, f.bold) + 1.6 + Math.abs(f.indent) * 1.5);
+    for (const ln of plainBody(n.body).split('\n')) need = Math.max(need, t3TextMm(ln, pt, f.bold) + 1.6 + Math.abs(f.indent) * 1.5);
   }
   return Math.min(45, Math.max(30, need + 1)); // 最低3cm（2026年11月9日〜。利用者の希望で広く）
 }
@@ -2417,14 +2451,17 @@ function midHeadCell() {
 function openHeadEditor() {
   if (st.personal || st.viewOnly) return;
   const cur = midHead(), fmt = noteFmt(cur);
+  setTimeout(() => { const t = $('#ntText'); if (t) t.addEventListener('input', () => { const pv = $('#ntPrev'); if (pv) pv.innerHTML = noteBodyHtml(t.value); }); }, 0);
   openModal(`<h3>真ん中の列の見出し（全員共通・どの月も同じ）</h3>
     <div class="ntbar">${noteBarHtml()}</div>
     <div class="ntedit"><textarea id="ntText" placeholder="見出しの文字（空のままでもかまいません）">${esc(cur ? cur.body : '')}</textarea></div>
+    <div class="ntprevw"><span>表での見え方（大きさ・色の目安）：</span><div class="ntprev" id="ntPrev"></div></div>
     <p class="note" style="margin:6px 0 0">見出しの欄は1行分の高さです。長いと文字が小さくなります。Ctrl＋Enter でも保存します。空にして保存すると、見出しが消えます。</p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox');
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
+    const pv = $('#ntPrev'); if (pv) { pv.style.cssText = noteStyle(fmt, 'px'); pv.innerHTML = noteBodyHtml(ta.value) || '<span style="color:#9aa5b1">（まだ何も書いていません）</span>'; }
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
@@ -2440,6 +2477,7 @@ function openHeadEditor() {
     else if (b.dataset.sz) fmt.size = Math.max(-5, Math.min(8, fmt.size + Number(b.dataset.sz)));
     else if (b.dataset.co != null) fmt.color = b.dataset.co;
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
+    else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
     else return;
     paint();
   });
@@ -2466,7 +2504,8 @@ function noteBarHtml() {
   return `<span class="grp"><b>寄せ</b><button type="button" class="btn" data-al="left">左寄せ</button><button type="button" class="btn" data-al="center">中央</button><button type="button" class="btn" data-al="right">右寄せ</button></span>
       <span class="grp"><b>上下</b><button type="button" class="btn" data-va="top">上</button><button type="button" class="btn" data-va="middle">上下真ん中</button><button type="button" class="btn" data-va="bottom">下</button></span>
       <span class="grp"><b>インデント</b><button type="button" class="btn" data-in="-1">◀ 左へ</button><button type="button" class="btn" data-in="1">右へ ▶</button><span class="cur" id="ntInCur"></span></span>
-      <span class="grp"><b>大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
+      <span class="grp"><b>選んだ文字</b><button type="button" class="btn" data-ssz="-1" title="書く欄で選んだ文字だけを小さくします">A− 小さく</button><button type="button" class="btn" data-ssz="1" title="書く欄で選んだ文字だけを大きくします">A＋ 大きく</button></span>
+      <span class="grp"><b>全体の大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
       <span class="grp"><b>色</b>${NOTE_COLORS.map(([c, n]) => `<button type="button" class="sw" data-co="${c}" title="${n}" style="background:${c || '#1f2933'}"></button>`).join('')}</span>
       <span class="grp"><b>太さ</b><button type="button" class="btn" data-bd="1"><b>太字</b></button><button type="button" class="btn" data-bd="0">細字</button></span>`;
 }
@@ -2501,12 +2540,15 @@ function openNoteEditor(day, side, line) {
       ${noteBarHtml()}
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
+    <div class="ntprevw"><span>表での見え方（大きさ・色の目安）：</span><div class="ntprev" id="ntPrev"></div></div>
     <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${kwColor(r.body) ? `color:${kwColor(r.body)};font-weight:700` : ''}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
+  ta.addEventListener('input', () => { const pv = $('#ntPrev'); if (pv) pv.innerHTML = noteBodyHtml(ta.value); });
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
+    const pv = $('#ntPrev'); if (pv) { pv.style.cssText = noteStyle(fmt, 'px'); pv.innerHTML = noteBodyHtml(ta.value) || '<span style="color:#9aa5b1">（まだ何も書いていません）</span>'; }
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
@@ -2528,6 +2570,7 @@ function openNoteEditor(day, side, line) {
     else if (b.dataset.sz) fmt.size = Math.max(-5, Math.min(8, fmt.size + Number(b.dataset.sz)));
     else if (b.dataset.co != null) fmt.color = b.dataset.co;
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
+    else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
     else if (b.id === 'ntMerge') sel.value = String(p0 + 1);
     else if (b.id === 'ntSplit') sel.value = '-1';
     else if (b.dataset.rq) {
@@ -2599,7 +2642,7 @@ function openT3Help() {
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合。リストはありません）、上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、はじめはマスからはみ出さないいちばん大きい大きさに自動でなります（書いた行のまま折り返しません。「A−」「A＋」で大きさを変えると、その大きさになります）。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
-    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
+    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト</h4><ul><li>画面の左の余白は1人目の先生、右の余白は2人目の先生への「お願いすること」のリストです（はじめは5行。「＋ 行を追加」で増やせます）。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
