@@ -376,7 +376,7 @@ table.yt td.nt{vertical-align:top;padding:0}
 /* 予定表③の左端の日・曜日（上の行に日にち、下の行に曜日。2026年11月9日〜） */
 table.yt td.dn.dn3{text-align:center;padding:0;vertical-align:bottom;line-height:1;border-bottom:0;border-left:0.6px solid #000}
 table.yt td.dw.dw3{text-align:center;padding:0;vertical-align:top;line-height:1.1;border-top:0;border-left:0.6px solid #000}
-table.yt thead th.dh3{font-size:5.5pt;line-height:1.05;letter-spacing:0;padding:0}
+table.yt thead th.dh3{font-size:6.5pt;line-height:1.05;letter-spacing:0;padding:0}
 table.yt td.nt.nt1:not(.ntm){border-bottom:0.3px dotted #9a9a9a}
 table.yt td.nt.nt2{border-top:0}
 table.yt td.nt .ntx{font-size:8pt;line-height:1.2;white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.4mm 0.8mm;box-sizing:border-box;font-weight:400}
@@ -2179,7 +2179,7 @@ function renderTable() {
     const mcol = () => `<col style="width:${pw}mm">`;
     const cols = `<col style="width:${DW}mm"><col style="width:${NW}mm">` + (A ? mcol() : '') + `<col style="width:${MW}mm">` + Bs.map(mcol).join('') + `<col style="width:${NW}mm">`;
     const mth = x => `<th>${ttlHtml(x.header_name)}</th>`;
-    const head = `<th class="dh dh1 dh3">日・<br>曜日</th><th class="nth">特　　記</th>` + (A ? mth(A) : '') + `${midHeadCell()}` + Bs.map(mth).join('') + `<th class="nth redge">特　　記</th>`;
+    const head = `<th class="dh dh1 dh3">日</th><th class="nth">特　　記</th>` + (A ? mth(A) : '') + `${midHeadCell()}` + Bs.map(mth).join('') + `<th class="nth redge">特　　記</th>`;
     const ned = noteEditable ? ' editable' : '';
     // 特記：ふだんは上の行・下の行の2つのマス。上の行の merged が true なら、2行を1つのマスに結合する
     // 特記：ふだんは1日に上の行・下の行の2つのマス。結合（同じ日の2行・日をまたいだ結合）は、いちばん上のマスの span_day・span_line で決める
@@ -2189,7 +2189,7 @@ function renderTable() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}"><div class="nti">${noteBodyHtml(n ? n.body : '')}</div></div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx"${side === 'M' && !noteFmt(n).size ? ' data-auto="1"' : ''} style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}"><div class="nti">${noteBodyHtml(n ? n.body : '')}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -2249,6 +2249,19 @@ $('#t3B').addEventListener('change', changeT3Pick);
 function fitNotes(root) {
   $$('td.nt .ntx, th.nthm .ntx', root).forEach(f => {
     if (!f.textContent) return;
+    // 真ん中の列で大きさを変えていないマス：書いた行のまま（折り返さずに）、マスからはみ出さない最大の大きさにする（2026年11月9日〜。利用者の希望）
+    if (f.dataset.auto) {
+      const inner = $('.nti', f), cs = getComputedStyle(f);
+      const roomW = f.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), roomH = f.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      inner.style.whiteSpace = 'pre'; inner.style.width = 'max-content'; inner.style.maxWidth = 'none';
+      const fits = px => { f.style.fontSize = px + 'px'; return inner.offsetWidth <= roomW + 0.5 && inner.offsetHeight <= roomH + 0.5; };
+      let lo = 4, hi = 48;
+      if (fits(hi)) lo = hi; else for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+      f.style.fontSize = (lo * 0.95).toFixed(2) + 'px'; // 印刷で端にぎりぎり触れないよう、少しだけゆとりを持たせる
+      // 寄せ（左・中央・右）が効くよう、文字の箱をマスの幅いっぱいに戻す（行は折り返さないまま）
+      inner.style.width = '100%';
+      return;
+    }
     let size = parseFloat(getComputedStyle(f).fontSize), g = 0;
     const inner = $('.nti', f) || f, cs = getComputedStyle(f), room = () => f.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     while ((inner === f ? f.scrollHeight > f.clientHeight + 0.5 : inner.offsetHeight > room() + 0.5) && size > 5 && g++ < 30) { size -= 0.4; f.style.fontSize = size + 'px'; }
@@ -2336,11 +2349,11 @@ function t3TextMm(text, pt, bold) {
   return t3Canvas.measureText(String(text || '')).width / pxPerMm();
 }
 // 予定表③の日・曜日の列の幅（mm）：[日の列, 曜日の列]
-// 予定表③の日・曜日の列の幅（mm）：上の行の日にち・下の行の曜日・2行の見出し「日・／曜日」がちょうど入る幅
+// 予定表③の日・曜日の列の幅（mm）：上の行の日にち・下の行の曜日・見出し「日」がちょうど入る幅
 function t3DayWidth(nd) {
   const dn = Math.max(...Array.from({ length: nd }, (_, i) => t3TextMm(String(i + 1), 8.5)));
   const wd = Math.max(...WD_JA.map(w => t3TextMm(`(${w})`, 6)));
-  const head = Math.max(t3TextMm('日・', 5.5), t3TextMm('曜日', 5.5));
+  const head = t3TextMm('日', 6.5);
   return Math.max(dn, wd, head) + 1.2;
 }
 function t3ColWidth(list, nd) {
@@ -2584,7 +2597,7 @@ async function saveNote(day, side, line, body, base, fmt, end) {
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
-    <h4>表の並び</h4><ul><li>左から「日・曜日」「特記」「1人目の先生」「（見出しなしの列）」「2人目の先生」「特記」です。日・曜日は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合。リストはありません）、上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
+    <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合。リストはありません）、上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、はじめはマスからはみ出さないいちばん大きい大きさに自動でなります（書いた行のまま折り返しません。「A−」「A＋」で大きさを変えると、その大きさになります）。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
