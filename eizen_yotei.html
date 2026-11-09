@@ -398,6 +398,10 @@ table.yt td.nt.editable:hover{background:#fff8e1}
 @media screen{
   .duo table.yt td.dn1,.duo table.yt td.dw1{position:static;box-shadow:none}
   .duo table.yt thead th.dh1{left:auto;box-shadow:inset 0 -1px 0 var(--stk,#000)}
+  /* 下に動かして見出しの行が上に残ったときも、見出しの上の横線が消えないように（2026年11月9日〜） */
+  .duo table.yt thead th,.duo table.yt thead th.dh1{box-shadow:inset 0 0.6px 0 #000,inset 0 -1px 0 var(--stk,#000)}
+  /* 予定表③のまわりの背景を、見やすい色に（画面だけ。2026年11月9日〜。利用者の希望） */
+  body.tbl-three #v-table .sheet-wrap{background:#dce8f5}
 }
 @media print{table.yt td.nt.editable:hover{background:none}}
 /* 予定表③：「お願いすること」のリスト（「⚙ 設定」の画面の中。印刷には出さない。2026年11月9日〜） */
@@ -416,7 +420,20 @@ table.yt td.nt.editable:hover{background:#fff8e1}
 body.tbl-three #v-table > p.note{display:none}
 @media print{.t3lay{display:block}.t3req{display:none!important}}
 /* 「お願いすること」のリストは「⚙ 設定」の画面の中で直す（2026年11月9日〜） */
-#modalBox.rqbox{width:min(780px,100%)}
+#modal #modalBox.rqbox{width:min(780px,100%)}
+/* 特記・真ん中の列・見出しを書く画面は横に広くし、上下に動かさなくても全体が見えるように（2026年11月9日〜。利用者の希望）
+   左に「書く欄」と「表での見え方」、右に「リストから選ぶ」 */
+#modal #modalBox.ntwide{width:min(1200px,100%);max-height:96vh;padding:14px 18px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:18px;grid-template-areas:"h h" "bar bar" "ed pick" "prev pick" "hint hint" "acts acts";grid-template-rows:auto auto auto 1fr auto auto}
+#modalBox.ntwide > h3{grid-area:h;margin:0 0 6px;font-size:17px}
+#modalBox.ntwide > .ntbar{grid-area:bar;gap:5px 12px;margin:0 0 6px}
+#modalBox.ntwide > .ntedit{grid-area:ed}
+#modalBox.ntwide > .ntedit textarea{min-height:96px;height:96px}
+#modalBox.ntwide > .ntprevw{grid-area:prev;margin:6px 0 0}
+#modalBox.ntwide > .ntprevw .ntprevbox{max-height:34vh}
+#modalBox.ntwide > .ntpick{grid-area:pick;margin:0;max-height:52vh;overflow:auto;align-self:start}
+#modalBox.ntwide > #ntHint,#modalBox.ntwide > p.note{grid-area:hint}
+#modalBox.ntwide > .acts{grid-area:acts;margin-top:8px}
+#modal #modalBox.ntwide.nopick{width:min(820px,100%);grid-template-columns:minmax(0,1fr);grid-template-areas:"h" "bar" "ed" "prev" "hint" "acts"}
 .rqset{display:flex;gap:12px;flex-wrap:wrap}
 .rqset .t3req{position:static;flex:1 1 260px;width:auto}
 /* 特記を書く画面の書式のボタン */
@@ -1203,7 +1220,7 @@ function errMsg(error) {
   return m;
 }
 // 開くたびに中身の入れ物を作り直す（前に開いたときのボタンの動きが重ならないように）
-function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
+function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); nb.className = 'box'; /* 前の画面の幅の印（rqbox・ntwide）を残さない */ old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
 let modalOnClose = null;
 let modalBeforeClose = null; // 閉じる前に、書きかけを保存するため（「⚙ 設定」のリスト。2026年11月9日〜）
 function closeModal() {
@@ -2208,12 +2225,14 @@ function renderTableBody() {
   // この画面では、先生の予定は直せない（見るだけ）。特記だけ書ける。「お願いすること」のリストは「⚙ 設定」の中
   function buildDuo(list) {
     // 先生の列は、その月の予定がちょうど入る幅（最小）にし、残りを左右の特記に同じだけ回す（2026年11月9日〜）
-    const PW = 199.4; // 紙の印刷できる幅（200mm）より少しだけ狭く
-    const pc = list.length, pw = pc ? t3ColWidth(list, nd) : 0;
+    const PW0 = 199.4; // 紙の印刷できる幅（200mm）より少しだけ狭く
+    // 画面では、枠の横幅に合わせて、どの列も同じ割合で広げる（いちばん広くて1.5倍。印刷はA4縦の幅のまま。2026年11月9日〜。利用者の希望）
+    const K = st.print3 ? 1 : t3ScreenWidth() / PW0, PW = PW0 * K;
+    const pc = list.length, pw = (pc ? t3ColWidth(list, nd) : 0) * K;
     // 日・曜日は左端の1列（上の行に日にち、下の行に曜日）。中身と見出しがちょうど入る幅（最小）にする（2026年11月9日〜）
-    const DW = t3DayWidth(nd);
+    const DW = t3DayWidth(nd) * K;
     // 日・曜日のすぐ右に「自分の主な予定・年次休暇」の列（見出しは空白。特記と同じく2行・結合・書式が使える。2026年11月9日〜）
-    const MW = t3MidWidth(nd);
+    const MW = t3MidWidth(nd) * K;
     const NW = (PW - pc * pw - DW - MW) / 2;
     const rowH3 = Math.min(8, (287 - titleH - headH - 1.5) / (nd * 2));
     const A = list[0], Bs = list.slice(1);
@@ -2247,7 +2266,7 @@ function renderTableBody() {
     const tbl = `<table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
     const xs = [0, DW, DW + NW]; let x = DW + NW; if (A) { x += pw; xs.push(x); } x += MW; xs.push(x); Bs.forEach(() => { x += pw; xs.push(x); }); xs.push(x + NW);
     const vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}<b class="ht" style="width:calc(${tableW}mm + 0.6px)"></b><b class="hb" style="width:calc(${tableW}mm + 0.6px)"></b></div>`;
-    const page = `<div class="sheet a4p ypage duo"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表</span></div><div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div></div>`;
+    const page = `<div class="sheet a4p ypage duo"${K > 1 ? ` style="width:${(PW + 0.6).toFixed(1)}mm"` : ''}><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表</span></div><div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div></div>`;
     return page; // 「お願いすること」のリストは、左右の余白ではなく「⚙ 設定」の中に出す（2026年11月9日〜）
   }
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
@@ -2532,6 +2551,12 @@ function t3TextMm(text, pt, bold) {
 }
 // 予定表③の日・曜日の列の幅（mm）：[日の列, 曜日の列]
 // 予定表③の日・曜日の列の幅（mm）：上の行の日にち・下の行の曜日・見出し「日」がちょうど入る幅
+// 予定表③の画面での横幅（mm）：予定表の枠の横幅いっぱい。狭い画面では、印刷と同じ 199.4mm（2026年11月9日〜）
+function t3ScreenWidth() {
+  const w = $('#v-table .sheet-wrap'); if (!w || !w.clientWidth) return 199.4;
+  const mm = (w.clientWidth - 28 - 6) * 25.4 / 96; // 枠の中の余白（左右14px）と、少しのゆとりを引く
+  return Math.round(Math.max(199.4, Math.min(mm, 300)) * 10) / 10; // 広げすぎない（いちばん広くて 300mm）
+}
 function t3DayWidth(nd) {
   const dn = Math.max(...Array.from({ length: nd }, (_, i) => t3TextMm(String(i + 1), 8.5)));
   const wd = Math.max(...WD_JA.map(w => t3TextMm(`(${w})`, 6)));
@@ -2608,6 +2633,7 @@ function openHeadEditor() {
     <p class="note" style="margin:6px 0 0">見出しの欄は1行分の高さです。長いと文字が小さくなります。Ctrl＋Enter でも保存します。空にして保存すると、見出しが消えます。</p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox');
+  box.classList.add('ntwide', 'nopick');
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
     drawPrev(fmt, ta.value, prevCell);
@@ -2699,6 +2725,7 @@ function openNoteEditor(day, side, line) {
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
+  box.classList.add('ntwide'); if (side === 'M') box.classList.add('nopick'); // 横に広い画面（真ん中の列はリストが無いので1列）
   ta.addEventListener('input', () => drawPrev(fmt, ta.value, prevCell));
   ['keyup', 'mouseup', 'select'].forEach(ev => ta.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(ta, !fmt.size && autoPt ? autoPt : notePt(fmt)); }));
   const paint = () => {
@@ -3322,7 +3349,21 @@ function doPrint(pageCss) {
 // 予定表②の印刷（A4縦。2026年11月9日〜）：印刷用の大きさで作り直してから印刷し、終わったら画面用に戻す
 $('#tbSwitch').addEventListener('click', e => { if (!e.target.closest('#btnPrint2')) return; st.print2 = true; renderTable(); doPrint('size:210mm 297mm;margin:5mm'); });
 window.addEventListener('afterprint', () => { if (st.print2) { st.print2 = false; setTimeout(() => { if (st.view === 'table') renderTable(); }, 300); } });
-$('#btnPrintTable').addEventListener('click', () => doPrint(document.body.classList.contains('tbl-three') ? 'size:210mm 297mm;margin:5mm' : 'size:297mm 210mm;margin:5mm'));
+$('#btnPrintTable').addEventListener('click', () => {
+  // 予定表③は、画面では横に広げているので、印刷用（A4縦の幅）に作り直してから印刷する（2026年11月9日〜）
+  if (document.body.classList.contains('tbl-three')) { st.print3 = true; renderTable(); }
+  doPrint(document.body.classList.contains('tbl-three') ? 'size:210mm 297mm;margin:5mm' : 'size:297mm 210mm;margin:5mm');
+});
+// Ctrl＋P で印刷したときも、予定表③は印刷用の幅に作り直す。終わったら画面用に戻す
+window.addEventListener('beforeprint', () => { if (st.view === 'table' && document.body.classList.contains('tbl-three') && !st.print3) { st.print3 = true; renderTable(); } });
+window.addEventListener('afterprint', () => { if (st.print3) { st.print3 = false; setTimeout(() => { if (st.view === 'table') renderTable(); }, 300); } });
+// 画面の大きさを変えたら、予定表③の横幅を合わせ直す（書く画面を開いているときは、閉じたあとの次の機会に）
+let t3ResizeTimer = 0;
+window.addEventListener('resize', () => {
+  if (st.print3 || isPrinting() || st.view !== 'table' || !document.body.classList.contains('tbl-three')) return;
+  clearTimeout(t3ResizeTimer);
+  t3ResizeTimer = setTimeout(() => { if (!st.print3 && !$('#modal').classList.contains('show')) renderTable(); }, 250);
+});
 $('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
 
 // ===== 管理者 =====
