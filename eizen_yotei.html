@@ -3477,6 +3477,8 @@ $('#msHolAdd').addEventListener('click', async () => {
     // 見るだけのURL（?view=1）・予定表③だけのURL（?t3=1）。2026年11月9日〜
     if (!st.personal && params.get('view') === '1') { st.viewOnly = true; document.body.classList.add('viewonly'); $('#whoLabel').textContent = '見るだけ'; }
     else if (!st.personal && params.get('t3') === '1') { st.t3Only = true; document.body.classList.add('t3only'); $('#whoLabel').textContent = '予定表③'; }
+    // 見るだけ・予定表③だけのURLは、はじめは今月を開く（ふつうは来月。2026年11月9日〜。Update のあとは見ていた月のまま）
+    if ((st.viewOnly || st.t3Only) && !(mq && /^\d{4}-\d{2}$/.test(mq))) { const td = todayJst(); st.y = Number(td.slice(0, 4)); st.m = Number(td.slice(5, 7)); }
     // 前にこの端末で選んでいた先生（予定入力の「○○先生」）。いなくなった先生なら、いつもの最初の先生
     if (!st.personal) { try { const sm = Number(localStorage.getItem('yotei-in-member')); if (sm && st.members.some(x => x.id === sm)) st.inMember = sm; } catch (e) {} }
     const tq = Number(params.get('t'));
