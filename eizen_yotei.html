@@ -480,7 +480,9 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
   .solo table.yt td.dn1,.solo table.yt td.dw1,.solo table.yt thead th.dh1{position:static;box-shadow:none}
   .solo table.yt thead th.dh1{position:sticky;box-shadow:inset 0 -1px 0 var(--stk,#000)}
 }
-.sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"MS PGothic","Yu Gothic","Meiryo",sans-serif}
+/* 予定表①②③の文字は「Meiryo UI」（2026年11月9日〜。利用者の希望。Meiryo UI の無いパソコン・スマホでは、メイリオなど近い文字になる） */
+.sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
+.atpanel,.ntedit textarea{font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif!important}
 .sheet.a4l{width:287mm;height:200mm;padding:0}
 .ypage + .ypage{margin-top:14px}
 .s-page{font-size:9pt;margin-left:3mm}
@@ -2275,7 +2277,7 @@ $('#sheet').addEventListener('click', e => {
 let t3Canvas = null;
 function t3TextMm(text, pt, bold) {
   if (!t3Canvas) t3Canvas = document.createElement('canvas').getContext('2d');
-  t3Canvas.font = `${bold ? 700 : 400} ${pt}pt "MS PGothic","Yu Gothic","Meiryo",sans-serif`;
+  t3Canvas.font = `${bold ? 700 : 400} ${pt}pt "Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif`;
   return t3Canvas.measureText(String(text || '')).width / pxPerMm();
 }
 // 予定表③の日・曜日の列の幅（mm）：[日の列, 曜日の列]
