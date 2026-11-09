@@ -409,6 +409,9 @@ table.yt td.nt.editable:hover{background:#fff8e1}
 .t3req li{margin:0 0 5px}
 .t3req input{width:100%;box-sizing:border-box;font-size:14px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
 .t3req input.ing{background:#fffbe6}
+.t3req .rqrow{display:flex;gap:4px;align-items:center}
+.t3req .rqrow input{flex:1;min-width:0}
+.t3req .rqfmt{padding:2px 6px;flex:none}
 .t3req .hint{font-size:11.5px;color:var(--sub);margin:6px 0 0;line-height:1.5}
 body.tbl-three #v-table > p.note{display:none}
 @media print{.t3lay{display:block}.t3req{display:none!important}}
@@ -2295,12 +2298,22 @@ const SIDE_LABEL = { L: '左の特記', R: '右の特記', M: '自分の予定�
 // 「お願いすること」の言葉の色（2026年11月9日〜。利用者の希望）：「捺印」を含むものは赤、「請求書」を含むものは青（両方あるときは赤）
 const KW_COLORS = [[/捺印/, '#c62828'], [/請求書/, '#1565c0']];
 function kwColor(t) { for (const [re, c] of KW_COLORS) if (re.test(String(t || ''))) return c; return ''; }
+// 特記の中の1つ分の色：お願いのリストで色を選んだ行と同じ文字ならその色、ちがえば言葉で決まる色（2026年11月9日〜）
+function segColor(seg) {
+  const t = String(seg || '').trim(); if (!t) return '';
+  const r = (st.requests || []).find(x => x.active !== false && x.color && String(x.body || '').trim() === t);
+  return r ? r.color : kwColor(seg);
+}
+// お願いのリストの1行の見た目（色・太さは、選んでいなければ言葉で決まる）
+const reqColor = r => r.color || kwColor(r.body);
+const reqBold = r => (r.bold == null ? !!kwColor(r.body) : !!r.bold);
+const reqStyle = r => `color:${reqColor(r) || 'inherit'};font-weight:${reqBold(r) ? 700 : 400};font-size:${(14 * (1 + (r.size || 0) * 0.1)).toFixed(1)}px;text-align:${r.align || 'left'}`;
 // 特記の中身：改行・「、」で区切った1つずつのうち、「捺印」「請求書」を含むものだけ色を付ける（ほかはマスの色のまま）
 // 選んだ文字だけの大きさ（2026年11月9日〜）：書く欄では {{-1|予定}} の形で書く（-4〜6。1つで約15％）
 const SEL_SIZE_RE = /\{\{(-?\d+)\|([^{}]*)\}\}/g;
 const plainBody = body => String(body || '').replace(SEL_SIZE_RE, '$2');
 function noteBodyHtml(body) {
-  const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : kwColor(seg); return c ? `<span style="color:${c}">${esc(seg)}</span>` : esc(seg); }).join('');
+  const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : segColor(seg); return c ? `<span style="color:${c}">${esc(seg)}</span>` : esc(seg); }).join('');
   const b = String(body || ''), out = []; let last = 0, m;
   SEL_SIZE_RE.lastIndex = 0;
   while ((m = SEL_SIZE_RE.exec(b))) {
@@ -2370,11 +2383,12 @@ const REQ_MIN_ROWS = 5;
 const reqsOf = mid => st.requests.filter(r => r.member_id === mid && r.active !== false && String(r.body || '').trim()).sort((a, b) => (a.sort_order - b.sort_order) || (a.id - b.id));
 function reqPanel(mem, pos) {
   if (!mem) return `<aside class="t3req no-print" style="visibility:hidden"></aside>`;
-  const items = reqsOf(mem.id), rows = items.map(r => `<li><input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off" style="${kwColor(r.body) ? `color:${kwColor(r.body)};font-weight:700` : ''}"></li>`);
-  while (rows.length < REQ_MIN_ROWS) rows.push(`<li><input class="rq" data-id="" value="" autocomplete="off"></li>`);
+  const fb = '<button type="button" class="btn sm rqfmt" title="この行の文字の大きさ・色・寄せ・太さ">✎</button>';
+  const items = reqsOf(mem.id), rows = items.map(r => `<li><div class="rqrow"><input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off" style="${reqStyle(r)}">${fb}</div></li>`);
+  while (rows.length < REQ_MIN_ROWS) rows.push(`<li><div class="rqrow"><input class="rq" data-id="" value="" autocomplete="off">${fb}</div></li>`);
   return `<aside class="t3req no-print" data-mid="${mem.id}" data-pos="${pos}"><h4>${ttlHtml(dispName(mem))}<small>にお願いすること</small></h4><ol>${rows.join('')}</ol>
     <button type="button" class="btn sm rqadd">＋ 行を追加</button>
-    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。${pos === 'L' ? '左' : '右'}の特記を書くときに、ここから選べます。</p></aside>`;
+    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。「✎」で、その行の文字の大きさ・色・寄せ・太さを変えられます。${pos === 'L' ? '左' : '右'}の特記を書くときに、ここから選べます。</p></aside>`;
 }
 async function saveReq(inp) {
   const box = inp.closest('.t3req'), mid = Number(box.dataset.mid), id = Number(inp.dataset.id) || 0, body = inp.value.trim();
@@ -2399,13 +2413,74 @@ async function saveReq(inp) {
   } catch (err) { toast('保存できませんでした：' + errMsg(err), true); inp.value = cur ? cur.body : ''; }
   finally { pendingSaves--; inp.classList.remove('ing'); }
 }
-$('#sheet').addEventListener('input', e => { const inp = e.target.closest('.t3req input.rq'); if (inp) { const c = kwColor(inp.value); inp.style.color = c; inp.style.fontWeight = c ? '700' : ''; } });
+$('#sheet').addEventListener('input', e => { const inp = e.target.closest('.t3req input.rq'); if (inp) { const r = st.requests.find(x => x.id === Number(inp.dataset.id)) || {}; inp.style.cssText = reqStyle({ ...r, body: inp.value }); } });
 $('#sheet').addEventListener('change', e => { const inp = e.target.closest('.t3req input.rq'); if (inp) saveReq(inp); });
 $('#sheet').addEventListener('keydown', e => { const inp = e.target.closest('.t3req input.rq'); if (inp && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+// リストの1行の書式（✎。2026年11月9日〜）
+$('#sheet').addEventListener('click', async e => {
+  const fbtn = e.target.closest('.t3req .rqfmt'); if (!fbtn) return;
+  const inp = $('input.rq', fbtn.closest('.rqrow'));
+  if (!inp.dataset.id) {
+    if (!inp.value.trim()) { toast('先にこの行に文字を書いてください', true); inp.focus(); return; }
+    await saveReq(inp);
+  }
+  const r = st.requests.find(x => x.id === Number(inp.dataset.id)); if (r) openReqEditor(r);
+});
+const REQ_COLORS = [['', '自動（言葉で決まる色）'], ['#000000', '黒'], ...NOTE_COLORS.slice(1)];
+function openReqEditor(r) {
+  const f = { body: r.body, align: r.align || 'left', size: r.size || 0, color: r.color || '', bold: r.bold == null ? null : !!r.bold };
+  openModal(`<h3>お願いすることの書式</h3>
+    <div class="ntbar">
+      <span class="grp"><b>寄せ</b><button type="button" class="btn" data-ral="left">左寄せ</button><button type="button" class="btn" data-ral="center">中央</button><button type="button" class="btn" data-ral="right">右寄せ</button></span>
+      <span class="grp"><b>大きさ</b><button type="button" class="btn" data-rsz="-1">A− 小さく</button><button type="button" class="btn" data-rsz="1">A＋ 大きく</button><span class="cur" id="rqSzCur"></span></span>
+      <span class="grp"><b>色</b>${REQ_COLORS.map(([c, n]) => c ? `<button type="button" class="sw" data-rco="${c}" title="${n}" style="background:${c}"></button>` : `<button type="button" class="btn" data-rco="" title="${n}">自動</button>`).join('')}</span>
+      <span class="grp"><b>太さ</b><button type="button" class="btn" data-rbd="auto">自動</button><button type="button" class="btn" data-rbd="1"><b>太字</b></button><button type="button" class="btn" data-rbd="0">細字</button></span>
+    </div>
+    <input type="text" id="rqText" value="${esc(r.body)}" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:15px">
+    <div class="ntprevw"><span>リストでの見え方：</span><div class="ntprev" id="rqPrev"></div></div>
+    <p class="note" style="margin:6px 0 0">「自動」の色は、「捺印」を含むと赤、「請求書」を含むと青、ほかは黒です。色を選ぶと、この行を特記に入れたときも、特記の中のその部分が同じ色になります（大きさ・寄せは特記のマスの書式です）。</p>
+    <div class="acts"><button type="button" class="btn" id="rqNo">やめる</button><button type="button" class="btn pri" id="rqOk">保存</button></div>`);
+  const box = $('#modalBox'), ti = $('#rqText');
+  const paint = () => {
+    const cur = { ...f, body: ti.value, bold: f.bold };
+    $('#rqPrev').style.cssText = reqStyle(cur); $('#rqPrev').textContent = ti.value || '（まだ何も書いていません）';
+    $$('[data-ral]', box).forEach(b => b.classList.toggle('on', b.dataset.ral === f.align));
+    $$('[data-rco]', box).forEach(b => b.classList.toggle('on', b.dataset.rco === f.color));
+    $$('[data-rbd]', box).forEach(b => b.classList.toggle('on', b.dataset.rbd === (f.bold == null ? 'auto' : f.bold ? '1' : '0')));
+    $('#rqSzCur').textContent = `${(10.5 * (1 + f.size * 0.1)).toFixed(1)}pt${f.size ? '' : '（標準）'}`;
+  };
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.ral) f.align = b.dataset.ral;
+    else if (b.dataset.rsz) f.size = Math.max(-4, Math.min(6, f.size + Number(b.dataset.rsz)));
+    else if (b.dataset.rco != null) f.color = b.dataset.rco;
+    else if (b.dataset.rbd) f.bold = b.dataset.rbd === 'auto' ? null : b.dataset.rbd === '1';
+    else return;
+    paint();
+  });
+  ti.addEventListener('input', paint);
+  paint();
+  const go = async () => {
+    const body = ti.value.trim();
+    if (!body) { toast('文字を書いてください（行を消すときは、リストの欄を空にします）', true); return; }
+    $('#rqOk').disabled = true; pendingSaves++;
+    try {
+      const patch = { body, align: f.align, size: f.size, color: f.color, bold: f.bold, updated_at: new Date().toISOString() };
+      const { error } = await sb.from('yotei_requests').update(patch).eq('id', r.id);
+      if (error) throw error;
+      Object.assign(r, patch); closeModal(); renderTable(); toast('保存しました');
+    } catch (err) { toast('保存できませんでした：' + errMsg(err), true); const b = $('#rqOk'); if (b) b.disabled = false; }
+    finally { pendingSaves--; }
+  };
+  $('#rqNo').addEventListener('click', closeModal);
+  $('#rqOk').addEventListener('click', go);
+  ti.addEventListener('keydown', ev => { if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); go(); } });
+  setTimeout(() => ti.focus(), 30);
+}
 $('#sheet').addEventListener('click', e => {
   const b = e.target.closest('.t3req .rqadd'); if (!b) return;
   const ol = $('ol', b.closest('.t3req')), li = document.createElement('li');
-  li.innerHTML = '<input class="rq" data-id="" value="" autocomplete="off">'; ol.appendChild(li); $('input', li).focus();
+  li.innerHTML = '<div class="rqrow"><input class="rq" data-id="" value="" autocomplete="off"><button type="button" class="btn sm rqfmt" title="この行の文字の大きさ・色・寄せ・太さ">✎</button></div>'; ol.appendChild(li); $('input', li).focus();
 });
 // 予定表③の先生の列の幅（mm）：その月の予定の文字（予定表③の大きさ 8pt。終日は 9pt）がちょうど入る幅。見出しの名前も入るようにする
 let t3Canvas = null;
@@ -2577,7 +2652,7 @@ function openNoteEditor(day, side, line) {
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
     <div class="ntprevw"><span>表での見え方（大きさ・色の目安）：</span><div class="ntprev" id="ntPrev"></div></div>
-    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${kwColor(r.body) ? `color:${kwColor(r.body)};font-weight:700` : ''}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
+    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
@@ -2682,7 +2757,7 @@ function openT3Help() {
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
-    <h4>お願いすることのリスト</h4><ul><li>画面の左の余白は1人目の先生、右の余白は2人目の先生への「お願いすること」のリストです（はじめは5行。「＋ 行を追加」で増やせます）。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
+    <h4>お願いすることのリスト</h4><ul><li>画面の左の余白は1人目の先生、右の余白は2人目の先生への「お願いすること」のリストです（はじめは5行。「＋ 行を追加」で増やせます）。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
     <h4>こんなときは</h4><ul><li>ほかの人と同じマスを同時に直すと、あとから保存した人に「ほかの人が先に変えていました」と出ます。出てきた最新の中身を確かめて、もう一度書いてください。</li><li>表が古いと思ったら、サイドバーの「Update」を押してください。</li></ul></div>
     <div class="acts"><button type="button" class="btn pri" id="t3HelpOk">閉じる</button></div>`);
