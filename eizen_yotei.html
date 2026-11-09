@@ -371,6 +371,8 @@ body.tbl-three #t3Pick{display:inline-flex}
 #t3Pick select{font-size:14px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
 table.yt th.nth{letter-spacing:.2em}
 table.yt td.nt{vertical-align:top;padding:0}
+table.yt td.nt.nt1:not(.ntm){border-bottom:0.3px dotted #9a9a9a}
+table.yt td.nt.nt2{border-top:0}
 table.yt td.nt .ntx{font-size:8pt;line-height:1.2;white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.4mm 0.8mm;box-sizing:border-box;font-weight:400}
 /* 予定表③は列が広いので、予定の文字を少し大きく（入りきらないときは自動で小さくなる） */
 .duo table.yt td.c .fit{font-size:8pt}
@@ -939,7 +941,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>スマホでは、上の「Update」「予定表」「予定入力」の3つのボタンだけが出ます（予定入力は1日ずつ大きく出ます）（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
       <li>パソコンのサイドバーには「📅 予定表①」（先生全員の表。印刷もここから）と「👤 予定表②」があります。「予定表②」は、左に先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。右の「日付と時間で見る」で日付と「午前」「午後」を選ぶと、その時間の先生全員の予定が出ます（「◀」「▶」で半日ずつ動きます。終日の予定には「終日」の印が付きます）。何日か続く予定のあいだの日も、「○日〜○日の続き」として出ます。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
-      <li>パソコンで、いちばん上の「営繕部予定表」の文字を押すと「予定表③」が開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。左から「特記」「1人目の先生」「日・曜日」「2人目の先生」「特記」の並びで、A4縦で印刷できます。この画面では先生の予定は直せません（見るだけ。直すときは予定表①か予定入力で）。左右の「特記」のマスを押すと、捺印・アポのお願いなどのメモを書けます（1日に左右1つずつ。改行もできます。空にして保存すると消えます）。書く画面のボタンで、寄せ（左寄せ・中央・右寄せ）・インデント（右へ・左へ）・文字の大きさ・色・太字／細字を、そのマス全体に付けられます。画面の左右の余白には、左の先生・右の先生それぞれに「お願いすること」のリスト（はじめは5行。「＋ 行を追加」で増やせます。空にすると消えます）があり、左の特記には左のリスト、右の特記には右のリストから選んで書き足せます（手で書くこともできます）。2人は上の「予定表③の2人」で選び直せます（はじめは今村部長・増野次長。みんなの画面で変わるため、管理者パスワードがいります）。リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li>
+      <li>パソコンで、いちばん上の「営繕部予定表」の文字を押すと「予定表③」が開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。左から「特記」「1人目の先生」「日・曜日」「2人目の先生」「特記」の並びで、A4縦で印刷できます。この画面では先生の予定は直せません（見るだけ。直すときは予定表①か予定入力で）。先生の列は、その月の予定がちょうど入る幅まで細くなり、残りが左右の「特記」の幅になります。左右の「特記」のマスを押すと、捺印・アポのお願いなどのメモを書けます（1日ははじめ、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。書く画面の「⬚ 1行に結合」で1つのマスにまとめ、「⇕ 2行に分割」で戻せます。空にして保存すると消えます）。書く画面のボタンで、寄せ（左寄せ・中央・右寄せ）・インデント（右へ・左へ）・文字の大きさ・色・太字／細字を、そのマス全体に付けられます。画面の左右の余白には、左の先生・右の先生それぞれに「お願いすること」のリスト（はじめは5行。「＋ 行を追加」で増やせます。空にすると消えます）があり、左の特記には左のリスト、右の特記には右のリストから選んで書き足せます（手で書くこともできます）。2人は上の「予定表③の2人」で選び直せます（はじめは今村部長・増野次長。みんなの画面で変わるため、管理者パスワードがいります）。リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li>
       <li>予定表①のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
@@ -1150,6 +1152,8 @@ function closeModal() {
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
 
 // ===== 読み込み =====
+// 予定表③の特記は、日付・左右・行（1＝上・2＝下）で1つ（2026年11月9日〜）
+const noteKey = (day, side, line) => `${day}|${side}|${line || 1}`;
 async function loadMasters() {
   const [mem, hol, set, ev] = await Promise.all([
     sb.from('yotei_members').select('*').order('sort_order').order('id'),
@@ -1179,7 +1183,7 @@ async function loadMonth() {
     sb.from('yotei_requests').select('*').eq('active', true).order('sort_order').order('id').range(0, 4999),
   ]);
   if (ent.error) throw ent.error; if (sub.error) throw sub.error; if (arr.error) throw arr.error;
-  st.notes = nts.error ? new Map() : new Map(nts.data.map(n => [n.day + '|' + n.side, n]));
+  st.notes = nts.error ? new Map() : new Map(nts.data.map(n => [noteKey(n.day, n.side, n.line), n]));
   if (nts.error) console.error(nts.error);
   st.requests = rqs.error ? [] : rqs.data; if (rqs.error) console.error(rqs.error);
   st.arrows = arr.data;
@@ -1396,7 +1400,7 @@ $('#btnUpdate').addEventListener('click', () => {
 // 画面に戻ってきたとき：10分より短い間なら、だまって最新の予定を読み直す（入力の途中・書きかけがあるときは読まない）
 // 10分以上たっていたとき・予定入力を開いたときに読み込みから10分以上たっていたときは、「Update」を押すようお知らせを出す
 const STALE_MIN = 10;
-function entriesSig() { return st.requests.map(r => r.id + ':' + (r.updated_at || '')).join(',') + '#' + [...st.notes.values()].map(n => n.day + n.side + ':' + (n.updated_at || '')).join(',') + '#' + [...st.entries.values()].map(e => `${e.member_id}|${e.day}|${e.updated_at || ''}`).sort().join(',') + '#' + st.arrows.map(a => a.id + ':' + (a.updated_at || '')).join(',') + '#' + [...st.subs.values()].map(x => x.member_id + ':' + x.submitted_at).join(','); }
+function entriesSig() { return st.requests.map(r => r.id + ':' + (r.updated_at || '')).join(',') + '#' + [...st.notes.values()].map(n => noteKey(n.day, n.side, n.line) + ':' + (n.updated_at || '')).join(',') + '#' + [...st.entries.values()].map(e => `${e.member_id}|${e.day}|${e.updated_at || ''}`).sort().join(',') + '#' + st.arrows.map(a => a.id + ':' + (a.updated_at || '')).join(',') + '#' + [...st.subs.values()].map(x => x.member_id + ':' + x.submitted_at).join(','); }
 async function refreshData() {
   const before = entriesSig();
   try { await loadMonth(); } catch (e) { return false; }
@@ -2122,8 +2126,10 @@ function renderTable() {
   // 予定表③（A4縦）：左から「特記」「1人目」「日・曜日」「2人目」「特記」（2026年11月9日〜）
   // この画面では、先生の予定は直せない（見るだけ）。特記だけ書ける。左右の余白に「お願いすること」のリスト
   function buildDuo(list) {
-    const PW = 199.4, NW = 42; // 紙の印刷できる幅（200mm）より少しだけ狭く・特記の列の幅
-    const pc = list.length, pw = pc ? (PW - 2 * NW - (dw + ww)) / pc : 0;
+    // 先生の列は、その月の予定がちょうど入る幅（最小）にし、残りを左右の特記に同じだけ回す（2026年11月9日〜）
+    const PW = 199.4; // 紙の印刷できる幅（200mm）より少しだけ狭く
+    const pc = list.length, pw = pc ? t3ColWidth(list, nd) : 0;
+    const NW = (PW - pc * pw - (dw + ww)) / 2;
     const rowH3 = Math.min(8, (287 - titleH - headH - 1.5) / (nd * 2));
     const A = list[0], Bs = list.slice(1);
     const mcol = () => `<col style="width:${pw}mm">`;
@@ -2131,7 +2137,11 @@ function renderTable() {
     const mth = x => `<th>${ttlHtml(x.header_name)}</th>`;
     const head = `<th class="nth">特　　記</th>` + (A ? mth(A) : '') + `<th colspan="2" class="dh dh1">日・曜日</th>` + Bs.map(mth).join('') + `<th class="nth redge">特　　記</th>`;
     const ned = editable ? ' editable' : '';
-    const nt = (day, side) => { const n = st.notes.get(day + '|' + side); return `<td rowspan="2" class="nt${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * 2 - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}">${esc(n ? n.body : '')}</div></td>`; };
+    // 特記：ふだんは上の行・下の行の2つのマス。上の行の merged が true なら、2行を1つのマスに結合する
+    const ntCell = (day, side, line, rs) => { const n = st.notes.get(noteKey(day, side, line)); return `<td${rs ? ' rowspan="2"' : ''} class="nt nt${line}${rs ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * (rs ? 2 : 1) - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}">${esc(n ? n.body : '')}</div></td>`; };
+    const merged = (day, side) => { const n = st.notes.get(noteKey(day, side, 1)); return !!(n && n.merged); };
+    const nt = (day, side) => ntCell(day, side, 1, merged(day, side));
+    const nt2 = (day, side) => merged(day, side) ? '' : ntCell(day, side, 2, false);
     let body = '';
     for (let d = 1; d <= nd; d++) {
       const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
@@ -2141,7 +2151,7 @@ function renderTable() {
       const c2 = x => { const e = withEnds(x.id, day); return e.allday ? ''
         : `<td class="c pm" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`; };
       body += `<tr style="height:${rowH3}mm">${nt(day, 'L')}${A ? c1(A) : ''}<td rowspan="2" class="dn${rd} dn1">${d}</td><td rowspan="2" class="dw${rd} dw1">(${WD_JA[w]})</td>${Bs.map(c1).join('')}${nt(day, 'R')}</tr>`;
-      body += `<tr style="height:${rowH3}mm">${A ? c2(A) : ''}${Bs.map(c2).join('')}</tr>`;
+      body += `<tr style="height:${rowH3}mm">${nt2(day, 'L')}${A ? c2(A) : ''}${Bs.map(c2).join('')}${nt2(day, 'R')}</tr>`;
     }
     const tableW = PW;
     const tbl = `<table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -2246,15 +2256,46 @@ $('#sheet').addEventListener('click', e => {
   const ol = $('ol', b.closest('.t3req')), li = document.createElement('li');
   li.innerHTML = '<input class="rq" data-id="" value="" autocomplete="off">'; ol.appendChild(li); $('input', li).focus();
 });
-function openNoteEditor(day, side) {
+// 予定表③の先生の列の幅（mm）：その月の予定の文字（予定表③の大きさ 8pt。終日は 9pt）がちょうど入る幅。見出しの名前も入るようにする
+let t3Canvas = null;
+function t3TextMm(text, pt, bold) {
+  if (!t3Canvas) t3Canvas = document.createElement('canvas').getContext('2d');
+  t3Canvas.font = `${bold ? 700 : 400} ${pt}pt "MS PGothic","Yu Gothic","Meiryo",sans-serif`;
+  return t3Canvas.measureText(String(text || '')).width / pxPerMm();
+}
+function t3ColWidth(list, nd) {
+  const { y, m } = st;
+  let need = 0;
+  const textMm = (t, pt, size) => { const k = 1 + (size || 0) * 0.1; return String(t || '').split(SMALL_WORDS).length > 1
+    ? t3TextMm(String(t).replace(SMALL_WORDS, ''), pt * k) + t3TextMm((String(t).match(SMALL_WORDS) || []).join(''), 5.5)
+    : t3TextMm(t, pt * k); };
+  for (const x of list) {
+    // 見出し（例：今村部長。文字の間を少しあける）
+    const hn = String(x.header_name || x.name || ''), tw = TITLE_WORDS.find(w => hn.endsWith(w));
+    need = Math.max(need, (tw ? t3TextMm(hn.slice(0, -tw.length), 10) + t3TextMm(tw, 6.5) : t3TextMm(hn, 10)) * 1.3 + 2);
+    for (let d = 1; d <= nd; d++) {
+      const e = effEntry(x.id, dstr(y, m, d)) || {};
+      if (e.allday) need = Math.max(need, textMm(e.allday, 9, e.allday_size) + 1.6 + Math.abs(e.allday_indent || 0) * INDENT_MM);
+      for (const k of ['am', 'pm']) if (e[k] && !e.allday) need = Math.max(need, 5.3 + t3TextMm('AM', 4.5) + textMm(e[k], 8, e[k + '_size']) + 0.8 + Math.max(0, e[k + '_indent'] || 0) * INDENT_MM);
+    }
+  }
+  // 少しゆとりを足す。細すぎ・太すぎにならないよう 16mm〜55mm に収める（特記の列を広くとるため）
+  return Math.min(55, Math.max(16, need + 1.5));
+}
+function openNoteEditor(day, side, line) {
   if (st.personal) return;
+  line = Number(line) || 1;
   const [yy, mm, dd] = day.split('-').map(Number);
-  const cur = st.notes.get(day + '|' + side), base = cur ? { ...cur } : null;
+  const top = st.notes.get(noteKey(day, side, 1)), isMerged = !!(top && top.merged);
+  if (isMerged) line = 1;
+  const cur = st.notes.get(noteKey(day, side, line)), base = cur ? { ...cur } : null;
   const fmt = noteFmt(cur);
   const pm = t3Members()[side === 'L' ? 0 : 1], items = pm ? reqsOf(pm.id) : [];
   const sideName = pm ? `（${esc(dispName(pm))}の側）` : '';
-  openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}${sideName}</h3>
+  const where = isMerged ? '（2行を結合したマス）' : line === 1 ? '　上の行' : '　下の行';
+  openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}${where}${sideName}</h3>
     <div class="ntbar">
+      <span class="grp"><b>行</b>${isMerged ? '<button type="button" class="btn" id="ntSplit" title="上の行・下の行の2つのマスに分けます">⇕ 2行に分割</button>' : '<button type="button" class="btn" id="ntMerge" title="上の行・下の行を1つのマスにまとめます（中身はつなげます）">⬚ 1行に結合</button>'}</span>
       <span class="grp"><b>寄せ</b><button type="button" class="btn" data-al="left">左寄せ</button><button type="button" class="btn" data-al="center">中央</button><button type="button" class="btn" data-al="right">右寄せ</button></span>
       <span class="grp"><b>インデント</b><button type="button" class="btn" data-in="-1">◀ 左へ</button><button type="button" class="btn" data-in="1">右へ ▶</button><span class="cur" id="ntInCur"></span></span>
       <span class="grp"><b>大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
@@ -2263,7 +2304,7 @@ function openNoteEditor(day, side) {
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
     <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
-    <p class="note" style="margin:6px 0 0">改行もできます。Ctrl＋Enter でも保存します。書式は、このマス全体にかかります。空にして保存すると、特記が消えます。</p>
+    <p class="note" style="margin:6px 0 0">${isMerged ? '2行を結合したマスです。改行もできます。' : 'この日の特記は、上の行・下の行の2つのマスに分かれています（それぞれ別に書けます）。'}Ctrl＋Enter でも保存します。書式は、このマス全体にかかります。空にして保存すると、そのマスの特記が消えます。</p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox');
   const paint = () => {
@@ -2283,37 +2324,78 @@ function openNoteEditor(day, side) {
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
     else if (b.dataset.rq) {
       const r = st.requests.find(q => q.id === Number(b.dataset.rq)); if (!r) return;
-      const v = ta.value.replace(/\s+$/, ''); ta.value = v ? v + '\n' + r.body : r.body; ta.focus();
+      // 2行に分かれたマスは1行分なので「、」で、結合したマスは改行でつなぐ
+      const v = ta.value.replace(/\s+$/, ''); ta.value = v ? v + (isMerged ? '\n' : '、') + r.body : r.body; ta.focus();
+    } else if (b.id === 'ntMerge' || b.id === 'ntSplit') {
+      // 書きかけの中身・書式を先に保存してから、結合・分割する
+      (async () => {
+        b.disabled = true;
+        if (!(await saveNote(day, side, line, ta.value.replace(/\s+$/, ''), base, fmt, true))) { b.disabled = false; return; }
+        const ok = await setNoteMerged(day, side, b.id === 'ntMerge');
+        closeModal();
+        if (ok) openNoteEditor(day, side, 1);
+      })();
+      return;
     } else return;
     paint();
   });
   paint();
-  const go = async () => { $('#ntOk').disabled = true; if (await saveNote(day, side, ta.value.replace(/\s+$/, ''), base, fmt)) closeModal(); else { const b = $('#ntOk'); if (b) b.disabled = false; } };
+  const go = async () => { $('#ntOk').disabled = true; if (await saveNote(day, side, line, ta.value.replace(/\s+$/, ''), base, fmt)) closeModal(); else { const b = $('#ntOk'); if (b) b.disabled = false; } };
   $('#ntNo').addEventListener('click', closeModal);
   $('#ntOk').addEventListener('click', go);
   ta.addEventListener('keydown', ev => { if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); go(); } });
   setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
 }
-const noteSig = n => n ? JSON.stringify([n.body || '', ...Object.values(noteFmt(n))]) : JSON.stringify(['', ...Object.values(NOTE_FMT0)]);
+const noteSig = n => n ? JSON.stringify([n.body || '', ...Object.values(noteFmt(n)), !!n.merged]) : JSON.stringify(['', ...Object.values(NOTE_FMT0), false]);
+const noteRow = (day, side, line) => sb.from('yotei_notes').select('*').eq('day', day).eq('side', side).eq('line', line).maybeSingle();
+const noteUp = rec => sb.from('yotei_notes').upsert({ ...rec, updated_at: new Date().toISOString() }, { onConflict: 'day,side,line' }).select().single();
 // 保存の直前に読み直し、ほかの人が先に変えていたら上書きしない（予定の保存と同じ考え方）
-async function saveNote(day, side, body, base, fmt) {
+// quiet：結合・分割の前の保存（知らせを出さず、表も作り直さない）
+async function saveNote(day, side, line, body, base, fmt, quiet) {
   pendingSaves++;
   try {
-    const now = await sb.from('yotei_notes').select('*').eq('day', day).eq('side', side).maybeSingle();
+    const now = await noteRow(day, side, line);
     if (now.error) throw now.error;
     const r = now.data;
     if (r && (!base || r.updated_at !== base.updated_at) && noteSig(r) !== noteSig(base)) {
-      st.notes.set(day + '|' + side, r); renderTable();
+      st.notes.set(noteKey(day, side, line), r); renderTable();
       toast('ほかの人が先に変えていました。最新の特記を出しましたので、確かめてからもう一度書いてください', true);
-      return true;
+      return !quiet;
     }
-    const rec = { day, side, body, ...noteFmt(fmt) };
+    const rec = { day, side, line, body, ...noteFmt(fmt), merged: line === 1 && !!(r ? r.merged : base && base.merged) };
     if (noteSig(r) === noteSig(rec)) return true;
-    const { data, error } = await sb.from('yotei_notes').upsert({ ...rec, updated_at: new Date().toISOString() }, { onConflict: 'day,side' }).select().single();
+    const { data, error } = await noteUp(rec);
     if (error) throw error;
-    st.notes.set(day + '|' + side, data); renderTable(); toast('保存しました');
+    st.notes.set(noteKey(day, side, line), data);
+    if (!quiet) { renderTable(); toast('保存しました'); }
     return true;
   } catch (err) { toast('保存できませんでした：' + errMsg(err), true); return false; }
+  finally { pendingSaves--; }
+}
+// 2行を1つのマスに結合する（下の行の中身は、上の行のあとに改行でつなぐ）・2つのマスに分割する（結合したマスの2行目から下を、空いている下の行へ移す）
+async function setNoteMerged(day, side, toMerged) {
+  pendingSaves++;
+  try {
+    const [r1, r2] = await Promise.all([noteRow(day, side, 1), noteRow(day, side, 2)]);
+    if (r1.error) throw r1.error; if (r2.error) throw r2.error;
+    const a = r1.data, b = r2.data;
+    const fa = noteFmt(a), fb = noteFmt(b);
+    let recA, recB = null;
+    if (toMerged) {
+      recA = { day, side, line: 1, body: [a && a.body, b && b.body].filter(Boolean).join('\n'), ...fa, merged: true };
+      if (b && b.body) recB = { day, side, line: 2, body: '', ...fb, merged: false };
+    } else {
+      const lines = String(a ? a.body : '').split('\n');
+      const moveDown = lines.length > 1 && !(b && b.body);
+      recA = { day, side, line: 1, body: moveDown ? lines[0] : (a ? a.body : ''), ...fa, merged: false };
+      if (moveDown) recB = { day, side, line: 2, body: lines.slice(1).join('\n'), ...fa, merged: false };
+    }
+    const u1 = await noteUp(recA); if (u1.error) throw u1.error;
+    st.notes.set(noteKey(day, side, 1), u1.data);
+    if (recB) { const u2 = await noteUp(recB); if (u2.error) throw u2.error; st.notes.set(noteKey(day, side, 2), u2.data); }
+    renderTable(); toast(toMerged ? '1行に結合しました' : '2行に分割しました');
+    return true;
+  } catch (err) { toast('できませんでした：' + errMsg(err), true); return false; }
   finally { pendingSaves--; }
 }
 // ===== 予定表②の右側：日付と午前・午後を選ぶと、先生全員の予定を出す（2026年11月5日〜） =====
@@ -2573,7 +2655,7 @@ function fitTexts(root) {
   });
 }
 $('#sheet').addEventListener('click', e => {
-  const nt = e.target.closest('td.nt.editable'); if (nt) { openNoteEditor(nt.dataset.day, nt.dataset.side); return; }
+  const nt = e.target.closest('td.nt.editable'); if (nt) { openNoteEditor(nt.dataset.day, nt.dataset.side, nt.dataset.line); return; }
   const td = e.target.closest('td.c.editable'); if (!td) return;
   openEntryEditor(Number(td.dataset.mid), td.dataset.day, e.clientX);
 });
