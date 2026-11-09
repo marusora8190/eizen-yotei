@@ -447,6 +447,9 @@ table.yt th.nthm .ntx{white-space:pre-wrap;word-break:break-all;overflow:hidden;
 table.yt th.nthm.editable{cursor:pointer}
 table.yt th.nthm.editable:hover{background:#fff8e1}
 .ntprevw{margin:8px 0 0;font-size:12px;color:var(--sub)}
+.ntprevbox{margin-top:4px;padding:8px;background:#f3f4f6;border-radius:6px;overflow:auto}
+.ntprevbox .ntx{background:#fff;outline:1px solid #000;box-sizing:border-box;white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.4mm 0.8mm;line-height:1.2;color:#000;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
+.ntprevbox .ntx .nti{width:100%}
 .ntprev{margin-top:3px;border:1px dashed #c9cfd6;border-radius:6px;padding:6px 8px;min-height:32px;white-space:pre-wrap;word-break:break-all;background:#fffef7;color:#000;line-height:1.3;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
 .ntedit textarea{width:100%;min-height:120px;font-size:15px;line-height:1.5;padding:8px;border:1px solid var(--line);border-radius:6px;box-sizing:border-box;font-family:inherit}
 body.tbl-one .tb-cols{display:flex;gap:16px;align-items:flex-start}
@@ -2272,7 +2275,7 @@ $('#t3A').addEventListener('change', changeT3Pick);
 $('#t3B').addEventListener('change', changeT3Pick);
 // 特記の文字が欄に入りきらないときは、文字を小さくする
 function fitNotes(root) {
-  $$('td.nt .ntx, th.nthm .ntx', root).forEach(f => {
+  $$('td.nt .ntx, th.nthm .ntx, .ntprevbox .ntx', root).forEach(f => {
     if (!f.textContent) return;
     // 真ん中の列で大きさを変えていないマス：書いた行のまま（折り返さずに）、マスからはみ出さない最大の大きさにする（2026年11月9日〜。利用者の希望）
     if (f.dataset.auto) {
@@ -2324,6 +2327,15 @@ function noteBodyHtml(body) {
   out.push(kw(b.slice(last)));
   return out.join('');
 }
+// 書く画面の「表での見え方」：予定表の実際のマス（cell）と同じ幅・高さ・同じ書式で描く（2026年11月9日〜）
+function drawPrev(fmt, body, cell) {
+  const pv = $('#ntPrev'); if (!pv) return;
+  const r = cell ? cell.getBoundingClientRect() : null;
+  pv.style.cssText = noteStyle(fmt, 'mm') + (r && r.width ? `width:${r.width}px;height:${r.height}px;` : 'width:60mm;height:9mm;');
+  if (cell && cell.dataset.auto && !fmt.size) pv.dataset.auto = '1'; else delete pv.dataset.auto;
+  pv.innerHTML = `<div class="nti">${noteBodyHtml(body)}</div>`;
+  fitNotes($('#ntPrevBox'));
+}
 // 文字の大きさを「ポイント」で出す（2026年11月9日〜。利用者の希望）。予定表のマスでの大きさ（標準は 8pt。1つで約1割）
 const notePt = f => 8 * (1 + (f.size || 0) * 0.1);
 function szLabel(f, autoPt) {
@@ -2368,7 +2380,7 @@ function t3MidWidth(nd) {
 }
 // 特記の書式（1マスごと。2026年11月9日〜）：寄せ・インデント（1つで1.5mm）・大きさ（1つで約1割）・色・太字
 const NOTE_COLORS = [['', '黒'], ['#c62828', '赤'], ['#1565c0', '青'], ['#2e7d32', '緑'], ['#ef6c00', 'オレンジ'], ['#6a1b9a', '紫']];
-const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: false, valign: 'top' }; // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
+const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: false, valign: 'middle' }; // 上下の位置のはじめは「上下真ん中」（2026年11月9日〜）。 // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
 function noteFmt(n) { const f = { ...NOTE_FMT0 }; if (n) for (const k of Object.keys(NOTE_FMT0)) if (n[k] != null) f[k] = n[k]; return f; }
 // unit が 'mm' のときは予定表のマス用（8pt が標準）、'px' のときは書く画面用（15px が標準）
 function noteStyle(n, unit) {
@@ -2558,18 +2570,18 @@ function midHeadCell() {
 }
 function openHeadEditor() {
   if (st.personal || st.viewOnly) return;
-  const cur = midHead(), fmt = noteFmt(cur), autoPt = null;
-  setTimeout(() => { const t = $('#ntText'); if (!t) return; t.addEventListener('input', () => { const pv = $('#ntPrev'); if (pv) pv.innerHTML = noteBodyHtml(t.value); }); ['keyup', 'mouseup', 'select'].forEach(ev => t.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(t, notePt(fmt)); })); }, 0);
+  const cur = midHead(), fmt = noteFmt(cur), autoPt = null, prevCell = $('#sheet th.nthm .ntx');
+  setTimeout(() => { const t = $('#ntText'); if (!t) return; t.addEventListener('input', () => drawPrev(fmt, t.value, prevCell)); ['keyup', 'mouseup', 'select'].forEach(ev => t.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(t, notePt(fmt)); })); }, 0);
   openModal(`<h3>真ん中の列の見出し（全員共通・どの月も同じ）</h3>
     <div class="ntbar">${noteBarHtml()}</div>
     <div class="ntedit"><textarea id="ntText" placeholder="見出しの文字（空のままでもかまいません）">${esc(cur ? cur.body : '')}</textarea></div>
-    <div class="ntprevw"><span>表での見え方（大きさ・色の目安）：</span><div class="ntprev" id="ntPrev"></div></div>
+    <div class="ntprevw"><span>表での見え方（実際のマスと同じ大きさ・同じ文字の大きさ）：</span><div class="ntprevbox" id="ntPrevBox"><div class="ntx" id="ntPrev"></div></div></div>
     <p class="note" style="margin:6px 0 0">見出しの欄は1行分の高さです。長いと文字が小さくなります。Ctrl＋Enter でも保存します。空にして保存すると、見出しが消えます。</p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox');
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
-    const pv = $('#ntPrev'); if (pv) { pv.style.cssText = noteStyle(fmt, 'px'); pv.innerHTML = noteBodyHtml(ta.value) || '<span style="color:#9aa5b1">（まだ何も書いていません）</span>'; }
+    drawPrev(fmt, ta.value, prevCell);
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
@@ -2631,6 +2643,7 @@ function openNoteEditor(day, side, line) {
   // 真ん中の列で大きさを変えていないマスは、今の自動の大きさ（ポイント）を出す
   const cellEl = $(`#sheet td.nt[data-day="${day}"][data-side="${side}"][data-line="${line}"] .ntx`);
   const autoPt = cellEl && cellEl.dataset.auto && cellEl.textContent ? parseFloat(getComputedStyle(cellEl).fontSize) * 0.75 : null;
+  const prevCell = cellEl; // 「表での見え方」は、このマスと同じ大きさで描く
   const curEnd = sp.starts.has(p0) ? sp.starts.get(p0) : -1;
   // 結合の終わりに選べる場所：このマスの次から、ほかの結合が始まる手前（月の終わり）まで
   const last = dim(st.y, st.m) * 2 - 1, opts = [];
@@ -2652,16 +2665,16 @@ function openNoteEditor(day, side, line) {
       ${noteBarHtml()}
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
-    <div class="ntprevw"><span>表での見え方（大きさ・色の目安）：</span><div class="ntprev" id="ntPrev"></div></div>
+    <div class="ntprevw"><span>表での見え方（実際のマスと同じ大きさ・同じ文字の大きさ）：</span><div class="ntprevbox" id="ntPrevBox"><div class="ntx" id="ntPrev"></div></div></div>
     <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
-  ta.addEventListener('input', () => { const pv = $('#ntPrev'); if (pv) pv.innerHTML = noteBodyHtml(ta.value); });
+  ta.addEventListener('input', () => drawPrev(fmt, ta.value, prevCell));
   ['keyup', 'mouseup', 'select'].forEach(ev => ta.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(ta, !fmt.size && autoPt ? autoPt : notePt(fmt)); }));
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
-    const pv = $('#ntPrev'); if (pv) { pv.style.cssText = noteStyle(fmt, 'px'); pv.innerHTML = noteBodyHtml(ta.value) || '<span style="color:#9aa5b1">（まだ何も書いていません）</span>'; }
+    drawPrev(fmt, ta.value, prevCell);
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
