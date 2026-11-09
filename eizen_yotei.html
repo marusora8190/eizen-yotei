@@ -118,6 +118,8 @@ header .monthbar .mlabel{min-width:0;padding:0 6px;white-space:nowrap}
 .slots{flex:1;display:flex;gap:8px;min-width:0}
 .slot{flex:1;display:flex;align-items:center;gap:4px;min-width:0}
 .slot .tag{font-size:12px;color:var(--sub);width:2.6em;flex:none;text-align:right}
+/* 予定表のマスを直す画面の「午前」「午後」「終日」は、くっきり太字（2026年11月9日〜。利用者の希望） */
+#modal .slot .tag.edtag{font-size:15px;font-weight:700;color:#000}
 .slot input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:#fff}
 .slot input:focus{outline:2px solid #9cb8e3;border-color:#9cb8e3}
 .slot-ad input{text-align:center}
@@ -2822,7 +2824,7 @@ function openEntryEditor(mid, day, clickX) {
   const mem = memberById(mid), e = effEntry(mid, day);
   const [yy, mm, dd] = day.split('-').map(Number), w = wdOf(yy, mm, dd);
   const isAd = !!e.allday;
-  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag" style="width:3em">${lab}</span><input type="text" autocomplete="off" enterkeyhint="done" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
+  const fld = (k, lab, val, red, until) => `<div class="slot" data-k="${k}" style="margin:6px 0"><span class="tag edtag" style="width:3em">${lab}</span><input type="text" autocomplete="off" enterkeyhint="done" value="${esc(val || '')}" class="${red ? 'is-red' : ''}"><button type="button" class="redbtn ${red ? 'on' : ''}" ${val ? 'data-manual="1"' : ''} data-init="${esc(red && e[k + '_red_parts'] ? JSON.stringify(String(e[k + '_red_parts']).split('\n')) : '')}">赤</button>${untilSelect(k, day, until)}</div>
     <div class="indrow" data-k="${k}" data-f="indent"><span class="tag" style="width:3em"></span>文字の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_indent'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="文字の位置を標準（左端から右へ3）にする">標準</button></div>
     <div class="indrow" data-k="${k}" data-f="size"><span class="tag" style="width:3em"></span>文字の大きさ：<button type="button" class="btn sm ind" data-d="-1">A− 小さく</button><span class="indv" data-v="${e[k + '_size'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">A＋ 大きく</button><button type="button" class="btn sm ind" data-d="0" title="文字の大きさを標準にする">標準</button></div>
     <div class="indrow arrowrow" data-k="${k}" data-f="arrow" style="${until ? '' : 'display:none'}"><span class="tag" style="width:3em"></span>矢印の位置：<button type="button" class="btn sm ind" data-d="-1">◀ 左へ</button><span class="indv" data-v="${e[k + '_arrow'] || 0}"></span><button type="button" class="btn sm ind" data-d="1">右へ ▶</button><button type="button" class="btn sm ind" data-d="0" title="矢印を予定の1文字目の真ん中にする">真ん中</button></div>
