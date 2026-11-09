@@ -429,6 +429,7 @@ body.t3only header h1{cursor:default!important;background:none!important;text-de
 .urlrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0}
 .urlrow .nm{font-weight:700;min-width:14em}
 .urlrow code{word-break:break-all;background:#f4f5f7;padding:2px 6px;border-radius:4px}
+table.yt td.nt .nti{width:100%}
 .ntedit textarea{width:100%;min-height:120px;font-size:15px;line-height:1.5;padding:8px;border:1px solid var(--line);border-radius:6px;box-sizing:border-box;font-family:inherit}
 body.tbl-one .tb-cols{display:flex;gap:16px;align-items:flex-start}
 body.tbl-one .tb-left{flex:none;width:640px;min-width:0}
@@ -2184,7 +2185,7 @@ function renderTable() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}">${noteBodyHtml(n ? n.body : '')}</div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}"><div class="nti">${noteBodyHtml(n ? n.body : '')}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -2245,7 +2246,10 @@ function fitNotes(root) {
   $$('td.nt .ntx', root).forEach(f => {
     if (!f.textContent) return;
     let size = parseFloat(getComputedStyle(f).fontSize), g = 0;
-    while (f.scrollHeight > f.clientHeight + 0.5 && size > 5 && g++ < 30) { size -= 0.4; f.style.fontSize = size + 'px'; }
+    const inner = $('.nti', f) || f, cs = getComputedStyle(f), room = () => f.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    while ((inner === f ? f.scrollHeight > f.clientHeight + 0.5 : inner.offsetHeight > room() + 0.5) && size > 5 && g++ < 30) { size -= 0.4; f.style.fontSize = size + 'px'; }
+    // 小さくしても入りきらないときは、上に寄せる（真ん中・下のままだと1行目が切れて見えなくなるため）
+    if (inner !== f && inner.offsetHeight > room() + 0.5) f.style.justifyContent = 'flex-start';
   });
 }
 const SIDE_LABEL = { L: '左の特記', R: '右の特記', M: '自分の予定（日・曜日の右の列）' };
@@ -2268,13 +2272,15 @@ function t3MidWidth(nd) {
 }
 // 特記の書式（1マスごと。2026年11月9日〜）：寄せ・インデント（1つで1.5mm）・大きさ（1つで約1割）・色・太字
 const NOTE_COLORS = [['', '黒'], ['#c62828', '赤'], ['#1565c0', '青'], ['#2e7d32', '緑'], ['#ef6c00', 'オレンジ'], ['#6a1b9a', '紫']];
-const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: false };
+const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: false, valign: 'top' }; // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
 function noteFmt(n) { const f = { ...NOTE_FMT0 }; if (n) for (const k of Object.keys(NOTE_FMT0)) if (n[k] != null) f[k] = n[k]; return f; }
 // unit が 'mm' のときは予定表のマス用（8pt が標準）、'px' のときは書く画面用（15px が標準）
 function noteStyle(n, unit) {
   const f = noteFmt(n), base = unit === 'mm' ? 8 : 15, u = unit === 'mm' ? 'pt' : 'px', step = unit === 'mm' ? 1.5 : 6;
   const pad = f.indent > 0 ? `padding-left:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : f.indent < 0 ? `padding-right:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${-f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : '';
-  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400};${pad}`;
+  // 予定表のマスでは、上下の位置も付ける（中の文字を上・真ん中・下に寄せる）
+  const va = unit === 'mm' ? `display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[f.valign] || 'flex-start'};` : '';
+  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400};${pad}${va}`;
 }
 // ===== 予定表③の左右の余白：先生ごとの「お願いすること」のリスト（2026年11月9日〜） =====
 const REQ_MIN_ROWS = 5;
@@ -2414,6 +2420,7 @@ function openNoteEditor(day, side, line) {
       <span class="grp"><b>結合</b><select id="ntSpan" title="このマスから、下のマスまでを1つにまとめます（日をまたいでもできます。同じ月の中だけ）"><option value="-1">結合しない</option>${opts.map(q => `<option value="${q}" ${q === curEnd ? 'selected' : ''}>${optLabel(q)}</option>`).join('')}</select>
         ${line === 1 && opts[0] === p0 + 1 ? '<button type="button" class="btn" id="ntMerge" title="この日の上の行・下の行を1つにします（保存で決まります）">⬚ 1行に結合</button>' : ''}<button type="button" class="btn" id="ntSplit" title="結合をやめて、もとのマスに戻します（保存で決まります）">⇕ 2行に分割</button></span>
       <span class="grp"><b>寄せ</b><button type="button" class="btn" data-al="left">左寄せ</button><button type="button" class="btn" data-al="center">中央</button><button type="button" class="btn" data-al="right">右寄せ</button></span>
+      <span class="grp"><b>上下</b><button type="button" class="btn" data-va="top">上</button><button type="button" class="btn" data-va="middle">上下真ん中</button><button type="button" class="btn" data-va="bottom">下</button></span>
       <span class="grp"><b>インデント</b><button type="button" class="btn" data-in="-1">◀ 左へ</button><button type="button" class="btn" data-in="1">右へ ▶</button><span class="cur" id="ntInCur"></span></span>
       <span class="grp"><b>大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
       <span class="grp"><b>色</b>${NOTE_COLORS.map(([c, n]) => `<button type="button" class="sw" data-co="${c}" title="${n}" style="background:${c || '#1f2933'}"></button>`).join('')}</span>
@@ -2427,6 +2434,7 @@ function openNoteEditor(day, side, line) {
   const paint = () => {
     ta.style.cssText = noteStyle(fmt, 'px');
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
+    $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
     $$('[data-bd]', box).forEach(b => b.classList.toggle('on', (b.dataset.bd === '1') === !!fmt.bold));
     $('#ntInCur').textContent = fmt.indent ? (fmt.indent > 0 ? `右へ${fmt.indent}` : `左へ${-fmt.indent}`) : '標準';
@@ -2441,6 +2449,7 @@ function openNoteEditor(day, side, line) {
   box.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.al) fmt.align = b.dataset.al;
+    else if (b.dataset.va) fmt.valign = b.dataset.va;
     else if (b.dataset.in) fmt.indent = Math.max(-20, Math.min(30, fmt.indent + Number(b.dataset.in)));
     else if (b.dataset.sz) fmt.size = Math.max(-5, Math.min(8, fmt.size + Number(b.dataset.sz)));
     else if (b.dataset.co != null) fmt.color = b.dataset.co;
@@ -2516,7 +2525,7 @@ function openT3Help() {
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日・曜日」「特記」「1人目の先生」「（見出しなしの列）」「2人目の先生」「特記」です。日・曜日は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合。リストはありません）、上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
-    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・インデント（◀ 左へ／右へ ▶）・大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
+    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、上の行・下の行の2つのマスに分かれていて、それぞれ別に書けます。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト</h4><ul><li>画面の左の余白は1人目の先生、右の余白は2人目の先生への「お願いすること」のリストです（はじめは5行。「＋ 行を追加」で増やせます）。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
