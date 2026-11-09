@@ -371,7 +371,7 @@ body.tbl-three #t3Pick{display:inline-flex}
 #t3Pick select{font-size:14px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
 table.yt th.nth{letter-spacing:.2em}
 table.yt td.nt{vertical-align:top;padding:0}
-table.yt td.nt .ntx{font-size:8pt;line-height:1.2;white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.4mm 0.8mm;box-sizing:border-box}
+table.yt td.nt .ntx{font-size:8pt;line-height:1.2;white-space:pre-wrap;word-break:break-all;overflow:hidden;padding:0.4mm 0.8mm;box-sizing:border-box;font-weight:400}
 /* 予定表③は列が広いので、予定の文字を少し大きく（入りきらないときは自動で小さくなる） */
 .duo table.yt td.c .fit{font-size:8pt}
 .duo table.yt td.c.ad .fit{font-size:9pt}
@@ -383,6 +383,30 @@ table.yt td.nt.editable:hover{background:#fff8e1}
   .duo table.yt thead th.dh1{left:auto;box-shadow:inset 0 -1px 0 var(--stk,#000)}
 }
 @media print{table.yt td.nt.editable:hover{background:none}}
+/* 予定表③：左右の余白に「お願いすること」のリスト（画面だけ。印刷には出さない。2026年11月9日〜） */
+.t3lay{display:flex;gap:14px;align-items:flex-start;justify-content:center}
+.t3req{flex:0 0 230px;width:230px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;position:sticky;top:8px;font-size:14px;color:#1f2933;font-family:inherit}
+.t3req h4{margin:0 0 6px;font-size:15px;line-height:1.4}
+.t3req h4 small{display:block;font-size:12px;font-weight:400;color:var(--sub)}
+.t3req ol{margin:0 0 8px;padding-left:22px}
+.t3req li{margin:0 0 5px}
+.t3req input{width:100%;box-sizing:border-box;font-size:14px;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+.t3req input.ing{background:#fffbe6}
+.t3req .hint{font-size:11.5px;color:var(--sub);margin:6px 0 0;line-height:1.5}
+body.tbl-three #v-table > p.note{display:none}
+@media print{.t3lay{display:block}.t3req{display:none!important}}
+/* 特記を書く画面の書式のボタン */
+.ntbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 8px}
+.ntbar .grp{display:inline-flex;gap:3px;align-items:center}
+.ntbar .grp > b{font-size:12px;font-weight:400;color:var(--sub);margin-right:2px}
+.ntbar .btn{padding:3px 8px;font-size:13px}
+.ntbar .btn.on{background:#1f4e8c;color:#fff;border-color:#1f4e8c}
+.ntbar .sw{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #9aa5b1;cursor:pointer;padding:0}
+.ntbar .sw.on{box-shadow:0 0 0 2px #1f2933}
+.ntbar .cur{font-size:12px;color:var(--sub);min-width:3.5em}
+.ntpick{margin:10px 0 0}
+.ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
+.ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
 .ntedit textarea{width:100%;min-height:120px;font-size:15px;line-height:1.5;padding:8px;border:1px solid var(--line);border-radius:6px;box-sizing:border-box;font-family:inherit}
 body.tbl-one .tb-cols{display:flex;gap:16px;align-items:flex-start}
 body.tbl-one .tb-left{flex:none;width:640px;min-width:0}
@@ -760,7 +784,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <div class="setbody">
         <ul>
           <li><b>管理者パスワードの仕組み</b>（ADMIN_EMAIL・ensureAdmin・adminSb）：マスターの保存・提出の印の取り消し・古いデータの整理・管理者メニューを開くとき・予定表③の2人を変えるときに、管理者としてログインします。データベースは、先生の一覧・祝日・設定・行事の変更と、予定・提出の印の削除を管理者アカウントだけに限っているため、これが無いとマスターの保存などができなくなります。</li>
-          <li><b>読み込みの件数の指定</b>（.range(0, 4999)）：祝日・予定・手で引く矢印・予定表②の「日付と時間で見る」・予定表③の特記の5か所。</li>
+          <li><b>読み込みの件数の指定</b>（.range(0, 4999)）：祝日・予定・手で引く矢印・予定表②の「日付と時間で見る」・予定表③の特記・予定表③のお願いのリストの6か所。</li>
           <li><b>ほかの人の変更を上書きしない仕組み</b>（保存の直前の読み直し）：消えると、古い画面のまま入力した人が、ほかの人の変更を上書きしてしまいます。</li>
         </ul>
         <p>修正を頼むときは、これらが修正の前後で同じ数だけ残っているかを確かめるよう頼んでください（依頼メモの【2】に書いてあります）。なお、この説明文に名前を書いているため、ファイルの中で ADMIN_EMAIL・ensureAdmin・adminSb の名前が出てくる回数は、それぞれ1回ずつ多くなっています。</p>
@@ -774,7 +798,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
           <li>データベースはスパーベース（②〜⑥と共用）。表は yotei_ で始まる7個です。</li>
           <li>予定（yotei_entries）・提出の印（yotei_submissions）・手で引く矢印（yotei_arrows）：見る・入れる・直すは誰でも、削除は管理者アカウントだけ。アプリはふだん予定を消さずに空にします（矢印は active を外します）。</li>
           <li>先生の一覧（yotei_members）・祝日（yotei_holidays）・設定（yotei_settings。予定表③の2人〔tbl3_members〕もここ）・行事（yotei_events）：見るのは誰でも、追加・書き換え・削除は管理者アカウントだけ。</li>
-          <li>予定表③の特記（yotei_notes。2026年11月9日〜。1日に左右1つずつ）：見る・入れる・直すは誰でも、削除は管理者アカウントだけ（アプリは消さずに空にする）。</li>
+          <li>予定表③の特記（yotei_notes。2026年11月9日〜。1日に左右1つずつ。書式の欄つき）・お願いのリスト（yotei_requests。先生ごと）：見る・入れる・直すは誰でも、削除は管理者アカウントだけ（アプリは消さずに、特記は空に、リストは active=false にする）。</li>
           <li>新しく表を作るときは、権限（GRANT）・RLS・守りの決まり（ポリシー）を一緒に付けます（依頼メモの【6】）。</li>
         </ul>
       </div>
@@ -915,7 +939,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>スマホでは、上の「Update」「予定表」「予定入力」の3つのボタンだけが出ます（予定入力は1日ずつ大きく出ます）（記入表の印刷・使い方・管理者メニューはパソコンで使います）。</li>
       <li>パソコンのサイドバーには「📅 予定表①」（先生全員の表。印刷もここから）と「👤 予定表②」があります。「予定表②」は、左に先生1人分の予定を大きな文字で出し、上の「◀」「▶」でほかの先生に切り替えます（先生ごとのURLでも、はじめは自分の予定が出て、ほかの先生の予定も見られます。直すことはできません）。右の「日付と時間で見る」で日付と「午前」「午後」を選ぶと、その時間の先生全員の予定が出ます（「◀」「▶」で半日ずつ動きます。終日の予定には「終日」の印が付きます）。何日か続く予定のあいだの日も、「○日〜○日の続き」として出ます。</li>
       <li>スマホの「予定表」は、先生1人ずつの予定を、画面の幅いっぱいの大きな文字で出します。上の「◀」「▶」を押すか、予定表を左右に指でなでると、ほかの先生に切り替わります（先生ごとのURLで開いたときは、その先生だけが出ます）。</li>
-      <li>パソコンで、いちばん上の「営繕部予定表」の文字を押すと「予定表③」が開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。左から「特記」「日・曜日」「2人の先生」「特記」の並びで、A4縦で印刷できます。左右の「特記」のマスを押すと、捺印・アポのお願いなどのメモを書けます（1日に左右1つずつ。改行もできます。空にして保存すると消えます）。2人は上の「予定表③の2人」で選び直せます（はじめは今村部長・増野次長。みんなの画面で変わるため、管理者パスワードがいります）。予定のマスを押して直せるのは予定表①と同じです。</li>
+      <li>パソコンで、いちばん上の「営繕部予定表」の文字を押すと「予定表③」が開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。左から「特記」「1人目の先生」「日・曜日」「2人目の先生」「特記」の並びで、A4縦で印刷できます。この画面では先生の予定は直せません（見るだけ。直すときは予定表①か予定入力で）。左右の「特記」のマスを押すと、捺印・アポのお願いなどのメモを書けます（1日に左右1つずつ。改行もできます。空にして保存すると消えます）。書く画面のボタンで、寄せ（左寄せ・中央・右寄せ）・インデント（右へ・左へ）・文字の大きさ・色・太字／細字を、そのマス全体に付けられます。画面の左右の余白には、左の先生・右の先生それぞれに「お願いすること」のリスト（はじめは5行。「＋ 行を追加」で増やせます。空にすると消えます）があり、左の特記には左のリスト、右の特記には右のリストから選んで書き足せます（手で書くこともできます）。2人は上の「予定表③の2人」で選び直せます（はじめは今村部長・増野次長。みんなの画面で変わるため、管理者パスワードがいります）。リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li>
       <li>予定表①のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
@@ -957,7 +981,7 @@ const adminSb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: safeSes
 // ===== 状態 =====
 const st = {
   members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [] },
-  y: 0, m: 0, arrows: [], notes: new Map(), tbl3: false, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null, tbMember: null,
+  y: 0, m: 0, arrows: [], notes: new Map(), requests: [], tbl3: false, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null, tbMember: null,
 };
 
 // ===== 小道具 =====
@@ -1145,16 +1169,19 @@ async function loadMasters() {
 async function loadMonth() {
   const { y, m } = st;
   const from = dstr(y, m, 1), to = dstr(y, m, dim(y, m));
-  const [ent, sub, arr, nts] = await Promise.all([
+  const [ent, sub, arr, nts, rqs] = await Promise.all([
     sb.from('yotei_entries').select('*').gte('day', from).lte('day', to).range(0, 4999),
     sb.from('yotei_submissions').select('*').eq('ym', ymStr(y, m)),
     sb.from('yotei_arrows').select('*').eq('active', true).gte('day_from', from).lte('day_from', to).order('id').range(0, 4999),
     // 予定表③の「特記」（1か月で最大 31日×2＝62件）
     sb.from('yotei_notes').select('*').gte('day', from).lte('day', to).range(0, 4999),
+    // 予定表③の「お願いすること」のリスト（先生ごと。月に関係ない）
+    sb.from('yotei_requests').select('*').eq('active', true).order('sort_order').order('id').range(0, 4999),
   ]);
   if (ent.error) throw ent.error; if (sub.error) throw sub.error; if (arr.error) throw arr.error;
   st.notes = nts.error ? new Map() : new Map(nts.data.map(n => [n.day + '|' + n.side, n]));
   if (nts.error) console.error(nts.error);
+  st.requests = rqs.error ? [] : rqs.data; if (rqs.error) console.error(rqs.error);
   st.arrows = arr.data;
   st.loadedAt = Date.now();
   st.entries = new Map(ent.data.map(e => [key(e.member_id, e.day), e]));
@@ -1369,14 +1396,15 @@ $('#btnUpdate').addEventListener('click', () => {
 // 画面に戻ってきたとき：10分より短い間なら、だまって最新の予定を読み直す（入力の途中・書きかけがあるときは読まない）
 // 10分以上たっていたとき・予定入力を開いたときに読み込みから10分以上たっていたときは、「Update」を押すようお知らせを出す
 const STALE_MIN = 10;
-function entriesSig() { return [...st.notes.values()].map(n => n.day + n.side + ':' + (n.updated_at || '')).join(',') + '#' + [...st.entries.values()].map(e => `${e.member_id}|${e.day}|${e.updated_at || ''}`).sort().join(',') + '#' + st.arrows.map(a => a.id + ':' + (a.updated_at || '')).join(',') + '#' + [...st.subs.values()].map(x => x.member_id + ':' + x.submitted_at).join(','); }
+function entriesSig() { return st.requests.map(r => r.id + ':' + (r.updated_at || '')).join(',') + '#' + [...st.notes.values()].map(n => n.day + n.side + ':' + (n.updated_at || '')).join(',') + '#' + [...st.entries.values()].map(e => `${e.member_id}|${e.day}|${e.updated_at || ''}`).sort().join(',') + '#' + st.arrows.map(a => a.id + ':' + (a.updated_at || '')).join(',') + '#' + [...st.subs.values()].map(x => x.member_id + ':' + x.submitted_at).join(','); }
 async function refreshData() {
   const before = entriesSig();
   try { await loadMonth(); } catch (e) { return false; }
   return entriesSig() !== before;
 }
 function busyNow() {
-  return pendingSaves > 0 || $('#modal').classList.contains('show') || !!$('#inRows .sv.ing');
+  const ae = document.activeElement;
+  return pendingSaves > 0 || $('#modal').classList.contains('show') || !!$('#inRows .sv.ing') || !!(ae && ae.closest && ae.closest('.t3req'));
 }
 function showUpdateNotice() {
   if ($('#modal').classList.contains('show') || pendingSaves > 0) return;
@@ -2091,31 +2119,37 @@ function renderTable() {
   }
   return `<div class="sheet a4l ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div>${solo ? tbl : `<div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div>`}</div>`;
   };
-  // 予定表③（A4縦）：左から「特記」「日・曜日」「1人目」「2人目」「特記」
+  // 予定表③（A4縦）：左から「特記」「1人目」「日・曜日」「2人目」「特記」（2026年11月9日〜）
+  // この画面では、先生の予定は直せない（見るだけ）。特記だけ書ける。左右の余白に「お願いすること」のリスト
   function buildDuo(list) {
     const PW = 199.4, NW = 42; // 紙の印刷できる幅（200mm）より少しだけ狭く・特記の列の幅
     const pc = list.length, pw = pc ? (PW - 2 * NW - (dw + ww)) / pc : 0;
     const rowH3 = Math.min(8, (287 - titleH - headH - 1.5) / (nd * 2));
-    const cols = `<col style="width:${NW}mm"><col style="width:${dw}mm"><col style="width:${ww}mm">` + list.map(() => `<col style="width:${pw}mm">`).join('') + `<col style="width:${NW}mm">`;
-    const head = `<th class="nth">特　　記</th><th colspan="2" class="dh dh1">日・曜日</th>` + list.map(x => `<th>${ttlHtml(x.header_name)}</th>`).join('') + `<th class="nth redge">特　　記</th>`;
-    const ed = editable ? ' editable' : '';
-    const nt = (day, side) => { const n = st.notes.get(day + '|' + side); return `<td rowspan="2" class="nt${ed}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * 2 - 0.4).toFixed(2)}mm">${esc(n ? n.body : '')}</div></td>`; };
+    const A = list[0], Bs = list.slice(1);
+    const mcol = () => `<col style="width:${pw}mm">`;
+    const cols = `<col style="width:${NW}mm">` + (A ? mcol() : '') + `<col style="width:${dw}mm"><col style="width:${ww}mm">` + Bs.map(mcol).join('') + `<col style="width:${NW}mm">`;
+    const mth = x => `<th>${ttlHtml(x.header_name)}</th>`;
+    const head = `<th class="nth">特　　記</th>` + (A ? mth(A) : '') + `<th colspan="2" class="dh dh1">日・曜日</th>` + Bs.map(mth).join('') + `<th class="nth redge">特　　記</th>`;
+    const ned = editable ? ' editable' : '';
+    const nt = (day, side) => { const n = st.notes.get(day + '|' + side); return `<td rowspan="2" class="nt${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * 2 - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm')}">${esc(n ? n.body : '')}</div></td>`; };
     let body = '';
     for (let d = 1; d <= nd; d++) {
       const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
       const c1 = x => { const e = withEnds(x.id, day); return e.allday
-        ? `<td rowspan="2" class="c ad${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`
-        : `<td class="c am${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size, e.am_red_parts)}</div></td>`; };
+        ? `<td rowspan="2" class="c ad" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td>`
+        : `<td class="c am" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.am, e.am_red, 'AM', e.am_indent, e.am_size, e.am_red_parts)}</div></td>`; };
       const c2 = x => { const e = withEnds(x.id, day); return e.allday ? ''
-        : `<td class="c pm${ed}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`; };
-      body += `<tr style="height:${rowH3}mm">${nt(day, 'L')}<td rowspan="2" class="dn${rd} dn1">${d}</td><td rowspan="2" class="dw${rd} dw1">(${WD_JA[w]})</td>${list.map(c1).join('')}${nt(day, 'R')}</tr>`;
-      body += `<tr style="height:${rowH3}mm">${list.map(c2).join('')}</tr>`;
+        : `<td class="c pm" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`; };
+      body += `<tr style="height:${rowH3}mm">${nt(day, 'L')}${A ? c1(A) : ''}<td rowspan="2" class="dn${rd} dn1">${d}</td><td rowspan="2" class="dw${rd} dw1">(${WD_JA[w]})</td>${Bs.map(c1).join('')}${nt(day, 'R')}</tr>`;
+      body += `<tr style="height:${rowH3}mm">${A ? c2(A) : ''}${Bs.map(c2).join('')}</tr>`;
     }
     const tableW = PW;
     const tbl = `<table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-    const xs = [0, NW, NW + dw + ww]; let x = NW + dw + ww; list.forEach(() => { x += pw; xs.push(x); }); xs.push(x + NW);
+    const xs = [0, NW]; let x = NW; if (A) { x += pw; xs.push(x); } x += dw + ww; xs.push(x); Bs.forEach(() => { x += pw; xs.push(x); }); xs.push(x + NW);
     const vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}<b class="ht" style="width:calc(${tableW}mm + 0.6px)"></b><b class="hb" style="width:calc(${tableW}mm + 0.6px)"></b></div>`;
-    return `<div class="sheet a4p ypage duo"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表</span></div><div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div></div>`;
+    const page = `<div class="sheet a4p ypage duo"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表</span></div><div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div></div>`;
+    if (!editable) return page;
+    return `<div class="t3lay">${reqPanel(A, 'L')}${page}${reqPanel(Bs[0], 'R')}</div>`;
   }
   $('#sheet').innerHTML = groups.map((g, i) => buildPage(g, i + 1)).join('');
   $('#sheet').classList.toggle('solo-wrap', solo);
@@ -2161,36 +2195,121 @@ function fitNotes(root) {
   });
 }
 const SIDE_LABEL = { L: '左の特記', R: '右の特記' };
+// 特記の書式（1マスごと。2026年11月9日〜）：寄せ・インデント（1つで1.5mm）・大きさ（1つで約1割）・色・太字
+const NOTE_COLORS = [['', '黒'], ['#c62828', '赤'], ['#1565c0', '青'], ['#2e7d32', '緑'], ['#ef6c00', 'オレンジ'], ['#6a1b9a', '紫']];
+const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: false };
+function noteFmt(n) { const f = { ...NOTE_FMT0 }; if (n) for (const k of Object.keys(NOTE_FMT0)) if (n[k] != null) f[k] = n[k]; return f; }
+// unit が 'mm' のときは予定表のマス用（8pt が標準）、'px' のときは書く画面用（15px が標準）
+function noteStyle(n, unit) {
+  const f = noteFmt(n), base = unit === 'mm' ? 8 : 15, u = unit === 'mm' ? 'pt' : 'px', step = unit === 'mm' ? 1.5 : 6;
+  const pad = f.indent > 0 ? `padding-left:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : f.indent < 0 ? `padding-right:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${-f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : '';
+  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400};${pad}`;
+}
+// ===== 予定表③の左右の余白：先生ごとの「お願いすること」のリスト（2026年11月9日〜） =====
+const REQ_MIN_ROWS = 5;
+const reqsOf = mid => st.requests.filter(r => r.member_id === mid && r.active !== false && String(r.body || '').trim()).sort((a, b) => (a.sort_order - b.sort_order) || (a.id - b.id));
+function reqPanel(mem, pos) {
+  if (!mem) return `<aside class="t3req no-print" style="visibility:hidden"></aside>`;
+  const items = reqsOf(mem.id), rows = items.map(r => `<li><input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off"></li>`);
+  while (rows.length < REQ_MIN_ROWS) rows.push(`<li><input class="rq" data-id="" value="" autocomplete="off"></li>`);
+  return `<aside class="t3req no-print" data-mid="${mem.id}" data-pos="${pos}"><h4>${ttlHtml(dispName(mem))}<small>にお願いすること</small></h4><ol>${rows.join('')}</ol>
+    <button type="button" class="btn sm rqadd">＋ 行を追加</button>
+    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。${pos === 'L' ? '左' : '右'}の特記を書くときに、ここから選べます。</p></aside>`;
+}
+async function saveReq(inp) {
+  const box = inp.closest('.t3req'), mid = Number(box.dataset.mid), id = Number(inp.dataset.id) || 0, body = inp.value.trim();
+  const cur = id ? st.requests.find(r => r.id === id) : null;
+  if (cur ? cur.body === body : !body) return;
+  inp.classList.add('ing'); pendingSaves++;
+  try {
+    const now = new Date().toISOString();
+    if (cur) {
+      const patch = body ? { body, updated_at: now } : { active: false, updated_at: now };
+      const { error } = await sb.from('yotei_requests').update(patch).eq('id', id);
+      if (error) throw error;
+      Object.assign(cur, patch);
+      if (!body) { st.requests = st.requests.filter(r => r.id !== id); inp.dataset.id = ''; }
+    } else {
+      const mx = Math.max(0, ...st.requests.filter(r => r.member_id === mid).map(r => r.sort_order || 0));
+      const { data, error } = await sb.from('yotei_requests').insert({ member_id: mid, sort_order: mx + 1, body, updated_at: now }).select().single();
+      if (error) throw error;
+      st.requests.push(data); inp.dataset.id = data.id;
+    }
+    toast(body ? 'リストに保存しました' : 'リストから消しました');
+  } catch (err) { toast('保存できませんでした：' + errMsg(err), true); inp.value = cur ? cur.body : ''; }
+  finally { pendingSaves--; inp.classList.remove('ing'); }
+}
+$('#sheet').addEventListener('change', e => { const inp = e.target.closest('.t3req input.rq'); if (inp) saveReq(inp); });
+$('#sheet').addEventListener('keydown', e => { const inp = e.target.closest('.t3req input.rq'); if (inp && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
+$('#sheet').addEventListener('click', e => {
+  const b = e.target.closest('.t3req .rqadd'); if (!b) return;
+  const ol = $('ol', b.closest('.t3req')), li = document.createElement('li');
+  li.innerHTML = '<input class="rq" data-id="" value="" autocomplete="off">'; ol.appendChild(li); $('input', li).focus();
+});
 function openNoteEditor(day, side) {
   if (st.personal) return;
   const [yy, mm, dd] = day.split('-').map(Number);
   const cur = st.notes.get(day + '|' + side), base = cur ? { ...cur } : null;
-  openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}</h3>
-    <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ">${esc(cur ? cur.body : '')}</textarea></div>
-    <p class="note" style="margin:6px 0 0">改行もできます。Ctrl＋Enter でも保存します。空にして保存すると、特記が消えます。</p>
+  const fmt = noteFmt(cur);
+  const pm = t3Members()[side === 'L' ? 0 : 1], items = pm ? reqsOf(pm.id) : [];
+  const sideName = pm ? `（${esc(dispName(pm))}の側）` : '';
+  openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}${sideName}</h3>
+    <div class="ntbar">
+      <span class="grp"><b>寄せ</b><button type="button" class="btn" data-al="left">左寄せ</button><button type="button" class="btn" data-al="center">中央</button><button type="button" class="btn" data-al="right">右寄せ</button></span>
+      <span class="grp"><b>インデント</b><button type="button" class="btn" data-in="-1">◀ 左へ</button><button type="button" class="btn" data-in="1">右へ ▶</button><span class="cur" id="ntInCur"></span></span>
+      <span class="grp"><b>大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
+      <span class="grp"><b>色</b>${NOTE_COLORS.map(([c, n]) => `<button type="button" class="sw" data-co="${c}" title="${n}" style="background:${c || '#1f2933'}"></button>`).join('')}</span>
+      <span class="grp"><b>太さ</b><button type="button" class="btn" data-bd="1"><b>太字</b></button><button type="button" class="btn" data-bd="0">細字</button></span>
+    </div>
+    <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
+    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（画面の' + (side === 'L' ? '左' : '右') + 'の余白で作れます）' : ''}</div>`}</div>
+    <p class="note" style="margin:6px 0 0">改行もできます。Ctrl＋Enter でも保存します。書式は、このマス全体にかかります。空にして保存すると、特記が消えます。</p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
-  const ta = $('#ntText');
-  const go = async () => { $('#ntOk').disabled = true; if (await saveNote(day, side, ta.value.replace(/\s+$/, ''), base)) closeModal(); else { const b = $('#ntOk'); if (b) b.disabled = false; } };
+  const ta = $('#ntText'), box = $('#modalBox');
+  const paint = () => {
+    ta.style.cssText = noteStyle(fmt, 'px');
+    $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
+    $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
+    $$('[data-bd]', box).forEach(b => b.classList.toggle('on', (b.dataset.bd === '1') === !!fmt.bold));
+    $('#ntInCur').textContent = fmt.indent ? (fmt.indent > 0 ? `右へ${fmt.indent}` : `左へ${-fmt.indent}`) : '標準';
+    $('#ntSzCur').textContent = fmt.size ? (fmt.size > 0 ? `＋${fmt.size}` : `−${-fmt.size}`) : '標準';
+  };
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.al) fmt.align = b.dataset.al;
+    else if (b.dataset.in) fmt.indent = Math.max(-20, Math.min(30, fmt.indent + Number(b.dataset.in)));
+    else if (b.dataset.sz) fmt.size = Math.max(-5, Math.min(8, fmt.size + Number(b.dataset.sz)));
+    else if (b.dataset.co != null) fmt.color = b.dataset.co;
+    else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
+    else if (b.dataset.rq) {
+      const r = st.requests.find(q => q.id === Number(b.dataset.rq)); if (!r) return;
+      const v = ta.value.replace(/\s+$/, ''); ta.value = v ? v + '\n' + r.body : r.body; ta.focus();
+    } else return;
+    paint();
+  });
+  paint();
+  const go = async () => { $('#ntOk').disabled = true; if (await saveNote(day, side, ta.value.replace(/\s+$/, ''), base, fmt)) closeModal(); else { const b = $('#ntOk'); if (b) b.disabled = false; } };
   $('#ntNo').addEventListener('click', closeModal);
   $('#ntOk').addEventListener('click', go);
   ta.addEventListener('keydown', ev => { if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); go(); } });
   setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 30);
 }
+const noteSig = n => n ? JSON.stringify([n.body || '', ...Object.values(noteFmt(n))]) : JSON.stringify(['', ...Object.values(NOTE_FMT0)]);
 // 保存の直前に読み直し、ほかの人が先に変えていたら上書きしない（予定の保存と同じ考え方）
-async function saveNote(day, side, body, base) {
+async function saveNote(day, side, body, base, fmt) {
   pendingSaves++;
   try {
     const now = await sb.from('yotei_notes').select('*').eq('day', day).eq('side', side).maybeSingle();
     if (now.error) throw now.error;
     const r = now.data;
-    if (r && (!base || r.updated_at !== base.updated_at) && r.body !== (base ? base.body : '')) {
+    if (r && (!base || r.updated_at !== base.updated_at) && noteSig(r) !== noteSig(base)) {
       st.notes.set(day + '|' + side, r); renderTable();
       toast('ほかの人が先に変えていました。最新の特記を出しましたので、確かめてからもう一度書いてください', true);
       return true;
     }
-    if (!r && !body) return true;
-    if (r && r.body === body) return true;
-    const { data, error } = await sb.from('yotei_notes').upsert({ day, side, body, updated_at: new Date().toISOString() }, { onConflict: 'day,side' }).select().single();
+    const rec = { day, side, body, ...noteFmt(fmt) };
+    if (noteSig(r) === noteSig(rec)) return true;
+    const { data, error } = await sb.from('yotei_notes').upsert({ ...rec, updated_at: new Date().toISOString() }, { onConflict: 'day,side' }).select().single();
     if (error) throw error;
     st.notes.set(day + '|' + side, data); renderTable(); toast('保存しました');
     return true;
