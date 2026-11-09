@@ -2129,6 +2129,8 @@ function renderTable() {
     // 先生の列は、その月の予定がちょうど入る幅（最小）にし、残りを左右の特記に同じだけ回す（2026年11月9日〜）
     const PW = 199.4; // 紙の印刷できる幅（200mm）より少しだけ狭く
     const pc = list.length, pw = pc ? t3ColWidth(list, nd) : 0;
+    // 日・曜日の列も、中身（日の数字・曜日）と見出し「日・曜日」がちょうど入る幅（最小）にする（2026年11月9日〜）
+    const [dw, ww] = t3DayWidths(nd);
     const NW = (PW - pc * pw - (dw + ww)) / 2;
     const rowH3 = Math.min(8, (287 - titleH - headH - 1.5) / (nd * 2));
     const A = list[0], Bs = list.slice(1);
@@ -2262,6 +2264,14 @@ function t3TextMm(text, pt, bold) {
   if (!t3Canvas) t3Canvas = document.createElement('canvas').getContext('2d');
   t3Canvas.font = `${bold ? 700 : 400} ${pt}pt "MS PGothic","Yu Gothic","Meiryo",sans-serif`;
   return t3Canvas.measureText(String(text || '')).width / pxPerMm();
+}
+// 予定表③の日・曜日の列の幅（mm）：[日の列, 曜日の列]
+function t3DayWidths(nd) {
+  const dn = Math.max(...Array.from({ length: nd }, (_, i) => t3TextMm(String(i + 1), 8.5))) + 0.6 + 0.5;
+  const wd = Math.max(...WD_JA.map(w => t3TextMm(`(${w})`, 6))) + 0.4 + 0.5;
+  const head = t3TextMm('日・曜日', 6.5) + 1;
+  const add = Math.max(0, head - (dn + wd)) / 2;
+  return [dn + add, wd + add];
 }
 function t3ColWidth(list, nd) {
   const { y, m } = st;
