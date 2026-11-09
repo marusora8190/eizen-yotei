@@ -438,6 +438,8 @@ body.tbl-three #btnT3Help{display:inline-flex}
 body.viewonly nav a:not([data-view="table"]):not([data-view="table1"]),body.viewonly nav .sep,body.viewonly .mnav [data-view="input"],body.viewonly .hide-personal-note{display:none!important}
 body.t3only nav a,body.t3only nav .sep,body.t3only .mnav [data-view],body.t3only .hide-personal-note{display:none!important}
 body.t3only header h1{cursor:default!important;background:none!important;text-decoration:none!important}
+#btnUpdateH{display:none}
+@media screen and (min-width:761px){body.t3only nav,body.t3only #btnNav{display:none!important}body.t3only #btnUpdateH{display:inline-flex;margin-left:auto}}
 .urlrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0}
 .urlrow .nm{font-weight:700;min-width:14em}
 .urlrow code{word-break:break-all;background:#f4f5f7;padding:2px 6px;border-radius:4px}
@@ -664,6 +666,8 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <span class="sp"></span>
     <button class="btn pri" id="btnSubmit">提出する</button>
   </div>
+  <!-- 予定表③だけのURL（?t3=1）のパソコンでは、サイドバーを出さず、Update をここ（上の帯の右端）に出す（2026年11月9日〜） -->
+  <button type="button" class="btn upd" id="btnUpdateH" title="最新の画面を読み込み直します">Update</button>
 </header>
 <div class="layout">
 <nav id="nav">
@@ -1425,6 +1429,7 @@ function render() {
 }
 $$('nav a[data-view], .mnav [data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
 $('#btnUpdateM').addEventListener('click', () => $('#btnUpdate').click());
+$('#btnUpdateH').addEventListener('click', () => $('#btnUpdate').click());
 // 上の「営繕部予定表」の文字を左クリックすると、予定表③を開く（ふつうのURLのパソコンだけ）
 $('#appTitle').addEventListener('click', e => { if (e.button !== 0 || st.personal || st.viewOnly || st.t3Only || isMobile()) return; showView('table3'); });
 $('#btnSpvBack').addEventListener('click', () => setSpv(false));
