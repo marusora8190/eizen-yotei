@@ -2081,7 +2081,16 @@ function cellText(t, red, prefix, indent, size, parts) {
 // 予定表では「委員会」「会議」の文字を、AM・PM と同じ大きさで出す（予定の文字の大きさを変えても、この2つは AM・PM と同じまま）
 const SMALL_WORDS = /委員会|会議/g;
 function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
+// 同じ画面（同じ月・同じ表・同じ先生）のまま作り直すときは、見ていた位置（表の枠の中と画面全体）を作り直したあとに戻す（2026年11月9日〜。保存のたびに一番上へ戻らないように）
+let lastTableSig = '';
 function renderTable() {
+  const wrapK = $('#v-table .sheet-wrap'), sigK = [st.view, st.y, st.m, !!st.tbl3, !!st.tblOne, st.tbMember, isMobile(), !!st.print2].join('|');
+  const keep = sigK === lastTableSig && wrapK ? { t: wrapK.scrollTop, l: wrapK.scrollLeft, wy: window.scrollY, wx: window.scrollX } : null;
+  lastTableSig = sigK;
+  renderTableBody();
+  if (keep) { wrapK.scrollTop = keep.t; wrapK.scrollLeft = keep.l; window.scrollTo(keep.wx, keep.wy); }
+}
+function renderTableBody() {
   const { y, m } = st, nd = dim(y, m);
   // 提出の印
   $('#tbChips').innerHTML = st.members.map(x => {
