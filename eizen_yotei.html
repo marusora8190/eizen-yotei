@@ -432,6 +432,13 @@ table.yt td.nt.ntsel{outline:2px solid #2f6fd6;outline-offset:-2px;background:#e
 #ntSelBar > span{white-space:nowrap}
 #ntSelBar .hint{font-size:12px;color:#c9d1db}
 @media print{#ntSelBar{display:none!important}}
+/* 特記をつかんで移す（マジックハンド。2026年11月10日〜。利用者の希望）：文字の入った特記のマスは手の形。つかんでいるあいだは、置けるマスが青い枠 */
+@media screen{#v-table .sheet-wrap td.nt.editable.hasnote{cursor:grab}}
+body.ntmoving,body.ntmoving *{cursor:grabbing!important;user-select:none}
+body.ntmoving #ntSelBar{display:none!important} /* つかんでいるあいだは、下の帯でマスが隠れないように */
+table.yt td.nt.ntdrop{outline:2px solid #2f6fd6;outline-offset:-2px;background:#e8f0ff!important}
+table.yt td.nt.ntsrc{opacity:.45}
+#ntGhost{position:fixed;z-index:70;pointer-events:none;background:#fff;border:1px solid #2f6fd6;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .duo .ytw .holband{position:absolute;left:0;background:#ffe6c7;pointer-events:none;z-index:0}
 .duo .ytw table.yt{position:relative;z-index:1}
 @media screen{
@@ -2377,7 +2384,7 @@ function renderTableBody() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${st.ntSel && st.ntSel.has(noteKey(day, side, line)) ? ' ntsel' : ''}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', true)}</div></div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${st.ntSel && st.ntSel.has(noteKey(day, side, line)) ? ' ntsel' : ''}${n && String(n.body || '').trim() ? ' hasnote' : ''}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', true)}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -3102,7 +3109,7 @@ function ntSelBar() {
     bar.innerHTML = `<span><b>${n}</b>マスを選んでいます</span><span class="hint">Ctrl＋クリックで追加・外す／Shift＋クリックで続けて選ぶ</span><button type="button" class="btn" id="nsDel">🗑 選んだ特記を消す（Delete）</button><button type="button" class="btn" id="nsOff">選ぶのをやめる（Esc）</button>`;
     $('#nsDel', bar).onclick = ntSelDelete; $('#nsOff', bar).onclick = ntSelClear;
   } else if (ntDelUndo) {
-    bar.innerHTML = `<span>${ntDelUndo.items.length}マスの特記を消しました</span><button type="button" class="btn" id="nsUndo">↶ 元に戻す</button><button type="button" class="btn" id="nsClose">閉じる</button>`;
+    bar.innerHTML = `<span>${ntDelUndo.msg || `${ntDelUndo.items.length}マスの特記を消しました`}</span><button type="button" class="btn" id="nsUndo">↶ 元に戻す</button><button type="button" class="btn" id="nsClose">閉じる</button>`;
     $('#nsUndo', bar).onclick = ntDelUndoRun; $('#nsClose', bar).onclick = () => { ntDelUndo = null; ntSelBar(); };
   }
   bar.classList.toggle('show', !!(n || ntDelUndo));
@@ -3448,7 +3455,7 @@ function openT3Help() {
     <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li><li>写したあとに元に戻したいときは、上の「↶ ○月→○月の写しを戻す」を押します（いちばん新しい1回分。写したパソコンだけで出ます）。写したマスを、写す前の中身に戻します。写したあとにほかの人が直したマスは戻しません。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
-    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
+    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>特記のマスは、手の形（✋）でつかんで、ほかのマスへ移せます（文字の入ったマスで、押したまま動かして、移したいマスで離します）。移す先にすでに文字があれば、2行目に書き足します。元のマスは空になります。移したあとの「↶ 元に戻す」で戻せます。表の上・下の端に近づけると、表が自動で動きます。つかんでいる途中で Esc を押すと、やめます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の右の「毎月」「12月」などは、出す月です。「✎」で、毎月か、決まった月（いくつでも）を選べます。月を決めた行は、その月の特記を書くときだけ「リストから選ぶ」に出ます（ほかの月のときは「ほかの月のものも出す」で出せます）。毎月のお願いと、1年にこの月だけのお願いを1つのリストに入れておけます。</li><li>年に何回かあるが何月かは決まっていないものは、出す月を「時々（月は決めない）」にします（印は緑の「時々」）。どの月の特記を書くときも、「リストから選ぶ」の下に「時々のもの」として分けて出ます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
@@ -3713,6 +3720,91 @@ function fitTexts(root) {
     if (f.scrollWidth > f.clientWidth + 0.5) { f.style.whiteSpace = 'normal'; f.style.lineHeight = '1'; }
     if (moved) moved.style.left = left;
   });
+}
+// ===== 特記をつかんで、ほかのマスへ移す（マジックハンド。2026年11月10日〜。利用者の希望）=====
+// 文字の入った特記・真ん中の列のマスを、マウスでつかんで（5px 以上動かして）ほかのマスで離すと、文字を移す。
+// 移す先にすでに文字があれば、2行目（改行のうしろ）に書き足す。移す先が空なら、元のマスの書式も一緒に移す。元のマスは空にする（書式・結合はそのまま）。
+// 動かさずに押しただけなら、今までどおり書く画面を開く。文字の無い所をつかんだときは、今までどおり表全体を動かす。移したあとは「↶ 元に戻す」で戻せる
+let ntDrag = null, ntDragJust = false;
+$('#sheet').addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const td = e.target.closest('td.nt.editable.hasnote'); if (!td) return;
+  e.stopPropagation(); // 表全体を動かすマジックハンドにはしない
+  ntDrag = { td, x: e.clientX, y: e.clientY, id: e.pointerId, on: false, over: null };
+});
+document.addEventListener('pointermove', e => {
+  const d = ntDrag; if (!d || e.pointerId !== d.id) return;
+  if (!d.on) {
+    if (Math.abs(e.clientX - d.x) < 5 && Math.abs(e.clientY - d.y) < 5) return;
+    d.on = true; document.body.classList.add('ntmoving'); d.td.classList.add('ntsrc');
+    try { window.getSelection().removeAllRanges(); } catch (_) {}
+    const g = document.createElement('div'); g.id = 'ntGhost';
+    const n = st.notes.get(noteKey(d.td.dataset.day, d.td.dataset.side, d.td.dataset.line));
+    g.textContent = '✋ ' + plainBody(n ? n.body : '').split('\n').join('／'); document.body.appendChild(g);
+  }
+  e.preventDefault();
+  d.cx = e.clientX; d.cy = e.clientY;
+  ntDragOver();
+  // 表の枠（または画面）の上・下の端に近づけたら、表を自動で動かす（画面の外のマスへも移せるように）
+  if (!d.timer) d.timer = setInterval(() => {
+    if (ntDrag !== d) { clearInterval(d.timer); return; }
+    const w = $('#v-table .sheet-wrap'), r = w.getBoundingClientRect();
+    const top = Math.max(r.top, 0) + 40, bot = Math.min(r.bottom, window.innerHeight) - 40;
+    const v = d.cy < top ? -12 : d.cy > bot ? 12 : 0; if (!v) return;
+    if (w.scrollHeight > w.clientHeight + 1) w.scrollTop += v; else window.scrollBy(0, v);
+    ntDragOver();
+  }, 30);
+});
+function ntDragOver() {
+  const d = ntDrag; if (!d) return;
+  const g = $('#ntGhost'); if (g) { g.style.left = (d.cx + 14) + 'px'; g.style.top = (d.cy + 10) + 'px'; }
+  const el = document.elementFromPoint(d.cx, d.cy), t = el && el.closest('#sheet td.nt.editable');
+  const tgt = t && t !== d.td ? t : null;
+  if (d.over !== tgt) { if (d.over) d.over.classList.remove('ntdrop'); if (tgt) tgt.classList.add('ntdrop'); d.over = tgt; }
+}
+const ntDragEnd = async e => {
+  const d = ntDrag; if (!d || (e && e.pointerId !== d.id)) return;
+  ntDrag = null; if (d.timer) clearInterval(d.timer);
+  if (!d.on) return; // 動かしていない：ふつうのクリック（書く画面を開く）
+  ntDragJust = true; setTimeout(() => { ntDragJust = false; }, 0);
+  document.body.classList.remove('ntmoving'); d.td.classList.remove('ntsrc'); if (d.over) d.over.classList.remove('ntdrop');
+  const g = $('#ntGhost'); if (g) g.remove();
+  if (e && e.type === 'pointerup' && d.over) await moveNote(d.td, d.over);
+};
+document.addEventListener('pointerup', ntDragEnd);
+document.addEventListener('pointercancel', ntDragEnd);
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && ntDrag && ntDrag.on) { const d = ntDrag; ntDrag = null; if (d.timer) clearInterval(d.timer); document.body.classList.remove('ntmoving'); d.td.classList.remove('ntsrc'); if (d.over) d.over.classList.remove('ntdrop'); const g = $('#ntGhost'); if (g) g.remove(); } });
+// つかんで動かしたあとのクリックは、書く画面を開かない
+$('#sheet').addEventListener('click', e => { if (ntDragJust) { e.stopPropagation(); e.preventDefault(); ntDragJust = false; } }, true);
+async function moveNote(srcTd, dstTd) {
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  const sk = [srcTd.dataset.day, srcTd.dataset.side, Number(srcTd.dataset.line)], dk = [dstTd.dataset.day, dstTd.dataset.side, Number(dstTd.dataset.line)];
+  const s0 = st.notes.get(noteKey(...sk)), d0 = st.notes.get(noteKey(...dk)) || null;
+  if (!s0 || !String(s0.body || '').trim()) return;
+  pendingSaves++;
+  try {
+    // 書く直前に2つのマスを読み直し、ほかの人が先に変えていたら移さない
+    const [rs, rd] = await Promise.all([noteRow(...sk), noteRow(...dk)]);
+    if (rs.error) throw rs.error; if (rd.error) throw rd.error;
+    const changed = (a, b) => (a ? !b || (a.updated_at !== b.updated_at && noteSig(a) !== noteSig(b)) : !!(b && String(b.body || '').trim()));
+    if (!rs.data || changed(s0, rs.data) || changed(d0, rd.data)) {
+      if (rs.data) st.notes.set(noteKey(...sk), rs.data); if (rd.data) st.notes.set(noteKey(...dk), rd.data);
+      renderTable(); toast('ほかの人が先に変えていました。最新の特記を出しましたので、確かめてからもう一度移してください', true); return;
+    }
+    const S = rs.data, D = rd.data, has = D && String(D.body || '').trim();
+    const dRec = has
+      ? { day: D.day, side: D.side, line: D.line, body: D.body.replace(/\s+$/, '') + '\n' + S.body, ...noteFmt(D), merged: !!D.merged, span_day: D.span_day || null, span_line: D.span_line || null }
+      : { day: dk[0], side: dk[1], line: dk[2], body: S.body, ...noteFmt(S), merged: !!(D && D.merged), span_day: D ? D.span_day || null : null, span_line: D ? D.span_line || null : null };
+    const sRec = { day: S.day, side: S.side, line: S.line, body: '', ...noteFmt(S), merged: !!S.merged, span_day: S.span_day || null, span_line: S.span_line || null };
+    const a = await noteUp(dRec); if (a.error) throw a.error;
+    const b = await noteUp(sRec); if (b.error) throw b.error;
+    st.notes.set(noteKey(...dk), a.data); st.notes.set(noteKey(...sk), b.data);
+    const lab = (k, x) => `${Number(String(k[0]).slice(8))}日${x === 'L' ? '（左）' : x === 'R' ? '（右）' : '（真ん中）'}`;
+    st.ntSel.clear(); ntSelAnchor = null;
+    ntDelUndo = { items: [{ before: D || { day: dk[0], side: dk[1], line: dk[2], body: '', ...noteFmt(null), merged: false, span_day: null, span_line: null }, after: a.data.updated_at }, { before: S, after: b.data.updated_at }], msg: `${lab(sk, sk[1])}の特記を${lab(dk, dk[1])}へ移しました${has ? '（2行目に書き足し）' : ''}` };
+    renderTable(); ntSelBar();
+  } catch (err) { renderTable(); toast('移せませんでした：' + errMsg(err), true); }
+  finally { pendingSaves--; }
 }
 $('#sheet').addEventListener('click', e => {
   if (e.target.closest('th.nthm.editable')) { openHeadEditor(); return; }
