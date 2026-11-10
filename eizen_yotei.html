@@ -513,8 +513,8 @@ body.tbl-three #v-table > p.note{display:none}
 .ntpick{margin:10px 0 0}
 .ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
 .ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
-#btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy{display:none}
-body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]),body.tbl-three #btnT3Copy:not([hidden]){display:inline-flex}
+#btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy,#btnT3Undo{display:none}
+body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]),body.tbl-three #btnT3Copy:not([hidden]),body.tbl-three #btnT3Undo:not([hidden]){display:inline-flex}
 /* 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）：開いたとき「写す」まで見えるよう、画面に収まる高さにし、一覧だけを上下に動かす */
 #modal #modalBox.cpbox{width:min(1240px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:flex;flex-direction:column;padding:12px 16px}
 #modalBox.cpbox > *{flex:none}
@@ -828,6 +828,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="t3Pick" title="予定表③に出す2人（全員共通。みんなの画面で変わります）">予定表③の2人：<select id="t3A"></select><select id="t3B"></select></span>
       <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
+      <button class="btn" id="btnT3Undo" title="直前の「📋 特記を翌月へ」で写した分を、写す前の中身に戻します（このパソコンで写したものだけ）" hidden>↶ 翌月への写しを戻す</button>
       <button class="btn" id="btnT3Copy" title="この月の特記を、翌月へまとめて写します（曜日・先生の予定を見ながら、写す日を1日ずつ直せます）">📋 特記を翌月へ</button>
       <button class="btn" id="btnT3Cols" title="予定表③の列の幅を、表を見ながら広く・狭くします（みんなの画面・印刷で同じになります）">↔ 列の幅</button>
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
@@ -2243,6 +2244,8 @@ function renderTableBody() {
   // スマホの予定表③：1日ずつ縦に並べて見るだけ（2026年11月10日〜。利用者の希望）
   document.body.classList.toggle('tbl-three-m', !!st.tbl3 && isMobile() && !st.personal);
   if (st.tbl3 && isMobile() && !st.personal) { renderT3Mobile(); return; }
+  $('#btnT3Undo').hidden = !noteEditable || !cpUndoGet(); // 「↶ 翌月への写しを戻す」は、戻せる写しがあるときだけ（2026年11月10日〜）
+  { const u = cpUndoGet(); if (u) { const [, tm] = u.to.split('-').map(Number), [, fm] = u.from.split('-').map(Number); $('#btnT3Undo').textContent = `↶ ${fm}月→${tm}月の写しを戻す`; } }
   $('#btnT3Copy').hidden = !noteEditable; // 「📋 特記を翌月へ」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Cols').hidden = !noteEditable; // 「↔ 列の幅」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Set').hidden = !noteEditable; // 「お願いすること」を直す「⚙ 設定」は、特記を書ける画面だけ
@@ -3240,7 +3243,13 @@ async function doCopyNotes(list, ny, nm, nNotes) {
     if (p % 2 === 1 && !cur.has(noteKey(pDay(p - 1), side, 1))) return 'default'; // 下の行で、その日の上の行が無い（はじめの1日1マス）
     return null;
   };
-  const write = async rec => { const { data, error } = await noteUp(rec); if (error) throw error; cur.set(noteKey(rec.day, rec.side, rec.line), data); return data; };
+  // 元に戻すために、写す前のマスの中身（無かったときは null）と、写したあとの保存した時刻を覚えておく（2026年11月10日〜）
+  const undo = new Map();
+  const write = async rec => {
+    const k = noteKey(rec.day, rec.side, rec.line);
+    if (!undo.has(k)) undo.set(k, { day: rec.day, side: rec.side, line: rec.line, before: cur.get(k) || null });
+    const { data, error } = await noteUp(rec); if (error) throw error; cur.set(k, data); undo.get(k).after = data.updated_at; return data;
+  };
   const fresh = async (day, side, line) => { const r = await noteRow(day, side, line); if (r.error) throw r.error; if (r.data) cur.set(noteKey(day, side, line), r.data); else cur.delete(noteKey(day, side, line)); return r.data; };
   let done = 0, added = 0;
   pendingSaves++;
@@ -3278,9 +3287,44 @@ async function doCopyNotes(list, ny, nm, nNotes) {
     }
     return { done, added };
   } catch (err) { toast('写している途中で止まりました：' + errMsg(err) + `（${done}件は写しました。${nm}月を開いて確かめてください）`, true); return null; }
-  finally { pendingSaves--; }
+  finally {
+    pendingSaves--;
+    const items = [...undo.values()].filter(x => x.after);
+    if (items.length) cpUndoSet({ at: new Date().toISOString(), from: ymStr(...prevYM(ny, nm)), to: ymStr(ny, nm), items });
+    renderTable();
+  }
 }
 $('#btnT3Copy').addEventListener('click', openCopyNotes);
+// ===== 「📋 特記を翌月へ」の元に戻す（2026年11月10日〜。利用者の希望）=====
+// いちばん新しい1回分を、そのパソコンのブラウザー（localStorage の yotei-cpundo）に覚える。戻すときは、写したときのまま（保存した時刻が同じ）のマスだけを戻す
+const CP_UNDO_KEY = 'yotei-cpundo';
+function cpUndoGet() { try { const v = JSON.parse(localStorage.getItem(CP_UNDO_KEY) || 'null'); return v && Array.isArray(v.items) && v.items.length ? v : null; } catch (e) { return null; } }
+function cpUndoSet(v) { try { if (v) localStorage.setItem(CP_UNDO_KEY, JSON.stringify(v)); else localStorage.removeItem(CP_UNDO_KEY); } catch (e) { /* 覚えられなくても写すことはできる */ } }
+async function undoCopyNotes() {
+  const u = cpUndoGet(); if (!u) { toast('元に戻せる写しはありません', true); return; }
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  const [ty, tm] = u.to.split('-').map(Number), [fy, fm] = u.from.split('-').map(Number), when = new Date(u.at);
+  if (!confirm(`${fm}月 → ${tm}月への特記の写し（${when.getMonth() + 1}/${when.getDate()} ${when.getHours()}:${String(when.getMinutes()).padStart(2, '0')}）を元に戻します。\n${tm}月の、写したマス ${u.items.length}か所を、写す前の中身に戻します。よろしいですか？\n（写したあとに、ほかの人が直したマスは戻しません）`)) return;
+  pendingSaves++;
+  let done = 0; const skip = [];
+  try {
+    for (const it of [...u.items].reverse()) {
+      const now = await noteRow(it.day, it.side, it.line); if (now.error) throw now.error;
+      if (!now.data || new Date(now.data.updated_at).getTime() !== new Date(it.after).getTime()) { skip.push(it); continue; }
+      const b = it.before;
+      // 写す前に無かったマスは、空のマス（はじめの形）に戻す（データベースの削除は管理者だけのため、空にする）
+      const rec = b ? { day: b.day, side: b.side, line: b.line, body: b.body || '', ...noteFmt(b), merged: !!b.merged, span_day: b.span_day || null, span_line: b.span_line || null }
+        : { day: it.day, side: it.side, line: it.line, body: '', ...noteFmt(null), merged: false, span_day: null, span_line: null };
+      const r = await noteUp(rec); if (r.error) throw r.error;
+      done++;
+    }
+    cpUndoSet(null);
+    toast(`${tm}月への写しを元に戻しました（${done}か所）${skip.length ? `。${skip.map(x => `${Number(x.day.slice(8))}日（${x.side === 'L' ? '左' : x.side === 'R' ? '右' : '真ん中'}）`).join('・')}は、写したあとに直されていたため戻していません` : ''}`, !!skip.length);
+  } catch (err) { toast('元に戻している途中で止まりました：' + errMsg(err), true); }
+  finally { pendingSaves--; }
+  if (st.y === ty && st.m === tm) { try { await loadMonth(); } catch (e) { /* 次の読み直しで出る */ } render(); } else await changeMonth(ty, tm);
+}
+$('#btnT3Undo').addEventListener('click', undoCopyNotes);
 // 「↔ 列の幅」の小窓を、題名の行をつかんで動かす（2026年11月10日〜。利用者の希望）。動かした場所は、そのパソコンのブラウザーに覚えておく
 const CW_POS_KEY = 'yotei-cw-pos';
 function cwDrag(box, handle) {
@@ -3312,7 +3356,7 @@ function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンでは、予定表③だけのURL（最後が ?t3=1。マスターのいちばん上でコピーできます）で開きます（サイドバーには出ません。いちばん上の「営繕部予定表」の文字を押しても開きません）。</li><li>スマホでは、いちばん上の「営繕部予定表」の文字を押すか、予定表③だけのURLを開くと、1日ずつ縦に並べた形で見られます（見るだけです。書いてあるものだけを出し、今月なら今日の日まで動きます。下の「予定表」で予定表①に戻ります）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります（左右の特記も同じです）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日の日は、左端の「日にち・曜日」の文字の高さの半分の帯が、左端から右の特記まで、うすいオレンジ色で引かれます（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
-    <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li></ul>
+    <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li><li>写したあとに元に戻したいときは、上の「↶ ○月→○月の写しを戻す」を押します（いちばん新しい1回分。写したパソコンだけで出ます）。写したマスを、写す前の中身に戻します。写したあとにほかの人が直したマスは戻しません。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
