@@ -578,6 +578,7 @@ body.t3only header h1{cursor:default!important;background:none!important;text-de
 @media screen and (min-width:761px){body.t3only nav,body.t3only #btnNav{display:none!important}body.t3only #btnUpdateH{display:inline-flex;margin-left:auto}}
 .urlrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0}
 .urlrow .nm{font-weight:700;min-width:14em}
+.urlrow a.urlop{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 .urlrow code{word-break:break-all;background:#f4f5f7;padding:2px 6px;border-radius:4px}
 table.yt td.nt .nti,table.yt th.nthm .nti{width:100%}
 table.yt th.nthm{padding:0;letter-spacing:0;font-weight:400;vertical-align:top}
@@ -879,9 +880,9 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <h2>マスター</h2>
     <div class="panel">
       <h3 style="margin-top:0">見るだけのURL・予定表③だけのURL</h3>
-      <div class="urlrow"><span class="nm">見るだけ（予定表①②）</span><code data-q="view=1"></code><button type="button" class="btn sm urlcp" data-q="view=1">コピー</button></div>
-      <div class="urlrow"><span class="nm">予定表③だけ（特記を書く）</span><code data-q="t3=1"></code><button type="button" class="btn sm urlcp" data-q="t3=1">コピー</button></div>
-      <p class="note">「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
+      <div class="urlrow"><span class="nm">見るだけ（予定表①②）</span><code data-q="view=1"></code><button type="button" class="btn sm urlcp" data-q="view=1">コピー</button><a class="btn sm urlop" data-q="view=1" target="_blank" rel="noopener noreferrer">開く</a></div>
+      <div class="urlrow"><span class="nm">予定表③だけ（特記を書く）</span><code data-q="t3=1"></code><button type="button" class="btn sm urlcp" data-q="t3=1">コピー</button><a class="btn sm urlop" data-q="t3=1" target="_blank" rel="noopener noreferrer">開く</a></div>
+      <p class="note">「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
     </div>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
@@ -4173,6 +4174,7 @@ function personalUrl(id) { return location.origin + location.pathname + '?p=' + 
 // 見るだけのURL・予定表③だけのURL（マスター。2026年11月9日〜）
 const modeUrl = q => location.origin + location.pathname + '?' + q;
 $$('#v-master code[data-q]').forEach(c => { c.textContent = modeUrl(c.dataset.q); });
+$$('#v-master a.urlop[data-q]').forEach(a => { a.href = modeUrl(a.dataset.q); }); // 開くボタン（2026年11月10日〜）
 $('#v-master').addEventListener('click', async e => {
   const b = e.target.closest('.urlcp'); if (!b) return;
   const u = modeUrl(b.dataset.q);
