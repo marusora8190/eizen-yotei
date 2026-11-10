@@ -470,6 +470,8 @@ body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three 
 /* 予定表③の「↔ 列の幅」：表を見ながら直せるよう、画面の下に出す（2026年11月10日〜。利用者の希望） */
 #modal.side.bottom{align-items:flex-end;justify-content:center;background:rgba(20,28,40,.08)}
 #modal.side.bottom #modalBox.cwbox{width:min(1180px,100%);padding:12px 16px}
+.cwbox > h3.cwdrag{cursor:move;user-select:none;-webkit-user-select:none;touch-action:none}
+.cwbox > h3.cwdrag .cwgrip{color:var(--sub);font-weight:400;font-size:12px;margin-left:8px}
 .cwgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:4px 0 6px}
 .cwcol{border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;background:#fafafa}
 .cwcol .cwname{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1249,7 +1251,7 @@ function errMsg(error) {
   return m;
 }
 // 開くたびに中身の入れ物を作り直す（前に開いたときのボタンの動きが重ならないように）
-function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); nb.className = 'box'; /* 前の画面の幅の印（rqbox・ntwide）を残さない */ old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
+function openModal(html) { const old = $('#modalBox'), nb = old.cloneNode(false); nb.className = 'box'; nb.removeAttribute('style'); /* 前の画面の幅の印（rqbox・ntwide）と、「↔ 列の幅」で動かした位置を残さない */ old.replaceWith(nb); nb.innerHTML = html; $('#modal').classList.add('show'); }
 let modalOnClose = null;
 let modalBeforeClose = null; // 閉じる前に、書きかけを保存するため（「⚙ 設定」のリスト。2026年11月9日〜）
 function closeModal() {
@@ -2889,13 +2891,14 @@ function openColWidths() {
   st.t3adjTmp = { ...saved };
   const ms = t3Members();
   const cols = [['L', '特記（左）'], ['A', ms[0] ? dispName(ms[0]) : '1人目'], ['M', midListName()], ['B', ms[1] ? dispName(ms[1]) : '2人目'], ['R', '特記（右）']];
-  openModal(`<h3 style="margin:0 0 4px">↔ 列の幅（表を見ながら直せます。印刷の大きさで出しています）</h3>
+  openModal(`<h3 class="cwdrag" style="margin:0 0 4px" title="ここをつかんで動かせます">↔ 列の幅（表を見ながら直せます。印刷の大きさで出しています）<span class="cwgrip">✥ ここをつかんで動かせます</span></h3>
     <div class="cwgrid">${cols.map(([k, n]) => `<div class="cwcol" data-k="${k}"><div class="cwname" title="${esc(n)}">${esc(n)}</div><div class="cwmm">今 <b data-cwv="${k}"></b> mm</div>
       <div class="cwbtns"><button type="button" class="btn" data-cw="${k}" data-d="-5" title="5mm 狭く">◀◀</button><button type="button" class="btn" data-cw="${k}" data-d="-1" title="1mm 狭く">◀ 狭く</button><button type="button" class="btn" data-cw="${k}" data-d="1" title="1mm 広く">広く ▶</button><button type="button" class="btn" data-cw="${k}" data-d="5" title="5mm 広く">▶▶</button></div></div>`).join('')}</div>
-    <p class="note" style="margin:0">「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつです。広げた分（狭めた分）は、左右の特記から同じだけ引きます（足します）。左の特記を広げると、右の特記が同じだけ狭くなります。先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えるので、月が変わっても同じ考え方で効きます。みんなの画面と印刷で同じになります。</p>
+    <p class="note" style="margin:0">いちばん上の題名の行をつかむと、この小窓を動かせます（ダブルクリックで下に戻ります）。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつです。広げた分（狭めた分）は、左右の特記から同じだけ引きます（足します）。左の特記を広げると、右の特記が同じだけ狭くなります。先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えるので、月が変わっても同じ考え方で効きます。みんなの画面と印刷で同じになります。</p>
     <div class="acts"><button type="button" class="btn" id="cwReset">すべて自動に戻す</button><span style="flex:1"></span><button type="button" class="btn" id="cwNo">やめる</button><button type="button" class="btn pri" id="cwOk">保存</button></div>`);
   $('#modal').classList.add('side', 'bottom');
   const box = $('#modalBox'); box.classList.add('cwbox');
+  cwDrag(box, $('h3.cwdrag', box));
   const show = () => { const w = st.t3last || {}; $$('[data-cwv]', box).forEach(b => { const v = w[b.dataset.cwv]; b.textContent = v == null ? '—' : v.toFixed(1); }); };
   show();
   box.addEventListener('click', e => {
@@ -2923,6 +2926,32 @@ function openColWidths() {
   });
 }
 $('#btnT3Cols').addEventListener('click', openColWidths);
+// 「↔ 列の幅」の小窓を、題名の行をつかんで動かす（2026年11月10日〜。利用者の希望）。動かした場所は、そのパソコンのブラウザーに覚えておく
+const CW_POS_KEY = 'yotei-cw-pos';
+function cwDrag(box, handle) {
+  const place = (x, y) => {
+    const w = box.offsetWidth, h = box.offsetHeight;
+    x = Math.max(0, Math.min(window.innerWidth - Math.min(w, 120), x)); y = Math.max(0, Math.min(window.innerHeight - 40, y)); // 画面の外に出しきらない（題名の行は残す）
+    Object.assign(box.style, { position: 'fixed', left: x + 'px', top: y + 'px', margin: '0' });
+    return { x, y };
+  };
+  try { const v = JSON.parse(localStorage.getItem(CW_POS_KEY) || 'null'); if (v && Number.isFinite(v.x) && Number.isFinite(v.y)) place(v.x, v.y); } catch (e) { /* 覚えていなければ、ふだんの場所（画面の下） */ }
+  handle.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const r = box.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    let last = place(r.left, r.top);
+    handle.setPointerCapture(e.pointerId);
+    const mv = ev => { last = place(ev.clientX - dx, ev.clientY - dy); };
+    const up = () => {
+      handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up);
+      try { localStorage.setItem(CW_POS_KEY, JSON.stringify(last)); } catch (e2) { /* 覚えられなくても動かすことはできる */ }
+    };
+    handle.addEventListener('pointermove', mv); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+  });
+  // 題名の行をダブルクリックすると、ふだんの場所（画面の下）に戻す
+  handle.addEventListener('dblclick', () => { Object.assign(box.style, { position: '', left: '', top: '', margin: '' }); try { localStorage.removeItem(CW_POS_KEY); } catch (e) { /* なにもしない */ } });
+}
 // ===== 予定表③の使い方（「印刷（A4縦）」の横の「❓ 予定表③の使い方」。2026年11月9日〜） =====
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
