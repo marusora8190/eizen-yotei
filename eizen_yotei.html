@@ -420,7 +420,7 @@ table.yt td.nt.editable:hover{background:#fff8e1}
 body.tbl-three #v-table > p.note{display:none}
 @media print{.t3lay{display:block}.t3req{display:none!important}}
 /* 「お願いすること」のリストは「⚙ 設定」の画面の中で直す（2026年11月9日〜） */
-#modal #modalBox.rqbox{width:min(780px,100%)}
+#modal #modalBox.rqbox{width:min(1120px,100%)}
 /* 特記・真ん中の列・見出しを書く画面は横に広くし、上下に動かさなくても全体が見えるように（2026年11月9日〜。利用者の希望）
    左に「書く欄」と「表での見え方」、右に「リストから選ぶ」 */
 #modal #modalBox.ntwide{width:min(1200px,100%);max-height:96vh;padding:14px 18px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:18px;grid-template-areas:"h h" "bar bar" "ed pick" "prev pick" "hint hint" "acts acts";grid-template-rows:auto auto auto 1fr auto auto}
@@ -725,7 +725,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="t3Pick" title="予定表③に出す2人（全員共通。みんなの画面で変わります）">予定表③の2人：<select id="t3A"></select><select id="t3B"></select></span>
       <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
-      <button class="btn" id="btnT3Set" title="今村部長・増野次長など、2人それぞれに「お願いすること」のリストを直します">⚙ 設定</button>
+      <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
@@ -2411,7 +2411,9 @@ function t3MidWidth(nd) {
 }
 // 特記の書式（1マスごと。2026年11月9日〜）：寄せ・インデント（1つで1.5mm）・大きさ（1つで約1割）・色・太字
 const NOTE_COLORS = [['', '黒'], ['#c62828', '赤'], ['#1565c0', '青'], ['#2e7d32', '緑'], ['#ef6c00', 'オレンジ'], ['#6a1b9a', '紫']];
-const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: true, valign: 'middle' }; // 上下の位置のはじめは「上下真ん中」、太さのはじめは「太字」（2026年11月9日〜）。 // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
+const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: true, valign: 'middle', bg: '' }; // bg：マスの塗りつぶし（空なら塗らない。真ん中の列で選べる。2026年11月10日〜）
+// 真ん中の列のマスの塗りつぶしの色（2026年11月10日〜。利用者の希望）。文字が読めるよう、薄い色だけ
+const NOTE_BGS = [['', 'なし'], ['#fff3b0', '黄'], ['#ffd6d6', 'ピンク'], ['#d6e8ff', '水色'], ['#d8f3d0', '緑'], ['#ffe2bf', 'オレンジ'], ['#eadcf7', '紫'], ['#e3e3e3', '灰色']]; // 上下の位置のはじめは「上下真ん中」、太さのはじめは「太字」（2026年11月9日〜）。 // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
 function noteFmt(n) { const f = { ...NOTE_FMT0 }; if (n) for (const k of Object.keys(NOTE_FMT0)) if (n[k] != null) f[k] = n[k]; return f; }
 // unit が 'mm' のときは予定表のマス用（8pt が標準）、'px' のときは書く画面用（15px が標準）
 function noteStyle(n, unit) {
@@ -2419,22 +2421,26 @@ function noteStyle(n, unit) {
   const pad = f.indent > 0 ? `padding-left:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : f.indent < 0 ? `padding-right:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${-f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : '';
   // 予定表のマスでは、上下の位置も付ける（中の文字を上・真ん中・下に寄せる）
   const va = unit === 'mm' ? `display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[f.valign] || 'flex-start'};` : '';
-  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400};${pad}${va}`;
+  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}${f.bg ? `background:${f.bg};` : ''}font-weight:${f.bold ? 700 : 400};${pad}${va}`;
 }
 // ===== 予定表③の「⚙ 設定」：先生ごとの「お願いすること」のリスト（2026年11月9日〜） =====
 const REQ_MIN_ROWS = 5;
 const reqsOf = mid => st.requests.filter(r => r.member_id === mid && r.active !== false && String(r.body || '').trim()).sort((a, b) => (a.sort_order - b.sort_order) || (a.id - b.id));
+// 真ん中の列のリスト（2026年11月10日〜）：yotei_requests の member_id が空の行。見出しの1行目を名前にする
+const midListName = () => { const h = midHead(); return (h && plainBody(h.body).split('\n').map(x => x.trim()).find(Boolean)) || '真ん中の列'; };
 function reqPanel(mem, pos) {
+  if (pos === 'M') mem = { id: null };
   if (!mem) return `<aside class="t3req no-print" style="visibility:hidden"></aside>`;
   const fb = '<button type="button" class="btn sm rqfmt" title="この行の文字の大きさ・色・寄せ・太さ">✎</button>';
   const items = reqsOf(mem.id), rows = items.map(r => `<li><div class="rqrow"><input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off" style="${reqStyle(r)}">${fb}</div></li>`);
   while (rows.length < REQ_MIN_ROWS) rows.push(`<li><div class="rqrow"><input class="rq" data-id="" value="" autocomplete="off">${fb}</div></li>`);
-  return `<aside class="t3req no-print" data-mid="${mem.id}" data-pos="${pos}"><h4>${ttlHtml(dispName(mem))}<small>にお願いすること</small></h4><ol>${rows.join('')}</ol>
+  const ttl = pos === 'M' ? `${esc(midListName())}<small>真ん中の列のリスト</small>` : `${ttlHtml(dispName(mem))}<small>にお願いすること</small>`;
+  return `<aside class="t3req no-print" data-mid="${mem.id == null ? '' : mem.id}" data-pos="${pos}"><h4>${ttl}</h4><ol>${rows.join('')}</ol>
     <button type="button" class="btn sm rqadd">＋ 行を追加</button>
-    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。「✎」で、その行の文字の大きさ・色・寄せ・太さを変えられます。${pos === 'L' ? '左' : '右'}の特記を書くときに、ここから選べます。</p></aside>`;
+    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。「✎」で、その行の文字の大きさ・色・寄せ・太さを変えられます。${pos === 'M' ? '真ん中の列' : pos === 'L' ? '左の特記' : '右の特記'}を書くときに、ここから選べます。</p></aside>`;
 }
 async function saveReq(inp) {
-  const box = inp.closest('.t3req'), mid = Number(box.dataset.mid), id = Number(inp.dataset.id) || 0, body = inp.value.trim();
+  const box = inp.closest('.t3req'), mid = box.dataset.pos === 'M' ? null : Number(box.dataset.mid), id = Number(inp.dataset.id) || 0, body = inp.value.trim();
   const cur = id ? st.requests.find(r => r.id === id) : null;
   if (cur ? cur.body === body : !body) return;
   if (inp.classList.contains('ing')) return; // 保存中の行を2回保存しない（「⚙ 設定」を閉じるときの書きかけの保存と重なるため）
@@ -2481,8 +2487,8 @@ function bindReqPanels(root) {
 // 「⚙ 設定」（「❓ 予定表③の使い方」の左）：2人それぞれの「お願いすること」のリストを直す画面（2026年11月9日〜。利用者の希望）
 function openReqSettings() {
   const ms = t3Members();
-  openModal(`<h3>⚙ 設定：お願いすることのリスト</h3>
-    <div class="rqset">${reqPanel(ms[0], 'L')}${reqPanel(ms[1], 'R')}</div>
+  openModal(`<h3>⚙ 設定：リスト（左右の特記・真ん中の列）</h3>
+    <div class="rqset">${reqPanel(ms[0], 'L')}${reqPanel(null, 'M')}${reqPanel(ms[1], 'R')}</div>
     <div class="acts"><button type="button" class="btn pri" id="rqSetClose">閉じる</button></div>`);
   const box = $('#modalBox'); box.classList.add('rqbox');
   bindReqPanels(box);
@@ -2710,22 +2716,23 @@ function openNoteEditor(day, side, line) {
     if (o >= 0 && o !== p0 && sp.explicit.has(o)) break;
     opts.push(q);
   }
-  const pm = side === 'M' ? null : t3Members()[side === 'L' ? 0 : 1], items = pm ? reqsOf(pm.id) : [];
+  const pm = side === 'M' ? null : t3Members()[side === 'L' ? 0 : 1], items = side === 'M' ? reqsOf(null) : pm ? reqsOf(pm.id) : [];
   const sideName = pm ? `（${esc(dispName(pm))}の側）` : '';
   const optLabel = q => (q === p0 + 1 && line === 1 ? 'この日の下の行まで（1行に結合）' : posLabel(q) + 'まで');
   openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}　${line === 1 ? '上の行' : '下の行'}${sideName}</h3>
     <div class="ntbar">
       <span class="grp"><b>結合</b><select id="ntSpan" title="このマスから、下のマスまでを1つにまとめます（日をまたいでもできます。同じ月の中だけ）"><option value="-1">結合しない</option>${opts.map(q => `<option value="${q}" ${q === curEnd ? 'selected' : ''}>${optLabel(q)}</option>`).join('')}</select>
         ${line === 1 && opts[0] === p0 + 1 ? '<button type="button" class="btn" id="ntMerge" title="この日の上の行・下の行を1つにします（保存で決まります）">⬚ 1行に結合</button>' : ''}<button type="button" class="btn" id="ntSplit" title="結合をやめて、もとのマスに戻します（保存で決まります）">⇕ 2行に分割</button></span>
-      ${noteBarHtml()}
+      ${noteBarHtml()}${side === 'M' ? `
+      <span class="grp"><b>塗りつぶし</b>${NOTE_BGS.map(([c, n]) => c ? `<button type="button" class="sw" data-bg="${c}" title="${n}" style="background:${c}"></button>` : `<button type="button" class="btn" data-bg="" title="塗りつぶしなし">なし</button>`).join('')}</span>` : ''}
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
     <div class="ntprevw"><span>表での見え方（実際のマスと同じ大きさ・同じ文字の大きさ）：</span><div class="ntprevbox" id="ntPrevBox"><div class="ntx" id="ntPrev"></div></div></div>
-    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（上の「⚙ 設定」で作れます）' : ''}</div>`}</div>
+    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（上の「⚙ 設定」で作れます）' : '真ん中の列のリストは、まだありません（上の「⚙ 設定」で作れます）'}</div>`}</div>
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
-  box.classList.add('ntwide'); if (side === 'M') box.classList.add('nopick'); // 横に広い画面（真ん中の列はリストが無いので1列）
+  box.classList.add('ntwide'); // 横に広い画面（真ん中の列にも、2026年11月10日からリストがある）
   ta.addEventListener('input', () => drawPrev(fmt, ta.value, prevCell));
   ['keyup', 'mouseup', 'select'].forEach(ev => ta.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(ta, !fmt.size && autoPt ? autoPt : notePt(fmt)); }));
   const paint = () => {
@@ -2735,6 +2742,7 @@ function openNoteEditor(day, side, line) {
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
     $$('[data-co]', box).forEach(b => b.classList.toggle('on', b.dataset.co === fmt.color));
     $$('[data-bd]', box).forEach(b => b.classList.toggle('on', (b.dataset.bd === '1') === !!fmt.bold));
+    $$('[data-bg]', box).forEach(b => b.classList.toggle('on', b.dataset.bg === (fmt.bg || '')));
     $('#ntInCur').textContent = fmt.indent ? (fmt.indent > 0 ? `右へ${fmt.indent}` : `左へ${-fmt.indent}`) : '標準';
     $('#ntSzCur').textContent = szLabel(fmt, autoPt);
     const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(ta, !fmt.size && autoPt ? autoPt : notePt(fmt));
@@ -2753,6 +2761,7 @@ function openNoteEditor(day, side, line) {
     else if (b.dataset.sz) fmt.size = Math.max(-5, Math.min(8, fmt.size + Number(b.dataset.sz)));
     else if (b.dataset.co != null) fmt.color = b.dataset.co;
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
+    else if (b.dataset.bg != null) fmt.bg = b.dataset.bg;
     else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
     else if (b.id === 'ntMerge') sel.value = String(p0 + 1);
     else if (b.id === 'ntSplit') sel.value = '-1';
@@ -2825,11 +2834,11 @@ async function saveNote(day, side, line, body, base, fmt, end) {
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
-    <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合。リストはありません）、上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、はじめはマスからはみ出さないいちばん大きい大きさに自動でなります（書いた行のまま折り返しません。「A−」「A＋」で大きさを変えると、その大きさになります）。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
+    <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、はじめはマスからはみ出さないいちばん大きい大きさに自動でなります（書いた行のまま折り返しません。「A−」「A＋」で大きさを変えると、その大きさになります）。幅は3cm以上で、中身が長いと広がります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
-    <h4>お願いすることのリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストを直せます（はじめは5行。「＋ 行を追加」で増やせます）。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
+    <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
     <h4>こんなときは</h4><ul><li>ほかの人と同じマスを同時に直すと、あとから保存した人に「ほかの人が先に変えていました」と出ます。出てきた最新の中身を確かめて、もう一度書いてください。</li><li>表が古いと思ったら、サイドバーの「Update」を押してください。</li></ul></div>
     <div class="acts"><button type="button" class="btn pri" id="t3HelpOk">閉じる</button></div>`);
