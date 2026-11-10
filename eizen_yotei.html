@@ -468,8 +468,28 @@ body.tbl-three #v-table > p.note{display:none}
 .ntpick{margin:10px 0 0}
 .ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
 .ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
-#btnT3Help,#btnT3Set,#btnT3Cols{display:none}
-body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]){display:inline-flex}
+#btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy{display:none}
+body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]),body.tbl-three #btnT3Copy:not([hidden]){display:inline-flex}
+/* 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）：開いたとき「写す」まで見えるよう、画面に収まる高さにし、一覧だけを上下に動かす */
+#modal #modalBox.cpbox{width:min(1240px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:flex;flex-direction:column;padding:12px 16px}
+#modalBox.cpbox > *{flex:none}
+#modalBox.cpbox > h3{margin:0 0 6px}
+#modalBox.cpbox .cpopt{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:14px;margin:0 0 6px}
+#modalBox.cpbox .cpopt label{display:inline-flex;gap:4px;align-items:center;cursor:pointer}
+#modalBox.cpbox .cplist{flex:1 1 auto;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#modalBox.cpbox table{border-collapse:collapse;width:100%;font-size:13.5px}
+#modalBox.cpbox th{position:sticky;top:0;z-index:1;background:#f3f4f6;font-weight:400;color:var(--sub);font-size:12.5px;padding:5px 6px;text-align:center;border-bottom:1px solid var(--line)}
+#modalBox.cpbox td{border-bottom:1px solid var(--line2,#eee);padding:5px 6px;vertical-align:top}
+#modalBox.cpbox tr.off td{opacity:.45}
+#modalBox.cpbox .cpbody{white-space:pre-wrap;word-break:break-all;max-width:300px;font-weight:700}
+#modalBox.cpbox .cpto{white-space:nowrap}
+#modalBox.cpbox .cpto select{font-size:14px;padding:3px 4px;font-weight:700}
+#modalBox.cpbox .cpto .btn{padding:3px 7px;font-size:12.5px}
+#modalBox.cpbox .cpsch{font-size:12.5px;line-height:1.45;color:#1f2933}
+#modalBox.cpbox .cpsch .lab{color:var(--sub)}
+#modalBox.cpbox .cpwarn{color:#c62828;font-size:12px}
+#modalBox.cpbox .cpnote{color:#8a5a00;font-size:12px}
+#modalBox.cpbox .red{color:#c62828}
 /* 予定表③の「↔ 列の幅」：表を見ながら直せるよう、画面の下に出す（2026年11月10日〜。利用者の希望） */
 #modal.side.bottom{align-items:flex-end;justify-content:center;background:rgba(20,28,40,.08)}
 #modal.side.bottom #modalBox.cwbox{width:min(1180px,100%);padding:12px 16px}
@@ -758,6 +778,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="t3Pick" title="予定表③に出す2人（全員共通。みんなの画面で変わります）">予定表③の2人：<select id="t3A"></select><select id="t3B"></select></span>
       <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
+      <button class="btn" id="btnT3Copy" title="この月の特記を、翌月へまとめて写します（曜日・先生の予定を見ながら、写す日を1日ずつ直せます）">📋 特記を翌月へ</button>
       <button class="btn" id="btnT3Cols" title="予定表③の列の幅を、表を見ながら広く・狭くします（みんなの画面・印刷で同じになります）">↔ 列の幅</button>
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
@@ -1260,7 +1281,7 @@ let modalBeforeClose = null; // 閉じる前に、書きかけを保存するた
 function closeModal() {
   if (modalBeforeClose) { const f = modalBeforeClose; modalBeforeClose = null; f(); }
   closeRedPick();
-  $('#modal').classList.remove('show', 'side', 'left', 'right'); $('#modalBox').innerHTML = '';
+  $('#modal').classList.remove('show', 'side', 'left', 'right', 'bottom'); $('#modalBox').innerHTML = '';
   if (modalOnClose) { const f = modalOnClose; modalOnClose = null; f(); }
 }
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
@@ -2169,6 +2190,7 @@ function renderTableBody() {
   // 先生ごとのURL・見るだけのURL・予定表③だけのURLでは、予定表のマスは直せない（予定表③だけのURLでも、特記とリストは書ける）
   const editable = !st.personal && !st.viewOnly && !st.t3Only;
   const noteEditable = editable || (st.t3Only && !isMobile());
+  $('#btnT3Copy').hidden = !noteEditable; // 「📋 特記を翌月へ」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Cols').hidden = !noteEditable; // 「↔ 列の幅」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Set').hidden = !noteEditable; // 「お願いすること」を直す「⚙ 設定」は、特記を書ける画面だけ
   // 表の幅は紙の幅（287mm）より少しだけ狭く。ちょうどだと、印刷のときにいちばん右の縦の罫線の半分が切れて細くなるため
@@ -2929,6 +2951,161 @@ function openColWidths() {
   });
 }
 $('#btnT3Cols').addEventListener('click', openColWidths);
+// ===== 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）=====
+// この月の特記を、翌月へまとめて写す。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決め、日曜・祝日に当たれば前の平日へずらせる。
+// 1件ずつ、元の日と写す日の先生（左は1人目・右は2人目）の予定を並べて出し、「◀」「▶」で写す日を直せる。写す先にすでに特記があれば、うしろに改行で書き足す
+function cpSched(list, mid, day) {
+  if (!mid) return '';
+  const e = list.find(x => x.member_id === mid && x.day === day), parts = [];
+  const tx = (t, red) => `<span class="${red ? 'red' : ''}">${esc(t)}</span>`;
+  if (e && e.allday) parts.push(`終日 ${tx(e.allday, e.allday_red)}`);
+  else { if (e && e.am) parts.push(`AM ${tx(e.am, e.am_red)}`); if (e && e.pm) parts.push(`PM ${tx(e.pm, e.pm_red)}`); }
+  for (const x of list) for (const k of ['allday', 'am', 'pm']) { const u = x[k + '_until']; if (x.member_id === mid && x[k] && u && x.day < day && day <= u) parts.push(`${k === 'allday' ? '終日' : k.toUpperCase()} ${tx(x[k], x[k + '_red'])}（${Number(x.day.slice(8))}日から続く）`); }
+  if (!parts.length && !(e && e.event_off)) { const ev = eventFor(day); if (ev) parts.push(`（行事）${esc(ev.text)}`); }
+  return parts.length ? parts.join('　') : '<span class="lab">予定なし</span>';
+}
+function cpTarget(y, m, d, ny, nm, rule, avoid) {
+  const nd = dim(ny, nm); let t, over = false;
+  if (rule === 'wd') { // 同じ週の同じ曜日（例：第2月曜 → 翌月の第2月曜。無いときは最後の同じ曜日）
+    const w = wdOf(y, m, d), n = Math.ceil(d / 7), f = 1 + ((w - wdOf(ny, nm, 1) + 7) % 7);
+    t = f + (n - 1) * 7; if (t > nd) { t -= 7; over = true; }
+  } else { t = Math.min(d, nd); over = d > nd; }
+  if (avoid) { let k = t; while (k > 1 && isRedDay(ny, nm, k)) k--; if (isRedDay(ny, nm, k)) { k = t; while (k < nd && isRedDay(ny, nm, k)) k++; } t = k; }
+  return { t, over };
+}
+async function openCopyNotes() {
+  if ($('#btnT3Copy').hidden) return;
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  const { y, m } = st, [ny, nm] = nextYM(y, m), nd = dim(ny, nm), ms = t3Members();
+  const from = dstr(ny, nm, 1), to = dstr(ny, nm, nd);
+  let nx;
+  try {
+    nx = await Promise.all([
+      sb.from('yotei_notes').select('*').gte('day', from).lte('day', to).range(0, 4999),
+      sb.from('yotei_entries').select('*').gte('day', from).lte('day', to).range(0, 4999),
+    ]);
+    if (nx[0].error) throw nx[0].error; if (nx[1].error) throw nx[1].error;
+  } catch (err) { toast('翌月の特記・予定を読めませんでした：' + errMsg(err), true); return; }
+  const nNotes = nx[0].data, nEnt = nx[1].data, cEnt = [...st.entries.values()];
+  const midOf = side => side === 'L' ? (ms[0] && ms[0].id) : side === 'R' ? (ms[1] && ms[1].id) : null;
+  const src = [...st.notes.values()].filter(n => String(n.day).slice(0, 7) === ymStr(y, m) && String(n.body || '').trim())
+    .sort((a, b) => (a.side === b.side ? 0 : a.side < b.side ? -1 : 1) || String(a.day).localeCompare(String(b.day)) || a.line - b.line);
+  const items = src.map((n, i) => ({ i, n, side: n.side, line: Number(n.line) || 1, d: Number(String(n.day).slice(8)), on: n.side !== 'M', t: 1, over: false, moved: false }));
+  const opt = { rule: 'wd', avoid: true, mid: false };
+  const calc = () => items.forEach(it => { const r = cpTarget(y, m, it.d, ny, nm, opt.rule, opt.avoid); it.t = r.t; it.over = r.over; it.moved = false; });
+  calc();
+  const dayLab = (yy, mm2, d) => `${mm2}/${d}（${WD_JA[wdOf(yy, mm2, d)]}）${st.holidays.get(dstr(yy, mm2, d)) ? ' ' + esc(st.holidays.get(dstr(yy, mm2, d))) : ''}`;
+  const sideLab = it => {
+    const e = noteSpanEnd(it.n), p0 = notePos(it.n.day, it.line), days = e > p0 ? Math.floor(e / 2) - Math.floor(p0 / 2) + 1 : 1;
+    return (it.side === 'L' ? '左' : it.side === 'R' ? '右' : esc(midListName())) + (it.line === 2 ? '・下の行' : e < 0 ? '・上の行' : '') + (days > 1 ? `・${days}日分を結合` : '');
+  };
+  const existAt = (side, d) => nNotes.filter(n => n.side === side && Number(String(n.day).slice(8)) === d && String(n.body || '').trim());
+  const rowHtml = it => {
+    const sd = dstr(y, m, it.d), td = dstr(ny, nm, it.t), mid = midOf(it.side), who = mid ? dispName(st.members.find(x => x.id === mid) || {}) : '';
+    const ex = existAt(it.side, it.t), dup = items.filter(o => o !== it && o.on && o.side === it.side && o.t === it.t && o.line === it.line && (opt.mid || o.side !== 'M')).length;
+    const red = isRedDay(ny, nm, it.t), wdChanged = wdOf(y, m, it.d) !== wdOf(ny, nm, it.t);
+    const opts = Array.from({ length: nd }, (_, k) => `<option value="${k + 1}" ${k + 1 === it.t ? 'selected' : ''}>${dayLab(ny, nm, k + 1)}</option>`).join('');
+    return `<tr data-i="${it.i}" class="${it.on ? '' : 'off'}">
+      <td style="text-align:center"><input type="checkbox" data-on="${it.i}" ${it.on ? 'checked' : ''}></td>
+      <td style="white-space:nowrap"><b>${dayLab(y, m, it.d)}</b><br><span class="lab" style="font-size:12px;color:var(--sub)">${sideLab(it)}</span></td>
+      <td><div class="cpbody">${noteBodyHtml(it.n.body, it.side === 'M')}</div></td>
+      <td class="cpto"><button type="button" class="btn" data-mv="-1" data-i="${it.i}" title="1日前にする">◀</button> <select data-to="${it.i}">${opts}</select> <button type="button" class="btn" data-mv="1" data-i="${it.i}" title="1日後にする">▶</button>
+        ${red ? '<div class="cpwarn">⚠ 日曜・祝日です</div>' : ''}${it.over ? '<div class="cpwarn">⚠ 同じ日（週）が無いため、近い日にしました</div>' : ''}${opt.rule === 'date' && wdChanged ? `<div class="cpnote">曜日が変わります（${WD_JA[wdOf(y, m, it.d)]}→${WD_JA[wdOf(ny, nm, it.t)]}）</div>` : ''}
+        ${ex.length ? '<div class="cpnote">すでに特記があります（うしろに書き足します）</div>' : ''}${dup ? '<div class="cpnote">ほかの特記と同じ日です（つなげて書きます）</div>' : ''}</td>
+      <td class="cpsch">${mid ? `<div><span class="lab">${esc(who)}（元の日）：</span>${cpSched(cEnt, mid, sd)}</div><div><span class="lab">${esc(who)}（写す日）：</span><b>${cpSched(nEnt, mid, td)}</b></div>` : '<span class="lab">—</span>'}</td></tr>`;
+  };
+  openModal(`<h3>📋 特記を翌月へ写す（${m}月 → ${ny !== y ? ny + '年' : ''}${nm}月）</h3>
+    <div class="cpopt"><span><b>写す日の決め方：</b></span>
+      <label><input type="radio" name="cpRule" value="wd" checked>同じ曜日（第○週の○曜日。例：第2月曜→翌月の第2月曜）</label>
+      <label><input type="radio" name="cpRule" value="date">同じ日付</label>
+      <label><input type="checkbox" id="cpAvoid" checked>日曜・祝日に当たったら、前の平日にずらす</label>
+      <label><input type="checkbox" id="cpMid">${esc(midListName())}（真ん中の列）も写す</label>
+      <span style="flex:1"></span><button type="button" class="btn" id="cpAll">全部選ぶ</button><button type="button" class="btn" id="cpNone">全部外す</button></div>
+    <p class="note" style="margin:0 0 6px">右の欄に、その日の先生の予定（元の日・写す日）を出しています。先生の予定がずれているときは「◀」「▶」か日付の欄で、写す日を1日ずつ直してください。写したくない行はチェックを外します。写す日の決め方を変えると、直した日も決め方どおりに戻ります。</p>
+    <div class="cplist"><table><thead><tr><th>写す</th><th>元の日</th><th>特記</th><th>写す日（${nm}月）</th><th>先生の予定</th></tr></thead><tbody id="cpRows"></tbody></table></div>
+    <div class="acts"><span id="cpCount" class="lab" style="color:var(--sub)"></span><span style="flex:1"></span><button type="button" class="btn" id="cpNo">やめる</button><button type="button" class="btn pri" id="cpOk">翌月へ写す</button></div>`);
+  const box = $('#modalBox'); box.classList.add('cpbox');
+  const draw = () => {
+    const vis = items.filter(it => opt.mid || it.side !== 'M');
+    $('#cpRows').innerHTML = vis.length ? vis.map(rowHtml).join('') : `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--sub)">${m}月には、写す特記がありません</td></tr>`;
+    const n = vis.filter(it => it.on).length; $('#cpCount').textContent = `写す件数：${n}件`; $('#cpOk').disabled = !n;
+  };
+  draw();
+  box.addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'cpRule') { opt.rule = t.value; calc(); draw(); }
+    else if (t.id === 'cpAvoid') { opt.avoid = t.checked; calc(); draw(); }
+    else if (t.id === 'cpMid') { opt.mid = t.checked; items.forEach(it => { if (it.side === 'M') it.on = t.checked; }); draw(); }
+    else if (t.dataset.on != null) { items[Number(t.dataset.on)].on = t.checked; draw(); }
+    else if (t.dataset.to != null) { const it = items[Number(t.dataset.to)]; it.t = Number(t.value); it.over = false; it.moved = true; draw(); }
+  });
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.mv) { const it = items[Number(b.dataset.i)]; it.t = Math.max(1, Math.min(nd, it.t + Number(b.dataset.mv))); it.over = false; it.moved = true; draw(); }
+    else if (b.id === 'cpAll' || b.id === 'cpNone') { items.forEach(it => { if (opt.mid || it.side !== 'M') it.on = b.id === 'cpAll'; }); draw(); }
+  });
+  $('#cpNo').addEventListener('click', closeModal);
+  $('#cpOk').addEventListener('click', async () => {
+    const list = items.filter(it => it.on && (opt.mid || it.side !== 'M'));
+    if (!list.length) return;
+    if (!confirm(`${list.length}件の特記を、${nm}月へ写します。よろしいですか？\n（写す先にすでに特記があるときは、うしろに書き足します）`)) return;
+    $('#cpOk').disabled = true;
+    const r = await doCopyNotes(list, ny, nm, nNotes);
+    if (r) { closeModal(); toast(`${r.done}件を${nm}月へ写しました${r.added ? `（うち${r.added}件は、すでにある特記に書き足しました）` : ''}。${nm}月を開きます`); await changeMonth(ny, nm); }
+    else { const b = $('#cpOk'); if (b) b.disabled = false; }
+  });
+}
+// 写す（翌月の特記を、写す直前に1件ずつ読み直してから書く。ほかの人の特記は消さず、うしろに書き足す）
+async function doCopyNotes(list, ny, nm, nNotes) {
+  const nd = dim(ny, nm), last = nd * 2 - 1, cur = new Map(nNotes.map(n => [noteKey(n.day, n.side, n.line), n]));
+  const pDay = p => dstr(ny, nm, Math.floor(p / 2) + 1), pLine = p => (p % 2) + 1;
+  // そのマスが、ほかのマスの結合（同じ日の上下の結合・日をまたいだ結合）に入っていれば、そのいちばん上のマスを返す
+  const ownerOf = (side, p) => {
+    for (const n of cur.values()) { if (n.side !== side) continue; const p0 = notePos(n.day, n.line), e = noteSpanEnd(n); if (p0 < p && p <= e) return n; }
+    if (p % 2 === 1 && !cur.has(noteKey(pDay(p - 1), side, 1))) return 'default'; // 下の行で、その日の上の行が無い（はじめの1日1マス）
+    return null;
+  };
+  const write = async rec => { const { data, error } = await noteUp(rec); if (error) throw error; cur.set(noteKey(rec.day, rec.side, rec.line), data); return data; };
+  const fresh = async (day, side, line) => { const r = await noteRow(day, side, line); if (r.error) throw r.error; if (r.data) cur.set(noteKey(day, side, line), r.data); else cur.delete(noteKey(day, side, line)); return r.data; };
+  let done = 0, added = 0;
+  pendingSaves++;
+  try {
+    for (const it of [...list].sort((a, b) => a.side.localeCompare(b.side) || a.t - b.t || a.line - b.line)) {
+      it._owner = null; // 前に押したときの結果を残さない
+      const n = it.n, day = dstr(ny, nm, it.t);
+      let line = it.line, p = notePos(day, line);
+      if (line === 2) {
+        const own = ownerOf(it.side, p);
+        if (own === 'default') { // その日の上の行を「分割」にしてから、下の行に書く
+          await write({ day, side: it.side, line: 1, body: '', ...noteFmt(null), merged: false, span_day: day, span_line: 1 });
+        } else if (own) { line = Number(own.line) || 1; p = notePos(own.day, line); it._owner = own; }
+      } else { const own = ownerOf(it.side, p); if (own && own !== 'default') { it._owner = own; p = notePos(own.day, own.line); line = Number(own.line) || 1; } }
+      const tDay = it._owner ? String(it._owner.day) : day;
+      const now = await fresh(tDay, it.side, line);
+      if (now && String(now.body || '').trim()) { // すでに書いてある：うしろに改行で書き足す（書式・結合は今のまま）
+        await write({ day: tDay, side: it.side, line, body: now.body + '\n' + n.body, ...noteFmt(now), merged: false, span_day: now.span_day || null, span_line: now.span_line || null });
+        added++; done++; continue;
+      }
+      // 空のマス：元の特記の書式と結合の長さで書く（日をまたいだ結合は、翌月の中で、ほかの特記の手前まで）
+      const ps = notePos(n.day, Number(n.line) || 1), se = noteSpanEnd(n);
+      let span_day = null, span_line = null;
+      if (line === 1) {
+        if (se < 0) { span_day = tDay; span_line = 1; } // 元は分割（上の行だけ）
+        else {
+          let e = Math.min(last, p + (se - ps));
+          for (let q = p + 1; q <= e; q++) { const o = cur.get(noteKey(pDay(q), it.side, pLine(q))); if (o && String(o.body || '').trim()) { e = q - 1; break; } }
+          if (e > p + 1 || (e === p + 1 && n.span_day)) { span_day = pDay(e); span_line = pLine(e); }
+          else if (e <= p) { span_day = tDay; span_line = 1; }
+        }
+      }
+      await write({ day: tDay, side: it.side, line, body: n.body, ...noteFmt(n), merged: false, span_day, span_line });
+      done++;
+    }
+    return { done, added };
+  } catch (err) { toast('写している途中で止まりました：' + errMsg(err) + `（${done}件は写しました。${nm}月を開いて確かめてください）`, true); return null; }
+  finally { pendingSaves--; }
+}
+$('#btnT3Copy').addEventListener('click', openCopyNotes);
 // 「↔ 列の幅」の小窓を、題名の行をつかんで動かす（2026年11月10日〜。利用者の希望）。動かした場所は、そのパソコンのブラウザーに覚えておく
 const CW_POS_KEY = 'yotei-cw-pos';
 function cwDrag(box, handle) {
@@ -2960,6 +3137,7 @@ function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
+    <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
