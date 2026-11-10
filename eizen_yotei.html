@@ -2291,7 +2291,7 @@ function renderTableBody() {
       const c2 = x => { const e = withEnds(x.id, day); return e.allday ? ''
         : `<td class="c pm" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`; };
       body += `<tr style="height:${rowH3}mm"><td class="dn${rd} dn3">${d}</td>${cellAt(day, 'L', 1)}${A ? c1(A) : ''}${cellAt(day, 'M', 1)}${Bs.map(c1).join('')}${cellAt(day, 'R', 1)}</tr>`;
-      body += `<tr style="height:${rowH3}mm"><td class="dw${rd} dw3">(${WD_JA[w]})</td>${cellAt(day, 'L', 2)}${A ? c2(A) : ''}${cellAt(day, 'M', 2)}${Bs.map(c2).join('')}${cellAt(day, 'R', 2)}</tr>`;
+      body += `<tr style="height:${rowH3}mm"><td class="dw${rd} dw3">${WD_JA[w]}</td>${cellAt(day, 'L', 2)}${A ? c2(A) : ''}${cellAt(day, 'M', 2)}${Bs.map(c2).join('')}${cellAt(day, 'R', 2)}</tr>`;
     }
     const tableW = DW + NL + (A ? pwA : 0) + MW + Bs.length * pwB + NR; // ふだんは PW と同じ
     const tbl = `<table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -2600,7 +2600,7 @@ function t3ScreenWidth() {
 }
 function t3DayWidth(nd) {
   const dn = Math.max(...Array.from({ length: nd }, (_, i) => t3TextMm(String(i + 1), 8.5)));
-  const wd = Math.max(...WD_JA.map(w => t3TextMm(`(${w})`, 6)));
+  const wd = Math.max(...WD_JA.map(w => t3TextMm(w, 6))); // 予定表③の曜日は「（）」を付けない（2026年11月10日〜。利用者の希望）
   const head = t3TextMm('日', 6.5);
   return Math.max(dn, wd, head) + 1.2;
 }
