@@ -2310,7 +2310,7 @@ function renderTableBody() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', side === 'M')}</div></div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', side === 'M')}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -2425,7 +2425,7 @@ function noteBodyHtml(body, mid) {
 function drawPrev(fmt, body, cell, side) {
   const pv = $('#ntPrev'); if (!pv) return;
   const r = cell ? cell.getBoundingClientRect() : null;
-  pv.style.cssText = noteStyle(fmt, 'mm', noteBase(side)) + (r && r.width ? `width:${r.width}px;height:${r.height}px;` : 'width:60mm;height:9mm;');
+  pv.style.cssText = noteStyle(fmt, 'mm', noteBase(side), noteIndent0(side)) + (r && r.width ? `width:${r.width}px;height:${r.height}px;` : 'width:60mm;height:9mm;');
   if (cell && cell.dataset.auto && !fmt.size) pv.dataset.auto = '1'; else delete pv.dataset.auto;
   pv.innerHTML = `<div class="nti">${noteBodyHtml(body, side === 'M')}</div>`;
   fitNotes($('#ntPrevBox'));
@@ -2487,8 +2487,11 @@ const MID_PT = 10.4, noteBase = side => (side === 'M' || side === 'L' || side ==
 // 真ん中の列で自動で小さくする言葉（先生の列の AM・PM と同じ割合）
 const MID_SMALL = /(AM|PM|ＡＭ|ＰＭ|終日)/g;
 // unit が 'mm' のときは予定表のマス用（base pt が標準。ふだんは 8pt）、'px' のときは書く画面用（15px が標準）
-function noteStyle(n, unit, ptBase) {
-  const f = noteFmt(n), base = unit === 'mm' ? (ptBase || 8) : 15, u = unit === 'mm' ? 'pt' : 'px', step = unit === 'mm' ? 1.5 : 6;
+// インデントの標準：左右の特記は「右へ1」の位置、真ん中の列・見出しは0（2026年11月10日〜。利用者の希望）。書く画面では、この位置を「標準」と出す
+const noteIndent0 = side => (side === 'L' || side === 'R') ? 1 : 0;
+function noteStyle(n, unit, ptBase, in0) {
+  const f = { ...noteFmt(n) }; f.indent += in0 || 0;
+  const base = unit === 'mm' ? (ptBase || 8) : 15, u = unit === 'mm' ? 'pt' : 'px', step = unit === 'mm' ? 1.5 : 6;
   const pad = f.indent > 0 ? `padding-left:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : f.indent < 0 ? `padding-right:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${-f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : '';
   // 予定表のマスでは、上下の位置も付ける（中の文字を上・真ん中・下に寄せる）
   const va = unit === 'mm' ? `display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[f.valign] || 'flex-start'};` : '';
@@ -2808,7 +2811,7 @@ function openNoteEditor(day, side, line) {
   ta.addEventListener('input', () => drawPrev(fmt, ta.value, prevCell, side));
   ['keyup', 'mouseup', 'select'].forEach(ev => ta.addEventListener(ev, () => { const sc = $('#ntSelCur'); if (sc) sc.textContent = selPtLabel(ta, !fmt.size && autoPt ? autoPt : notePt(fmt, noteBase(side))); }));
   const paint = () => {
-    ta.style.cssText = noteStyle(fmt, 'px');
+    ta.style.cssText = noteStyle(fmt, 'px', 0, noteIndent0(side));
     drawPrev(fmt, ta.value, prevCell, side);
     $$('[data-al]', box).forEach(b => b.classList.toggle('on', b.dataset.al === fmt.align));
     $$('[data-va]', box).forEach(b => b.classList.toggle('on', b.dataset.va === fmt.valign));
