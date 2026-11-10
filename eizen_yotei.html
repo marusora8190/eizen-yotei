@@ -425,6 +425,15 @@ table.yt td.nt.editable:hover{background:#fff8e1}
 .t3req .rqrow{display:flex;gap:4px;align-items:center}
 .t3req .rqrow input{flex:1;min-width:0}
 .t3req .rqfmt{padding:2px 6px;flex:none}
+/* リストの行を出す月の印（2026年11月10日〜）。毎月は灰色、月を決めた行はだいだい色 */
+.t3req .rqmon{flex:none;font-size:11px;line-height:1.2;padding:2px 5px;border-radius:9px;background:#eef0f3;color:#5b6573;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.t3req .rqmon.only{background:#ffe2bf;color:#8a4b00;font-weight:700}
+.rqmonbar .grp{flex-wrap:wrap}
+.rqmonbar .btn{padding:3px 7px;white-space:nowrap}
+.rqmonbar b{white-space:nowrap}
+.ntpick .pkmore{display:block;margin-top:6px;font-size:12.5px;color:var(--sub);background:none;border:0;padding:2px 0;cursor:pointer;text-decoration:underline}
+.ntpick .btn.pkoth{opacity:.55;border-style:dashed}
+.ntpick .btn .pkm{font-size:10.5px;font-weight:400;color:#8a4b00;margin-left:4px}
 /* お願いのリスト・真ん中の列のリストの行を、左の「⠿」をつかんで上下に動かし、順番を変える（2026年11月10日〜。利用者の希望） */
 .t3req .rqgrip{flex:none;cursor:grab;color:#8a94a3;font-size:16px;line-height:1;padding:4px 2px;user-select:none;-webkit-user-select:none;touch-action:none}
 .t3req .rqgrip:hover{color:#1f2933}
@@ -2510,6 +2519,10 @@ function noteStyle(n, unit, ptBase, in0) {
 // ===== 予定表③の「⚙ 設定」：先生ごとの「お願いすること」のリスト（2026年11月9日〜） =====
 const REQ_MIN_ROWS = 5;
 const RQ_GRIP = '<span class="rqgrip" title="つかんで上下に動かすと、順番を変えられます">⠿</span>';
+// リストの行を出す月（2026年11月10日〜。利用者の希望）：months が空なら毎月。例：[12] は12月だけ
+const reqMonths = r => (Array.isArray(r.months) ? r.months.map(Number).filter(x => x >= 1 && x <= 12).sort((a, b) => a - b) : []);
+const reqInMonth = (r, m) => { const ms = reqMonths(r); return !ms.length || ms.includes(m); };
+const reqMonLabel = r => { const ms = reqMonths(r); return ms.length ? ms.join('・') + '月' : '毎月'; };
 const reqsOf = mid => st.requests.filter(r => r.member_id === mid && r.active !== false && String(r.body || '').trim()).sort((a, b) => (a.sort_order - b.sort_order) || (a.id - b.id));
 // 真ん中の列のリスト（2026年11月10日〜）：yotei_requests の member_id が空の行。見出しの1行目を名前にする
 const midListName = () => { const h = midHead(); return (h && plainBody(h.body).split('\n').map(x => x.trim()).find(Boolean)) || '真ん中の列'; };
@@ -2517,12 +2530,12 @@ function reqPanel(mem, pos) {
   if (pos === 'M') mem = { id: null };
   if (!mem) return `<aside class="t3req no-print" style="visibility:hidden"></aside>`;
   const fb = '<button type="button" class="btn sm rqfmt" title="この行の文字の大きさ・色・寄せ・太さ">✎</button>';
-  const items = reqsOf(mem.id), rows = items.map(r => `<li><div class="rqrow">${RQ_GRIP}<input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off" style="${reqStyle(r)}">${fb}</div></li>`);
+  const items = reqsOf(mem.id), rows = items.map(r => `<li><div class="rqrow">${RQ_GRIP}<input class="rq" data-id="${r.id}" value="${esc(r.body)}" autocomplete="off" style="${reqStyle(r)}"><span class="rqmon${reqMonths(r).length ? ' only' : ''}" title="出す月（「✎」で変えられます）">${reqMonLabel(r)}</span>${fb}</div></li>`);
   while (rows.length < REQ_MIN_ROWS) rows.push(`<li><div class="rqrow">${RQ_GRIP}<input class="rq" data-id="" value="" autocomplete="off">${fb}</div></li>`);
   const ttl = pos === 'M' ? `${esc(midListName())}<small>真ん中の列のリスト</small>` : `${ttlHtml(dispName(mem))}<small>にお願いすること</small>`;
   return `<aside class="t3req no-print" data-mid="${mem.id == null ? '' : mem.id}" data-pos="${pos}"><h4>${ttl}</h4><ol>${rows.join('')}</ol>
     <button type="button" class="btn sm rqadd">＋ 行を追加</button>
-    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。左の「⠿」をつかんで上下に動かすと、順番を変えられます。「✎」で、その行の文字の大きさ・色・寄せ・太さを変えられます。${pos === 'M' ? '真ん中の列' : pos === 'L' ? '左の特記' : '右の特記'}を書くときに、ここから選べます。</p></aside>`;
+    <p class="hint">書いて欄の外を押すかEnterで保存します。空にすると消えます。左の「⠿」をつかんで上下に動かすと、順番を変えられます。右の「毎月」「12月」などは出す月で、決めた月だけ「リストから選ぶ」に出ます。「✎」で出す月や、その行の文字の大きさ・色・寄せ・太さを変えられます。${pos === 'M' ? '真ん中の列' : pos === 'L' ? '左の特記' : '右の特記'}を書くときに、ここから選べます。</p></aside>`;
 }
 async function saveReq(inp) {
   const box = inp.closest('.t3req'), mid = box.dataset.pos === 'M' ? null : Number(box.dataset.mid), id = Number(inp.dataset.id) || 0, body = inp.value.trim();
@@ -2596,7 +2609,7 @@ function bindReqPanels(root) {
   root.addEventListener('keydown', e => { const inp = e.target.closest('.t3req input.rq'); if (inp && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } });
   // リストの1行の書式（✎。2026年11月9日〜）
   root.addEventListener('click', async e => {
-    const fbtn = e.target.closest('.t3req .rqfmt'); if (!fbtn) return;
+    const fbtn = e.target.closest('.t3req .rqfmt, .t3req .rqmon'); if (!fbtn) return; // 月の印を押しても、書式の画面を開く
     const inp = $('input.rq', fbtn.closest('.rqrow'));
     if (!inp.dataset.id) {
       if (!inp.value.trim()) { toast('先にこの行に文字を書いてください', true); inp.focus(); return; }
@@ -2624,9 +2637,11 @@ function openReqSettings() {
 $('#btnT3Set').addEventListener('click', openReqSettings);
 const REQ_COLORS = [['', '自動（言葉で決まる色）'], ['#000000', '黒'], ...NOTE_COLORS.slice(1)];
 function openReqEditor(r) {
-  const f = { body: r.body, align: r.align || 'left', size: r.size || 0, color: r.color || '', bold: r.bold == null ? null : !!r.bold };
+  const f = { body: r.body, align: r.align || 'left', size: r.size || 0, color: r.color || '', bold: r.bold == null ? null : !!r.bold, months: reqMonths(r) };
   const isMid = r.member_id == null; // 真ん中の列（和田予定など）のリストの行（2026年11月10日〜）
   openModal(`<h3>${isMid ? `${esc(midListName())}（真ん中の列）のリストの書式` : 'お願いすることの書式'}</h3>
+    <div class="ntbar rqmonbar" style="margin-bottom:6px"><span class="grp"><b>出す月</b><button type="button" class="btn" data-rmon="all">毎月</button>${Array.from({ length: 12 }, (_, i) => `<button type="button" class="btn" data-rmon="${i + 1}">${i + 1}月</button>`).join('')}</span>
+      <span class="note" style="font-size:12px">月を押すと、その月だけ「リストから選ぶ」に出ます（いくつでも選べます）。「毎月」で、どの月にも出ます。</span></div>
     <div class="ntbar">
       <span class="grp"><b>寄せ</b><button type="button" class="btn" data-ral="left">左寄せ</button><button type="button" class="btn" data-ral="center">中央</button><button type="button" class="btn" data-ral="right">右寄せ</button></span>
       <span class="grp"><b>大きさ</b><button type="button" class="btn" data-rsz="-1">A− 小さく</button><button type="button" class="btn" data-rsz="1">A＋ 大きく</button><span class="cur" id="rqSzCur"></span></span>
@@ -2644,6 +2659,7 @@ function openReqEditor(r) {
     $$('[data-ral]', box).forEach(b => b.classList.toggle('on', b.dataset.ral === f.align));
     $$('[data-rco]', box).forEach(b => b.classList.toggle('on', b.dataset.rco === f.color));
     $$('[data-rbd]', box).forEach(b => b.classList.toggle('on', b.dataset.rbd === (f.bold == null ? 'auto' : f.bold ? '1' : '0')));
+    $$('[data-rmon]', box).forEach(b => b.classList.toggle('on', b.dataset.rmon === 'all' ? !f.months.length : f.months.includes(Number(b.dataset.rmon))));
     $('#rqSzCur').textContent = `${(10.5 * (1 + f.size * 0.1)).toFixed(1)}pt${f.size ? '' : '（標準）'}`;
   };
   box.addEventListener('click', e => {
@@ -2652,6 +2668,7 @@ function openReqEditor(r) {
     else if (b.dataset.rsz) f.size = Math.max(-4, Math.min(6, f.size + Number(b.dataset.rsz)));
     else if (b.dataset.rco != null) f.color = b.dataset.rco;
     else if (b.dataset.rbd) f.bold = b.dataset.rbd === 'auto' ? null : b.dataset.rbd === '1';
+    else if (b.dataset.rmon) { if (b.dataset.rmon === 'all') f.months = []; else { const k = Number(b.dataset.rmon); f.months = f.months.includes(k) ? f.months.filter(x => x !== k) : [...f.months, k].sort((a, c) => a - c); if (f.months.length === 12) f.months = []; } }
     else return;
     paint();
   });
@@ -2662,7 +2679,7 @@ function openReqEditor(r) {
     if (!body) { toast('文字を書いてください（行を消すときは、リストの欄を空にします）', true); return; }
     $('#rqOk').disabled = true; pendingSaves++;
     try {
-      const patch = { body, align: f.align, size: f.size, color: f.color, bold: f.bold, updated_at: new Date().toISOString() };
+      const patch = { body, align: f.align, size: f.size, color: f.color, bold: f.bold, months: f.months.length ? f.months : null, updated_at: new Date().toISOString() };
       const { error } = await sb.from('yotei_requests').update(patch).eq('id', r.id);
       if (error) throw error;
       Object.assign(r, patch); closeModal(); renderTable(); toast('保存しました');
@@ -2843,7 +2860,10 @@ function openNoteEditor(day, side, line) {
     if (o >= 0 && o !== p0 && sp.explicit.has(o)) break;
     opts.push(q);
   }
-  const pm = side === 'M' ? null : t3Members()[side === 'L' ? 0 : 1], items = side === 'M' ? reqsOf(null) : pm ? reqsOf(pm.id) : [];
+  const pm = side === 'M' ? null : t3Members()[side === 'L' ? 0 : 1], allItems = side === 'M' ? reqsOf(null) : pm ? reqsOf(pm.id) : [];
+  // 「リストから選ぶ」には、毎月のものと、この月のものだけを出す（ほかの月だけのものは「ほかの月のものも出す」で出す。2026年11月10日〜）
+  const items = allItems.filter(r => reqInMonth(r, mm)), others = allItems.filter(r => !reqInMonth(r, mm));
+  const pkBtn = (r, oth) => `<button type="button" class="btn${oth ? ' pkoth' : ''}" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}"${oth ? ' hidden' : ''}>${esc(r.body)}${reqMonths(r).length ? `<span class="pkm">${reqMonLabel(r)}</span>` : ''}</button>`;
   const sideName = pm ? `（${esc(dispName(pm))}の側）` : '';
   const optLabel = q => (q === p0 + 1 && line === 1 ? 'この日の下の行まで（1行に結合）' : posLabel(q) + 'まで');
   openModal(`<h3>${mm}月${dd}日（${WD_JA[wdOf(yy, mm, dd)]}）　${SIDE_LABEL[side]}　${line === 1 ? '上の行' : '下の行'}${sideName}</h3>
@@ -2855,7 +2875,7 @@ function openNoteEditor(day, side, line) {
     </div>
     <div class="ntedit"><textarea id="ntText" placeholder="捺印・アポのお願いなどのメモ（下のリストから選ぶか、手で書きます）">${esc(cur ? cur.body : '')}</textarea></div>
     <div class="ntprevw"><span>表での見え方（実際のマスと同じ大きさ・同じ文字の大きさ）：</span><div class="ntprevbox" id="ntPrevBox"><div class="ntx" id="ntPrev"></div></div></div>
-    <div class="ntpick">${items.length ? `<div>リストから選ぶ（押すと書き足します）${sideName}</div>${items.map(r => `<button type="button" class="btn" data-rq="${r.id}" style="${reqColor(r) ? `color:${reqColor(r)};` : ''}font-weight:${reqBold(r) ? 700 : 400}">${esc(r.body)}</button>`).join('')}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（上の「⚙ 設定」で作れます）' : '真ん中の列のリストは、まだありません（上の「⚙ 設定」で作れます）'}</div>`}</div>
+    <div class="ntpick">${allItems.length ? `<div>リストから選ぶ（押すと書き足します。毎月のものと${mm}月のもの）${sideName}</div>${items.map(r => pkBtn(r, false)).join('')}${others.map(r => pkBtn(r, true)).join('')}${others.length ? `<button type="button" class="pkmore" id="pkMore">ほかの月のものも出す（${others.length}件）</button>` : ''}` : `<div>${pm ? esc(dispName(pm)) + 'にお願いすることのリストは、まだありません（上の「⚙ 設定」で作れます）' : '真ん中の列のリストは、まだありません（上の「⚙ 設定」で作れます）'}</div>`}</div>
     <p class="note" style="margin:6px 0 0" id="ntHint"></p>
     <div class="acts"><button type="button" class="btn" id="ntNo">やめる</button><button type="button" class="btn pri" id="ntOk">保存</button></div>`);
   const ta = $('#ntText'), box = $('#modalBox'), sel = $('#ntSpan');
@@ -2890,6 +2910,7 @@ function openNoteEditor(day, side, line) {
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
     else if (b.dataset.bg != null) fmt.bg = b.dataset.bg;
     else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
+    else if (b.id === 'pkMore') { const show = b.dataset.on !== '1'; b.dataset.on = show ? '1' : ''; $$('.ntpick .pkoth', box).forEach(x => { x.hidden = !show; }); b.textContent = show ? 'ほかの月のものを隠す' : `ほかの月のものも出す（${others.length}件）`; return; }
     else if (b.id === 'ntMerge') sel.value = String(p0 + 1);
     else if (b.id === 'ntSplit') sel.value = '-1';
     else if (b.dataset.rq) {
@@ -3197,7 +3218,7 @@ function openT3Help() {
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
-    <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
+    <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の右の「毎月」「12月」などは、出す月です。「✎」で、毎月か、決まった月（いくつでも）を選べます。月を決めた行は、その月の特記を書くときだけ「リストから選ぶ」に出ます（ほかの月のときは「ほかの月のものも出す」で出せます）。毎月のお願いと、1年にこの月だけのお願いを1つのリストに入れておけます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
     <h4>こんなときは</h4><ul><li>ほかの人と同じマスを同時に直すと、あとから保存した人に「ほかの人が先に変えていました」と出ます。出てきた最新の中身を確かめて、もう一度書いてください。</li><li>表が古いと思ったら、サイドバーの「Update」を押してください。</li></ul></div>
     <div class="acts"><button type="button" class="btn pri" id="t3HelpOk">閉じる</button></div>`);
