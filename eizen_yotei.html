@@ -462,8 +462,19 @@ body.tbl-three #v-table > p.note{display:none}
 .ntpick{margin:10px 0 0}
 .ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
 .ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
-#btnT3Help,#btnT3Set{display:none}
-body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]){display:inline-flex}
+#btnT3Help,#btnT3Set,#btnT3Cols{display:none}
+body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]){display:inline-flex}
+/* 予定表③の「↔ 列の幅」：表を見ながら直せるよう、画面の下に出す（2026年11月10日〜。利用者の希望） */
+#modal.side.bottom{align-items:flex-end;justify-content:center;background:rgba(20,28,40,.08)}
+#modal.side.bottom #modalBox.cwbox{width:min(1180px,100%);padding:12px 16px}
+.cwgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:4px 0 6px}
+.cwcol{border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;background:#fafafa}
+.cwcol .cwname{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cwcol .cwmm{font-size:13px;color:var(--sub);margin:2px 0 4px}
+.cwcol .cwmm b{color:#1f2933;font-size:15px}
+.cwcol .cwbtns{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.cwcol .cwbtns .btn{padding:3px 6px;font-size:12.5px}
+@media (max-width:760px){.cwgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .t3help{max-height:65vh;overflow:auto;line-height:1.65;font-size:14px}
 .t3help h3{margin:0 0 6px}
 .t3help h4{margin:12px 0 4px;font-size:15px;border-left:4px solid #1f4e8c;padding-left:6px}
@@ -739,6 +750,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="t3Pick" title="予定表③に出す2人（全員共通。みんなの画面で変わります）">予定表③の2人：<select id="t3A"></select><select id="t3B"></select></span>
       <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
+      <button class="btn" id="btnT3Cols" title="予定表③の列の幅を、表を見ながら広く・狭くします（みんなの画面・印刷で同じになります）">↔ 列の幅</button>
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
@@ -2149,6 +2161,7 @@ function renderTableBody() {
   // 先生ごとのURL・見るだけのURL・予定表③だけのURLでは、予定表のマスは直せない（予定表③だけのURLでも、特記とリストは書ける）
   const editable = !st.personal && !st.viewOnly && !st.t3Only;
   const noteEditable = editable || (st.t3Only && !isMobile());
+  $('#btnT3Cols').hidden = !noteEditable; // 「↔ 列の幅」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Set').hidden = !noteEditable; // 「お願いすること」を直す「⚙ 設定」は、特記を書ける画面だけ
   // 表の幅は紙の幅（287mm）より少しだけ狭く。ちょうどだと、印刷のときにいちばん右の縦の罫線の半分が切れて細くなるため
   const W = 286.4, dw = 7, ww = 6.5;
@@ -2246,12 +2259,16 @@ function renderTableBody() {
     // 日・曜日は左端の1列（上の行に日にち、下の行に曜日）。中身と見出しがちょうど入る幅（最小）にする（2026年11月9日〜）
     const DW = t3DayWidth(nd) * K;
     // 日・曜日のすぐ右に「自分の主な予定・年次休暇」の列（見出しは空白。特記と同じく2行・結合・書式が使える。2026年11月9日〜）
-    const MW = t3MidWidth(nd) * K;
-    const NW = (PW - pc * pw - DW - MW) / 2;
+    // 「↔ 列の幅」で決めた調整（mm。印刷の大きさで。全員共通。2026年11月10日〜）：先生・真ん中の列は自動の幅に足す。L は右の特記から左の特記へ回す幅
+    const adj = t3Adj(), pwA = Math.max(5, pw / K + (adj.A || 0)) * K, pwB = Math.max(5, pw / K + (adj.B || 0)) * K;
+    const MW = Math.max(5, t3MidWidth(nd) + (adj.M || 0)) * K;
+    const rest = PW - DW - (list[0] ? pwA : 0) - list.slice(1).length * pwB - MW;
+    const NL = Math.max(10 * K, rest / 2 + (adj.L || 0) * K), NR = Math.max(10 * K, rest - NL);
+    st.t3last = { L: NL / K, A: pwA / K, M: MW / K, B: pwB / K, R: NR / K, rest: rest / K, raw: { A: pw / K + (adj.A || 0), M: t3MidWidth(nd) + (adj.M || 0), B: pw / K + (adj.B || 0) } }; // 「↔ 列の幅」の画面で、今の幅を出すため
     const rowH3 = Math.min(8, (287 - titleH - headH - 1.5) / (nd * 2));
     const A = list[0], Bs = list.slice(1);
-    const mcol = () => `<col style="width:${pw}mm">`;
-    const cols = `<col style="width:${DW}mm"><col style="width:${NW}mm">` + (A ? mcol() : '') + `<col style="width:${MW}mm">` + Bs.map(mcol).join('') + `<col style="width:${NW}mm">`;
+    const mcol = w => `<col style="width:${w}mm">`;
+    const cols = `<col style="width:${DW}mm"><col style="width:${NL}mm">` + (A ? mcol(pwA) : '') + `<col style="width:${MW}mm">` + Bs.map(() => mcol(pwB)).join('') + `<col style="width:${NR}mm">`;
     const mth = x => `<th>${ttlHtml(x.header_name)}</th>`;
     const head = `<th class="dh dh1 dh3">日</th><th class="nth">特　　記</th>` + (A ? mth(A) : '') + `${midHeadCell()}` + Bs.map(mth).join('') + `<th class="nth redge">特　　記</th>`;
     const ned = noteEditable ? ' editable' : '';
@@ -2276,9 +2293,9 @@ function renderTableBody() {
       body += `<tr style="height:${rowH3}mm"><td class="dn${rd} dn3">${d}</td>${cellAt(day, 'L', 1)}${A ? c1(A) : ''}${cellAt(day, 'M', 1)}${Bs.map(c1).join('')}${cellAt(day, 'R', 1)}</tr>`;
       body += `<tr style="height:${rowH3}mm"><td class="dw${rd} dw3">(${WD_JA[w]})</td>${cellAt(day, 'L', 2)}${A ? c2(A) : ''}${cellAt(day, 'M', 2)}${Bs.map(c2).join('')}${cellAt(day, 'R', 2)}</tr>`;
     }
-    const tableW = PW;
+    const tableW = DW + NL + (A ? pwA : 0) + MW + Bs.length * pwB + NR; // ふだんは PW と同じ
     const tbl = `<table class="yt" style="width:${tableW}mm"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-    const xs = [0, DW, DW + NW]; let x = DW + NW; if (A) { x += pw; xs.push(x); } x += MW; xs.push(x); Bs.forEach(() => { x += pw; xs.push(x); }); xs.push(x + NW);
+    const xs = [0, DW, DW + NL]; let x = DW + NL; if (A) { x += pwA; xs.push(x); } x += MW; xs.push(x); Bs.forEach(() => { x += pwB; xs.push(x); }); xs.push(x + NR);
     const vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}<b class="ht" style="width:calc(${tableW}mm + 0.6px)"></b><b class="hb" style="width:calc(${tableW}mm + 0.6px)"></b></div>`;
     const page = `<div class="sheet a4p ypage duo"${K > 1 ? ` style="width:${(PW + 0.6).toFixed(1)}mm"` : ''}><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表</span></div><div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div></div>`;
     return page; // 「お願いすること」のリストは、左右の余白ではなく「⚙ 設定」の中に出す（2026年11月9日〜）
@@ -2848,11 +2865,60 @@ async function saveNote(day, side, line, body, base, fmt, end) {
   } catch (err) { renderTable(); toast('保存できませんでした：' + errMsg(err), true); return false; }
   finally { pendingSaves--; }
 }
+// ===== 予定表③の「↔ 列の幅」（2026年11月10日〜。利用者の希望）=====
+// yotei_settings の tbl3_col_widths に {L, A, M, B}（mm。印刷の大きさ）を全員共通で保存する（パスワード無し。データベースもこの1行は誰でも直せる）
+// A・M・B：1人目・真ん中の列・2人目の自動の幅に足す幅。L：右の特記から左の特記へ回す幅。どの列も、広げた分は左右の特記から同じだけ引く
+const T3ADJ0 = { L: 0, A: 0, M: 0, B: 0 };
+function t3Adj() {
+  if (st.t3adjTmp) return st.t3adjTmp; // 「↔ 列の幅」の画面で直している途中
+  const v = st.settings.tbl3_col_widths; return v && typeof v === 'object' ? { ...T3ADJ0, ...v } : { ...T3ADJ0 };
+}
+function openColWidths() {
+  if ($('#btnT3Cols').hidden) return; // 特記を書ける画面だけ
+  const saved = t3Adj(); let done = false;
+  st.t3adjTmp = { ...saved };
+  const ms = t3Members();
+  const cols = [['L', '特記（左）'], ['A', ms[0] ? dispName(ms[0]) : '1人目'], ['M', midListName()], ['B', ms[1] ? dispName(ms[1]) : '2人目'], ['R', '特記（右）']];
+  openModal(`<h3 style="margin:0 0 4px">↔ 列の幅（表を見ながら直せます。印刷の大きさで出しています）</h3>
+    <div class="cwgrid">${cols.map(([k, n]) => `<div class="cwcol" data-k="${k}"><div class="cwname" title="${esc(n)}">${esc(n)}</div><div class="cwmm">今 <b data-cwv="${k}"></b> mm</div>
+      <div class="cwbtns"><button type="button" class="btn" data-cw="${k}" data-d="-5" title="5mm 狭く">◀◀</button><button type="button" class="btn" data-cw="${k}" data-d="-1" title="1mm 狭く">◀ 狭く</button><button type="button" class="btn" data-cw="${k}" data-d="1" title="1mm 広く">広く ▶</button><button type="button" class="btn" data-cw="${k}" data-d="5" title="5mm 広く">▶▶</button></div></div>`).join('')}</div>
+    <p class="note" style="margin:0">「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつです。広げた分（狭めた分）は、左右の特記から同じだけ引きます（足します）。左の特記を広げると、右の特記が同じだけ狭くなります。先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えるので、月が変わっても同じ考え方で効きます。みんなの画面と印刷で同じになります。</p>
+    <div class="acts"><button type="button" class="btn" id="cwReset">すべて自動に戻す</button><span style="flex:1"></span><button type="button" class="btn" id="cwNo">やめる</button><button type="button" class="btn pri" id="cwOk">保存</button></div>`);
+  $('#modal').classList.add('side', 'bottom');
+  const box = $('#modalBox'); box.classList.add('cwbox');
+  const show = () => { const w = st.t3last || {}; $$('[data-cwv]', box).forEach(b => { const v = w[b.dataset.cwv]; b.textContent = v == null ? '—' : v.toFixed(1); }); };
+  show();
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-cw]'); if (!b) return;
+    const k = b.dataset.cw, d = Number(b.dataset.d), before = { ...st.t3adjTmp }, a = st.t3adjTmp;
+    // 特記：押した側が d、反対の特記が −d だけ変わる。先生・真ん中の列：その列が d 変わり、左右の特記が −d/2 ずつ変わる
+    if (k === 'L') a.L = (a.L || 0) + d; else if (k === 'R') a.L = (a.L || 0) - d; else a[k] = (a[k] || 0) + d;
+    renderTable();
+    const w = st.t3last || {}, low = ['A', 'M', 'B'].some(c => w.raw && w.raw[c] < 5) || w.rest / 2 + (a.L || 0) < 10 || w.rest / 2 - (a.L || 0) < 10;
+    if (low) { st.t3adjTmp = before; renderTable(); toast('これ以上は狭くできません（特記は10mm、ほかの列は5mmまで）', true); }
+    show();
+  });
+  $('#cwReset').addEventListener('click', () => { st.t3adjTmp = { ...T3ADJ0 }; renderTable(); show(); });
+  modalOnClose = () => { st.t3adjTmp = null; if (!done) renderTable(); }; // やめる・画面の外を押したときは、元の幅に戻す
+  $('#cwNo').addEventListener('click', closeModal);
+  $('#cwOk').addEventListener('click', async () => {
+    const value = {}; for (const k of Object.keys(T3ADJ0)) value[k] = Math.round((st.t3adjTmp[k] || 0) * 10) / 10;
+    $('#cwOk').disabled = true; pendingSaves++;
+    try {
+      const { error } = await sb.from('yotei_settings').upsert({ key: 'tbl3_col_widths', value });
+      if (error) throw error;
+      st.settings.tbl3_col_widths = value; done = true; closeModal(); renderTable(); toast('列の幅を保存しました');
+    } catch (err) { toast('保存できませんでした：' + errMsg(err), true); const b = $('#cwOk'); if (b) b.disabled = false; }
+    finally { pendingSaves--; }
+  });
+}
+$('#btnT3Cols').addEventListener('click', openColWidths);
 // ===== 予定表③の使い方（「印刷（A4縦）」の横の「❓ 予定表③の使い方」。2026年11月9日〜） =====
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、はじめはマスからはみ出さないいちばん大きい大きさに自動でなります（書いた行のまま折り返しません。「A−」「A＋」で大きさを変えると、その大きさになります）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
+    <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
