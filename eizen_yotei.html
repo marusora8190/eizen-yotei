@@ -2482,8 +2482,8 @@ const NOTE_FMT0 = { align: 'left', indent: 0, size: 0, color: '', bold: true, va
 // 真ん中の列のマスの塗りつぶしの色（2026年11月10日〜。利用者の希望）。文字が読めるよう、薄い色だけ
 const NOTE_BGS = [['', 'なし'], ['#fff3b0', '黄'], ['#ffd6d6', 'ピンク'], ['#d6e8ff', '水色'], ['#d8f3d0', '緑'], ['#ffe2bf', 'オレンジ'], ['#eadcf7', '紫'], ['#e3e3e3', '灰色']]; // 上下の位置のはじめは「上下真ん中」、太さのはじめは「太字」（2026年11月9日〜）。 // valign：上下の位置（top・middle・bottom。2026年11月9日〜）
 function noteFmt(n) { const f = { ...NOTE_FMT0 }; if (n) for (const k of Object.keys(NOTE_FMT0)) if (n[k] != null) f[k] = n[k]; return f; }
-// 文字の標準の大きさ（pt）：特記・見出しは 8pt、真ん中の列（和田予定）は 10.4pt（2026年11月10日〜。利用者の希望）
-const MID_PT = 10.4, noteBase = side => side === 'M' ? MID_PT : 8;
+// 文字の標準の大きさ（pt）：左右の特記・真ん中の列（和田予定）は 10.4pt、真ん中の列の見出しは 8pt（2026年11月10日〜。利用者の希望。特記もその日のうちに 10.4pt にした）
+const MID_PT = 10.4, noteBase = side => (side === 'M' || side === 'L' || side === 'R') ? MID_PT : 8;
 // 真ん中の列で自動で小さくする言葉（先生の列の AM・PM と同じ割合）
 const MID_SMALL = /(AM|PM|ＡＭ|ＰＭ|終日)/g;
 // unit が 'mm' のときは予定表のマス用（base pt が標準。ふだんは 8pt）、'px' のときは書く画面用（15px が標準）
