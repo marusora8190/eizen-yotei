@@ -422,6 +422,16 @@ table.yt td.nt.editable{cursor:pointer}
 table.yt td.nt.editable:hover{background:#fff8e1}
 /* 予定表③だけ：日曜・祝日の日は、左端の「日にち・曜日」の文字の高さの帯を、左端から右の特記まで、うすいオレンジ色で引く（印刷にも出る。2026年11月10日〜。利用者の希望）
    はじめはマス全部を塗っていたが、同じ日に帯の形にした。帯は表のうしろに描くので、文字は隠れない。真ん中の列で「塗りつぶし」を選んだマスは、その色が先 */
+/* 予定表③：特記のマスを複数選んで消す（2026年11月10日〜。利用者の希望）。選んだマスは青い枠 */
+table.yt td.nt.ntsel{outline:2px solid #2f6fd6;outline-offset:-2px;background:#e8f0ff!important}
+@media print{table.yt td.nt.ntsel{outline:0;background:none!important}}
+#ntSelBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;background:#1f2933;color:#fff;border-radius:10px;padding:8px 12px;display:none;align-items:center;gap:10px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:calc(100vw - 24px)}
+#ntSelBar.show{display:flex}
+#ntSelBar .btn{padding:4px 10px;font-size:13px;color:#1f2933;background:#fff;border:1px solid #fff;white-space:nowrap}
+#ntSelBar .btn:hover{background:#e8f0ff}
+#ntSelBar > span{white-space:nowrap}
+#ntSelBar .hint{font-size:12px;color:#c9d1db}
+@media print{#ntSelBar{display:none!important}}
 .duo .ytw .holband{position:absolute;left:0;background:#ffe6c7;pointer-events:none;z-index:0}
 .duo .ytw table.yt{position:relative;z-index:1}
 @media screen{
@@ -1567,6 +1577,7 @@ $('#btnSpvBack').addEventListener('click', () => setSpv(false));
 async function changeMonth(y, m) {
   if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
   st.y = y; st.m = m;
+  if (st.ntSel) { st.ntSel.clear(); ntSelAnchor = null; ntDelUndo = null; ntSelBar(); } // 月を変えたら、選んだマス・元に戻すをやめる
   try { await loadMonth(); } catch (e) { toast('読み込めませんでした：' + errMsg(e), true); }
   render();
 }
@@ -2366,7 +2377,7 @@ function renderTableBody() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', true)}</div></div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${st.ntSel && st.ntSel.has(noteKey(day, side, line)) ? ' ntsel' : ''}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', true)}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -3078,6 +3089,83 @@ $('#btnT3Cols').addEventListener('click', openColWidths);
 // ===== 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）=====
 // この月の特記を、翌月へまとめて写す。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決め、日曜・祝日に当たれば前の平日へずらせる。
 // 1件ずつ、元の日と写す日の先生（左は1人目・右は2人目）の予定を並べて出し、「◀」「▶」で写す日を直せる。写す先にすでに特記があれば、うしろに改行で書き足す
+// ===== 予定表③：特記のマスを複数選んで、Delete キーでまとめて消す（2026年11月10日〜。利用者の希望）=====
+// Ctrl（Mac は ⌘）＋クリックで1つずつ選ぶ・外す。Shift＋クリックで、前に選んだマスから同じ列の続いたマスをまとめて選ぶ。Esc で選ぶのをやめる
+// 消すときは、マスの文字を空にする（書式・結合はそのまま）。消したあとは「↶ 元に戻す」で、消す前の中身に戻せる（その画面を開いているあいだ）
+st.ntSel = new Set(); let ntSelAnchor = null, ntDelUndo = null;
+function ntSelBar() {
+  let bar = $('#ntSelBar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'ntSelBar'; document.body.appendChild(bar); }
+  const n = st.ntSel.size;
+  if (n) {
+    bar.innerHTML = `<span><b>${n}</b>マスを選んでいます</span><span class="hint">Ctrl＋クリックで追加・外す／Shift＋クリックで続けて選ぶ</span><button type="button" class="btn" id="nsDel">🗑 選んだ特記を消す（Delete）</button><button type="button" class="btn" id="nsOff">選ぶのをやめる（Esc）</button>`;
+    $('#nsDel', bar).onclick = ntSelDelete; $('#nsOff', bar).onclick = ntSelClear;
+  } else if (ntDelUndo) {
+    bar.innerHTML = `<span>${ntDelUndo.items.length}マスの特記を消しました</span><button type="button" class="btn" id="nsUndo">↶ 元に戻す</button><button type="button" class="btn" id="nsClose">閉じる</button>`;
+    $('#nsUndo', bar).onclick = ntDelUndoRun; $('#nsClose', bar).onclick = () => { ntDelUndo = null; ntSelBar(); };
+  }
+  bar.classList.toggle('show', !!(n || ntDelUndo));
+}
+function ntSelClick(td, range) {
+  const k = noteKey(td.dataset.day, td.dataset.side, td.dataset.line);
+  ntDelUndo = null;
+  if (range && ntSelAnchor && ntSelAnchor.side === td.dataset.side) {
+    const a = notePos(ntSelAnchor.day, ntSelAnchor.line), b = notePos(td.dataset.day, td.dataset.line), lo = Math.min(a, b), hi = Math.max(a, b);
+    $$(`#sheet td.nt.editable[data-side="${td.dataset.side}"]`).forEach(x => { const p = notePos(x.dataset.day, x.dataset.line); if (p >= lo && p <= hi) st.ntSel.add(noteKey(x.dataset.day, x.dataset.side, x.dataset.line)); });
+  } else {
+    if (st.ntSel.has(k)) st.ntSel.delete(k); else st.ntSel.add(k);
+    ntSelAnchor = { day: td.dataset.day, side: td.dataset.side, line: td.dataset.line };
+  }
+  $$('#sheet td.nt').forEach(x => x.classList.toggle('ntsel', st.ntSel.has(noteKey(x.dataset.day, x.dataset.side, x.dataset.line))));
+  ntSelBar();
+}
+function ntSelClear() { st.ntSel.clear(); ntSelAnchor = null; $$('#sheet td.nt.ntsel').forEach(x => x.classList.remove('ntsel')); ntSelBar(); }
+async function ntSelDelete() {
+  const keys = [...st.ntSel], targets = keys.map(k => st.notes.get(k)).filter(n => n && String(n.body || '').trim());
+  if (!targets.length) { toast('選んだマスには、消す特記がありません', true); ntSelClear(); return; }
+  if (pendingSaves > 0) { toast('保存が終わるまでお待ちください'); return; }
+  if (!confirm(`選んだ${keys.length}マスのうち、書いてある${targets.length}マスの特記を消します。よろしいですか？\n（消したあとに出る「↶ 元に戻す」で戻せます）`)) return;
+  pendingSaves++;
+  const done = [], skip = [];
+  try {
+    for (const n of targets) {
+      const now = await noteRow(n.day, n.side, n.line); if (now.error) throw now.error;
+      const r = now.data;
+      if (!r || (r.updated_at !== n.updated_at && noteSig(r) !== noteSig(n))) { if (r) st.notes.set(noteKey(r.day, r.side, r.line), r); skip.push(n); continue; } // ほかの人が先に変えていたら消さない
+      const rec = { day: r.day, side: r.side, line: r.line, body: '', ...noteFmt(r), merged: !!r.merged, span_day: r.span_day || null, span_line: r.span_line || null };
+      const u = await noteUp(rec); if (u.error) throw u.error;
+      st.notes.set(noteKey(r.day, r.side, r.line), u.data);
+      done.push({ before: r, after: u.data.updated_at });
+    }
+  } catch (err) { toast('消している途中で止まりました：' + errMsg(err), true); }
+  finally { pendingSaves--; }
+  st.ntSel.clear(); ntSelAnchor = null;
+  ntDelUndo = done.length ? { items: done } : null;
+  renderTable(); ntSelBar();
+  if (done.length) toast(`${done.length}マスの特記を消しました${skip.length ? `（${skip.length}マスは、ほかの人が先に変えていたため消していません）` : ''}`, !!skip.length);
+}
+async function ntDelUndoRun() {
+  const u = ntDelUndo; if (!u) return;
+  pendingSaves++;
+  let done = 0; const skip = [];
+  try {
+    for (const it of u.items) {
+      const b = it.before, now = await noteRow(b.day, b.side, b.line); if (now.error) throw now.error;
+      if (!now.data || new Date(now.data.updated_at).getTime() !== new Date(it.after).getTime()) { skip.push(b); continue; }
+      const r = await noteUp({ day: b.day, side: b.side, line: b.line, body: b.body || '', ...noteFmt(b), merged: !!b.merged, span_day: b.span_day || null, span_line: b.span_line || null });
+      if (r.error) throw r.error; st.notes.set(noteKey(b.day, b.side, b.line), r.data); done++;
+    }
+    toast(`${done}マスの特記を元に戻しました${skip.length ? `（${skip.length}マスは、消したあとに直されていたため戻していません）` : ''}`, !!skip.length);
+  } catch (err) { toast('元に戻している途中で止まりました：' + errMsg(err), true); }
+  finally { pendingSaves--; }
+  ntDelUndo = null; renderTable(); ntSelBar();
+}
+document.addEventListener('keydown', ev => {
+  if (!st.ntSel || !st.ntSel.size || $('#modal').classList.contains('show')) return;
+  const ae = document.activeElement; if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable)) return;
+  if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); ntSelDelete(); }
+  else if (ev.key === 'Escape') ntSelClear();
+});
 // 予定表③の日曜・祝日の帯（2026年11月10日〜）：その日の「日にち」の文字の上の端から「曜日」の文字の下の端まで（少しゆとりを付ける）の高さで、表の左端から右端まで
 function drawHolBands() {
   $$('#sheet .duo .ytw').forEach(w => {
@@ -3359,7 +3447,7 @@ function openT3Help() {
     <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li><li>写したあとに元に戻したいときは、上の「↶ ○月→○月の写しを戻す」を押します（いちばん新しい1回分。写したパソコンだけで出ます）。写したマスを、写す前の中身に戻します。写したあとにほかの人が直したマスは戻しません。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
-    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li></ul>
+    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の右の「毎月」「12月」などは、出す月です。「✎」で、毎月か、決まった月（いくつでも）を選べます。月を決めた行は、その月の特記を書くときだけ「リストから選ぶ」に出ます（ほかの月のときは「ほかの月のものも出す」で出せます）。毎月のお願いと、1年にこの月だけのお願いを1つのリストに入れておけます。</li><li>年に何回かあるが何月かは決まっていないものは、出す月を「時々（月は決めない）」にします（印は緑の「時々」）。どの月の特記を書くときも、「リストから選ぶ」の下に「時々のもの」として分けて出ます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>印刷</h4><ul><li>「印刷（A4縦）」で、A4縦1枚に印刷します。リストは印刷されません。</li></ul>
@@ -3627,7 +3715,9 @@ function fitTexts(root) {
 }
 $('#sheet').addEventListener('click', e => {
   if (e.target.closest('th.nthm.editable')) { openHeadEditor(); return; }
-  const nt = e.target.closest('td.nt.editable'); if (nt) { openNoteEditor(nt.dataset.day, nt.dataset.side, nt.dataset.line); return; }
+  const nt = e.target.closest('td.nt.editable');
+  if (nt && (e.ctrlKey || e.metaKey || e.shiftKey)) { ntSelClick(nt, e.shiftKey); return; } // Ctrl＋クリック・Shift＋クリックは、マスを選ぶ（2026年11月10日〜）
+  if (nt) { if (st.ntSel && st.ntSel.size) ntSelClear(); openNoteEditor(nt.dataset.day, nt.dataset.side, nt.dataset.line); return; }
   const td = e.target.closest('td.c.editable'); if (!td) return;
   openEntryEditor(Number(td.dataset.mid), td.dataset.day, e.clientX);
 });
