@@ -421,6 +421,20 @@ body.tbl-three #v-table > p.note{display:none}
 @media print{.t3lay{display:block}.t3req{display:none!important}}
 /* 「お願いすること」のリストは「⚙ 設定」の画面の中で直す（2026年11月9日〜） */
 #modal #modalBox.rqbox{width:min(1120px,100%)}
+/* 「⚙ 設定」の画面：開いたとき、上下に動かさなくても「閉じる」まで見えるように（2026年11月10日〜。利用者の希望）
+   画面に収まる高さにし、行が多いリストだけ、そのリストの中で上下に動く。行の間も少し詰める */
+#modal #modalBox.rqbox{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:flex;flex-direction:column;padding:12px 16px}
+#modalBox.rqbox > h3{margin:0 0 8px;flex:none}
+#modalBox.rqbox > .acts{flex:none;margin-top:8px}
+#modalBox.rqbox .rqset{flex:1 1 auto;min-height:0;align-items:stretch}
+#modalBox.rqbox .rqset .t3req{display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);padding:8px 10px}
+#modalBox.rqbox .t3req h4{flex:none;margin:0 0 4px}
+#modalBox.rqbox .t3req ol{flex:1 1 auto;min-height:0;overflow:auto;margin:0 0 6px}
+#modalBox.rqbox .t3req li{margin:0 0 3px}
+#modalBox.rqbox .t3req input{padding:3px 6px}
+#modalBox.rqbox .t3req .rqadd,#modalBox.rqbox .t3req .hint{flex:none}
+#modalBox.rqbox .t3req .rqadd{align-self:flex-start}
+#modalBox.rqbox .t3req .hint{margin-top:4px;font-size:11px}
 /* 特記・真ん中の列・見出しを書く画面は横に広くし、上下に動かさなくても全体が見えるように（2026年11月9日〜。利用者の希望）
    左に「書く欄」と「表での見え方」、右に「リストから選ぶ」 */
 #modal #modalBox.ntwide{width:min(1200px,100%);max-height:96vh;padding:14px 18px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:18px;grid-template-areas:"h h" "bar bar" "ed pick" "prev pick" "hint hint" "acts acts";grid-template-rows:auto auto auto 1fr auto auto}
@@ -2502,7 +2516,8 @@ $('#btnT3Set').addEventListener('click', openReqSettings);
 const REQ_COLORS = [['', '自動（言葉で決まる色）'], ['#000000', '黒'], ...NOTE_COLORS.slice(1)];
 function openReqEditor(r) {
   const f = { body: r.body, align: r.align || 'left', size: r.size || 0, color: r.color || '', bold: r.bold == null ? null : !!r.bold };
-  openModal(`<h3>お願いすることの書式</h3>
+  const isMid = r.member_id == null; // 真ん中の列（和田予定など）のリストの行（2026年11月10日〜）
+  openModal(`<h3>${isMid ? `${esc(midListName())}（真ん中の列）のリストの書式` : 'お願いすることの書式'}</h3>
     <div class="ntbar">
       <span class="grp"><b>寄せ</b><button type="button" class="btn" data-ral="left">左寄せ</button><button type="button" class="btn" data-ral="center">中央</button><button type="button" class="btn" data-ral="right">右寄せ</button></span>
       <span class="grp"><b>大きさ</b><button type="button" class="btn" data-rsz="-1">A− 小さく</button><button type="button" class="btn" data-rsz="1">A＋ 大きく</button><span class="cur" id="rqSzCur"></span></span>
@@ -2511,7 +2526,7 @@ function openReqEditor(r) {
     </div>
     <input type="text" id="rqText" value="${esc(r.body)}" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:15px">
     <div class="ntprevw"><span>リストでの見え方：</span><div class="ntprev" id="rqPrev"></div></div>
-    <p class="note" style="margin:6px 0 0">「自動」の色は、「捺印」を含むと赤、「請求書」を含むと青、ほかは黒です。色を選ぶと、この行を特記に入れたときも、特記の中のその部分が同じ色になります（大きさ・寄せは特記のマスの書式です）。</p>
+    <p class="note" style="margin:6px 0 0">「自動」の色は、「捺印」を含むと赤、「請求書」を含むと青、ほかは黒です。色を選ぶと、この行を${isMid ? '真ん中の列' : '特記'}に入れたときも、${isMid ? '真ん中の列' : '特記'}の中のその部分が同じ色になります（大きさ・寄せは${isMid ? '真ん中の列' : '特記'}のマスの書式です）。</p>
     <div class="acts"><button type="button" class="btn" id="rqNo">やめる</button><button type="button" class="btn pri" id="rqOk">保存</button></div>`);
   const box = $('#modalBox'), ti = $('#rqText');
   const paint = () => {
