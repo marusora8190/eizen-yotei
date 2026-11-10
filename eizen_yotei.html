@@ -2328,7 +2328,7 @@ function renderTableBody() {
       if (sp.covered.has(p)) return '';
       const rs = sp.starts.has(p) ? sp.starts.get(p) - p + 1 : 1;
       const n = st.notes.get(noteKey(day, side, line));
-      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', side === 'M')}</div></div></td>`;
+      return `<td${rs > 1 ? ` rowspan="${rs}"` : ''} class="nt nt${line}${rs > 1 ? ' ntm' : ''}${ned}${side === 'R' ? ' redge' : ''}" data-day="${day}" data-side="${side}" data-line="${line}" title="クリックすると特記を書けます"><div class="ntx" style="height:${(rowH3 * rs - 0.4).toFixed(2)}mm;${noteStyle(n, 'mm', noteBase(side), noteIndent0(side))}"><div class="nti">${noteBodyHtml(n ? n.body : '', true)}</div></div></td>`;
     };
     let body = '';
     for (let d = 1; d <= nd; d++) {
@@ -2427,7 +2427,7 @@ const reqStyle = r => `color:${reqColor(r) || 'inherit'};font-weight:${reqBold(r
 const SEL_SIZE_RE = /\{\{(-?\d+)\|([^{}]*)\}\}/g;
 const plainBody = body => String(body || '').replace(SEL_SIZE_RE, '$2');
 function noteBodyHtml(body, mid) {
-  // mid：真ん中の列のとき、「AM」「PM」「終日」を自動で小さくする（2026年11月10日〜）
+  // mid：特記・真ん中の列のマスのとき、「AM」「PM」「終日」を自動で小さくする（真ん中の列は2026年11月10日〜、左右の特記も同日〜。見出しでは小さくしない）
   const sm = t => mid ? esc(t).replace(MID_SMALL, w => `<span class="nap">${w}</span>`) : esc(t);
   const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : segColor(seg); return c ? `<span style="color:${c}">${sm(seg)}</span>` : sm(seg); }).join('');
   const b = String(body || ''), out = []; let last = 0, m;
@@ -2446,7 +2446,7 @@ function drawPrev(fmt, body, cell, side) {
   const r = cell ? cell.getBoundingClientRect() : null;
   pv.style.cssText = noteStyle(fmt, 'mm', noteBase(side), noteIndent0(side)) + (r && r.width ? `width:${r.width}px;height:${r.height}px;` : 'width:60mm;height:9mm;');
   if (cell && cell.dataset.auto && !fmt.size) pv.dataset.auto = '1'; else delete pv.dataset.auto;
-  pv.innerHTML = `<div class="nti">${noteBodyHtml(body, side === 'M')}</div>`;
+  pv.innerHTML = `<div class="nti">${noteBodyHtml(body, !!side)}</div>`; // 特記・真ん中の列は「AM」「PM」「終日」を小さく（見出しは小さくしない）
   fitNotes($('#ntPrevBox'));
 }
 // 文字の大きさを「ポイント」で出す（2026年11月9日〜。利用者の希望）。予定表のマスでの大きさ（標準は 8pt。1つで約1割）
@@ -3086,7 +3086,7 @@ async function openCopyNotes() {
     return `<tr data-i="${it.i}" class="${it.on ? '' : 'off'}">
       <td style="text-align:center"><input type="checkbox" data-on="${it.i}" ${it.on ? 'checked' : ''}></td>
       <td style="white-space:nowrap"><b>${dayLab(y, m, it.d)}</b><br><span class="lab" style="font-size:12px;color:var(--sub)">${sideLab(it)}</span></td>
-      <td><div class="cpbody">${noteBodyHtml(it.n.body, it.side === 'M')}</div></td>
+      <td><div class="cpbody">${noteBodyHtml(it.n.body, true)}</div></td>
       <td class="cpto"><button type="button" class="btn" data-mv="-1" data-i="${it.i}" title="1日前にする">◀</button> <select data-to="${it.i}">${opts}</select> <button type="button" class="btn" data-mv="1" data-i="${it.i}" title="1日後にする">▶</button>
         ${red ? '<div class="cpwarn">⚠ 日曜・祝日です</div>' : ''}${it.over ? '<div class="cpwarn">⚠ 同じ日（週）が無いため、近い日にしました</div>' : ''}${opt.rule === 'date' && wdChanged ? `<div class="cpnote">曜日が変わります（${WD_JA[wdOf(y, m, it.d)]}→${WD_JA[wdOf(ny, nm, it.t)]}）</div>` : ''}
         ${ex.length ? '<div class="cpnote">すでに特記があります（うしろに書き足します）</div>' : ''}${dup ? '<div class="cpnote">ほかの特記と同じ日です（つなげて書きます）</div>' : ''}</td>
@@ -3214,7 +3214,7 @@ function cwDrag(box, handle) {
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
-    <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日の日は、その日の行（上の行・下の行）がうすいオレンジ色になります（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
+    <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります（左右の特記も同じです）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日の日は、その日の行（上の行・下の行）がうすいオレンジ色になります（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
