@@ -378,6 +378,29 @@ body.tbl-one #sheet.solo-wrap{min-width:0}
 .sheet.p2 table.yt thead th .ttl{font-size:9pt}
 .sheet.p2 table.yt thead th.dh{font-size:8pt}
 #t3Pick{display:none;align-items:center;gap:6px;font-size:14px}
+/* スマホの予定表③（見るだけ。1日ずつ縦に並べる。2026年11月10日〜。利用者の希望） */
+.m3wrap{box-sizing:border-box;width:100%;padding:8px;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif;color:#1f2933}
+.m3top{font-size:15px;font-weight:700;margin:2px 2px 4px}
+.m3top small{display:block;font-size:12px;font-weight:400;color:var(--sub);margin-top:2px}
+.m3day{background:#fff;border:1px solid #c9ced6;border-radius:8px;margin:0 0 8px;overflow:hidden}
+.m3day.hol{background:#ffe2bf;border-color:#f0b878}
+.m3day.today{box-shadow:0 0 0 2px #2f5d9a}
+.m3h{display:flex;align-items:baseline;gap:8px;padding:6px 10px;font-size:17px;font-weight:700;border-bottom:1px solid #e3e6ea}
+.m3day.hol .m3h{border-bottom-color:#f0c79a}
+.m3h .wd{font-size:14px}
+.m3h .red{color:#c62828}.m3h .sat{color:#1565c0}
+.m3h .hn{font-size:13px;font-weight:400;color:#c62828}
+.m3h .td{margin-left:auto;font-size:12px;font-weight:700;color:#fff;background:#2f5d9a;border-radius:9px;padding:1px 8px}
+.m3row{display:flex;gap:8px;padding:6px 10px;border-top:1px dashed #e3e6ea;font-size:16px;line-height:1.45}
+.m3row:first-of-type{border-top:0}
+.m3lab{flex:0 0 74px;font-size:12px;color:#5b6573;padding-top:3px;line-height:1.3}
+.m3val{flex:1;min-width:0;white-space:pre-wrap;word-break:break-all;font-weight:700}
+.m3val .nap{font-size:0.69em}
+.m3val .sch{font-weight:400}
+.m3val .sch .red{color:#c62828}
+.m3val .span{font-size:12px;font-weight:400;color:#5b6573}
+.m3empty{padding:6px 10px;font-size:13px;color:#8a94a3}
+.m3day.hol .m3row{border-top-color:#f0c79a}
 body.tbl-three #t3Pick{display:inline-flex}
 #t3Pick select{font-size:14px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
 table.yt th.nth{letter-spacing:.2em}
@@ -599,6 +622,7 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
   #v-table .sheet-wrap{overscroll-behavior:contain;padding:0}
   #sheet{padding:14px;width:max-content;min-width:100%}
   #sheet.solo-wrap{width:auto}
+  body.tbl-three-m #sheet{width:auto;min-width:0;padding:0} /* スマホの予定表③は、画面の幅に合わせる（2026年11月10日〜） */
   .ypage .s-title{position:sticky;top:0;z-index:5;background:#fff}
   .ypage .s-tt{position:sticky;left:1mm}
   table.yt thead th{position:sticky;top:calc(var(--tth,7mm) - 1px);z-index:3;background:#fff;background-clip:padding-box;box-shadow:inset 0 -1px 0 var(--stk,#000)}
@@ -1496,7 +1520,7 @@ function showView(v) {
   // 「予定表（一人ずつ）」（パソコンのサイドバー。2026年11月5日〜）は、予定表の画面を先生1人分の形で出す
   const one = v === 'table1';
   // 「予定表③」（2人分＋特記。2026年11月9日〜）は、上の「営繕部予定表」の文字を押して開く。先生ごとのURL・スマホでは出さない
-  if (v === 'table3' && (st.personal || isMobile())) v = 'table';
+  if (v === 'table3' && st.personal) v = 'table'; // スマホでも開ける（見るだけ。1日ずつ縦に並べる。2026年11月10日〜）
   const three = v === 'table3';
   if (one || three) v = 'table'; if (v === 'table') { st.tblOne = one && !isMobile(); st.tbl3 = three; }
   if (st.personal && !['input', 'table', 'form', 'help'].includes(v)) v = 'input';
@@ -1504,7 +1528,7 @@ function showView(v) {
   if (isMobile() && !['input', 'table'].includes(v)) v = 'input'; // スマホは予定入力・予定表だけ
   // 見るだけのURL：予定表①②だけ。予定表③だけのURL：いつも予定表③（スマホでは、見るだけの予定表）
   if (st.viewOnly) { if (v !== 'table') { v = 'table'; st.tblOne = false; } st.tbl3 = false; }
-  if (st.t3Only) { v = 'table'; st.tblOne = false; st.tbl3 = !isMobile(); }
+  if (st.t3Only) { v = 'table'; st.tblOne = false; st.tbl3 = true; } // スマホでも予定表③（見るだけ。2026年11月10日〜）
   st.view = v;
   document.body.classList.toggle('tbl-three', v === 'table' && !!st.tbl3 && !st.personal && !isMobile());
   $$('section').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
@@ -1528,7 +1552,7 @@ $$('nav a[data-view], .mnav [data-view]').forEach(a => a.addEventListener('click
 $('#btnUpdateM').addEventListener('click', () => $('#btnUpdate').click());
 $('#btnUpdateH').addEventListener('click', () => $('#btnUpdate').click());
 // 上の「営繕部予定表」の文字を左クリックすると、予定表③を開く（ふつうのURLのパソコンだけ）
-$('#appTitle').addEventListener('click', e => { if (e.button !== 0 || st.personal || st.viewOnly || st.t3Only || isMobile()) return; showView('table3'); });
+$('#appTitle').addEventListener('click', e => { if (e.button !== 0 || st.personal || st.viewOnly || st.t3Only) return; showView('table3'); }); // スマホでも押せる（予定表③を見るだけ。2026年11月10日〜）
 $('#btnSpvBack').addEventListener('click', () => setSpv(false));
 
 async function changeMonth(y, m) {
@@ -2208,6 +2232,9 @@ function renderTableBody() {
   // 先生ごとのURL・見るだけのURL・予定表③だけのURLでは、予定表のマスは直せない（予定表③だけのURLでも、特記とリストは書ける）
   const editable = !st.personal && !st.viewOnly && !st.t3Only;
   const noteEditable = editable || (st.t3Only && !isMobile());
+  // スマホの予定表③：1日ずつ縦に並べて見るだけ（2026年11月10日〜。利用者の希望）
+  document.body.classList.toggle('tbl-three-m', !!st.tbl3 && isMobile() && !st.personal);
+  if (st.tbl3 && isMobile() && !st.personal) { renderT3Mobile(); return; }
   $('#btnT3Copy').hidden = !noteEditable; // 「📋 特記を翌月へ」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Cols').hidden = !noteEditable; // 「↔ 列の幅」も、特記を書ける画面だけ（2026年11月10日〜）
   $('#btnT3Set').hidden = !noteEditable; // 「お願いすること」を直す「⚙ 設定」は、特記を書ける画面だけ
@@ -3032,6 +3059,42 @@ $('#btnT3Cols').addEventListener('click', openColWidths);
 // ===== 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）=====
 // この月の特記を、翌月へまとめて写す。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決め、日曜・祝日に当たれば前の平日へずらせる。
 // 1件ずつ、元の日と写す日の先生（左は1人目・右は2人目）の予定を並べて出し、「◀」「▶」で写す日を直せる。写す先にすでに特記があれば、うしろに改行で書き足す
+// ===== スマホの予定表③（見るだけ。2026年11月10日〜。利用者の希望）=====
+// 1日ずつのまとまりを縦に並べ、左の特記・1人目・真ん中の列・2人目・右の特記のうち、書いてあるものだけを出す
+function renderT3Mobile() {
+  const { y, m } = st, nd = dim(y, m), ms = t3Members(), list = [...st.entries.values()];
+  renderTbSwitch(null);
+  document.body.classList.remove('tbl-three', 'tbl-one');
+  const td = todayJst(), sp = { L: noteSpans('L'), R: noteSpans('R'), M: noteSpans('M') };
+  // その日に始まる特記（上の行・下の行）。日をまたいで結合したものは「（〜○日）」を付ける
+  const notesOn = (side, day) => [1, 2].map(line => {
+    const n = st.notes.get(noteKey(day, side, line)); if (!n || !String(n.body || '').trim()) return '';
+    const p = notePos(day, line); if (sp[side].covered.has(p)) return '';
+    const e = sp[side].starts.get(p), endDay = e != null ? Math.floor(e / 2) + 1 : 0, f = noteFmt(n);
+    return `<div style="${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400}">${noteBodyHtml(n.body, true)}${endDay > Number(day.slice(8)) ? `<span class="span">（〜${endDay}日）</span>` : ''}</div>`;
+  }).filter(Boolean).join('');
+  // 日をまたいで結合した特記の途中の日には「（○日から続く）」と出す
+  const contOn = (side, day) => { const p0 = notePos(day, 1); for (const [a, e] of sp[side].starts) if (a < p0 && p0 <= e && Math.floor(a / 2) !== Math.floor(p0 / 2)) { const n = st.notes.get(noteKey(posDay(a), side, posLine(a))); if (n && String(n.body || '').trim()) return `<span class="span">（${Math.floor(a / 2) + 1}日から続く）</span> ${noteBodyHtml(n.body.split('\n')[0], true)}`; } return ''; };
+  const row = (lab, html) => html ? `<div class="m3row"><span class="m3lab">${lab}</span><div class="m3val">${html}</div></div>` : '';
+  let out = '';
+  for (let d = 1; d <= nd; d++) {
+    const day = dstr(y, m, d), w = wdOf(y, m, d), hol = st.holidays.get(day), red = isRedDay(y, m, d);
+    const pSch = mm => { if (!mm) return ''; const h = cpSched(list, mm.id, day); return /予定なし/.test(h) && !/行事/.test(h) ? '' : `<span class="sch">${h}</span>`; };
+    const rows = row('特記（左）', notesOn('L', day) || contOn('L', day))
+      + (ms[0] ? row(ttlHtml(dispName(ms[0])), pSch(ms[0])) : '')
+      + row(esc(midListName()), notesOn('M', day) || contOn('M', day))
+      + (ms[1] ? row(ttlHtml(dispName(ms[1])), pSch(ms[1])) : '')
+      + row('特記（右）', notesOn('R', day) || contOn('R', day));
+    out += `<div class="m3day${red ? ' hol' : ''}${day === td ? ' today' : ''}" data-day="${day}"><div class="m3h"><span class="${red ? 'red' : w === 6 ? 'sat' : ''}">${m}月${d}日</span><span class="wd ${red ? 'red' : w === 6 ? 'sat' : ''}">（${WD_JA[w]}）</span>${hol ? `<span class="hn">${esc(hol)}</span>` : ''}${day === td ? '<span class="td">今日</span>' : ''}</div>${rows || '<div class="m3empty">予定・特記なし</div>'}</div>`;
+  }
+  $('#sheet').classList.remove('solo-wrap');
+  $('#sheet').removeAttribute('style'); // 予定表③（パソコン）で付けた幅などを残さない
+  $('#sheet').innerHTML = `<div class="m3wrap"><div class="m3top">予定表③　${ms.map(x => ttlHtml(dispName(x))).join('・')}<small>スマホでは見るだけです（書くときはパソコンで）。書いてあるものだけを出しています。</small></div>${out}</div>`;
+  // 今月なら、はじめに今日の日まで動かす（同じ月を作り直すときは、見ていた位置のまま）
+  const sig = 'm3|' + ymStr(y, m);
+  fitTableBox();
+  if (st.m3sig !== sig) { st.m3sig = sig; const t = $(`#sheet .m3day[data-day="${td}"]`); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 0); }
+}
 function cpSched(list, mid, day) {
   if (!mid) return '';
   const e = list.find(x => x.member_id === mid && x.day === day), parts = [];
@@ -3213,7 +3276,7 @@ function cwDrag(box, handle) {
 // ===== 予定表③の使い方（「印刷（A4縦）」の横の「❓ 予定表③の使い方」。2026年11月9日〜） =====
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
-    <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURL・スマホでは開きません）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
+    <h4>開き方</h4><ul><li>パソコンで、いちばん上の「営繕部予定表」の文字を左クリックすると開きます（サイドバーには出ません。先生ごとのURLでは開きません）。</li><li>スマホでは、いちばん上の「営繕部予定表」の文字を押すか、予定表③だけのURLを開くと、1日ずつ縦に並べた形で見られます（見るだけです。書いてあるものだけを出し、今月なら今日の日まで動きます。下の「予定表」で予定表①に戻ります）。</li><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li></ul>
     <h4>表の並び</h4><ul><li>左から「日」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります（左右の特記も同じです）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日の日は、その日の行（上の行・下の行）がうすいオレンジ色になります（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li></ul>
     <h4>列の幅を変える</h4><ul><li>上の「↔ 列の幅」を押すと、画面の下に列ごとのボタンが出ます。「◀ 狭く」「広く ▶」は1mm、「◀◀」「▶▶」は5mmずつで、表にすぐ映ります。「保存」で決まり、みんなの画面と印刷で同じになります（パスワードはいりません）。</li><li>先生・真ん中の列を広げた分は、左右の特記から同じだけ引きます。左の特記を広げると、右の特記が同じだけ狭くなります。</li><li>先生・真ん中の列の幅は、その月の中身で決まる自動の幅からの差として覚えます。「すべて自動に戻す」で、はじめの幅に戻ります。特記は10mm、ほかの列は5mmより狭くはできません。</li></ul>
