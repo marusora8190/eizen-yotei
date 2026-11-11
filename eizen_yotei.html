@@ -3259,7 +3259,7 @@ function renderT3Mobile() {
   let out = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), hol = st.holidays.get(day), red = isRedDay(y, m, d);
-    const pSch = mm => { if (!mm) return ''; const h = cpSched(list, mm.id, day); return /予定なし/.test(h) && !/行事/.test(h) ? '' : `<span class="sch">${h}</span>`; };
+    const pSch = mm => { if (!mm) return ''; const h = cpSched(list, mm.id, day, true); return /予定なし/.test(h) && !/行事/.test(h) ? '' : `<span class="sch">${h}</span>`; };
     const rows = row('特記（左）', notesOn('L', day) || contOn('L', day))
       + (ms[0] ? row(ttlHtml(dispName(ms[0])), pSch(ms[0])) : '')
       + row(esc(midListName()), notesOn('M', day) || contOn('M', day))
@@ -3275,13 +3275,15 @@ function renderT3Mobile() {
   fitTableBox();
   if (st.m3sig !== sig) { st.m3sig = sig; const t = $(`#sheet .m3day[data-day="${td}"]`); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 0); }
 }
-function cpSched(list, mid, day) {
+// small：スマホの予定表③で使うとき、「AM」「PM」「終日」の印と、予定の中の「委員会」「会議」を小さく出す（2026年11月11日〜。利用者の希望）
+function cpSched(list, mid, day, small) {
   if (!mid) return '';
   const e = list.find(x => x.member_id === mid && x.day === day), parts = [];
-  const tx = (t, red) => `<span class="${red ? 'red' : ''}">${esc(t)}</span>`;
-  if (e && e.allday) parts.push(`終日 ${tx(e.allday, e.allday_red)}`);
-  else { if (e && e.am) parts.push(`AM ${tx(e.am, e.am_red)}`); if (e && e.pm) parts.push(`PM ${tx(e.pm, e.pm_red)}`); }
-  for (const x of list) for (const k of ['allday', 'am', 'pm']) { const u = x[k + '_until']; if (x.member_id === mid && x[k] && u && x.day < day && day <= u) parts.push(`${k === 'allday' ? '終日' : k.toUpperCase()} ${tx(x[k], x[k + '_red'])}（${Number(x.day.slice(8))}日から続く）`); }
+  const tx = (t, red) => `<span class="${red ? 'red' : ''}">${small ? esc(t).replace(SMALL_WORDS, w => `<span class="nap">${w}</span>`) : esc(t)}</span>`;
+  const lb = w => small ? `<span class="nap">${w}</span>` : w;
+  if (e && e.allday) parts.push(`${lb('終日')} ${tx(e.allday, e.allday_red)}`);
+  else { if (e && e.am) parts.push(`${lb('AM')} ${tx(e.am, e.am_red)}`); if (e && e.pm) parts.push(`${lb('PM')} ${tx(e.pm, e.pm_red)}`); }
+  for (const x of list) for (const k of ['allday', 'am', 'pm']) { const u = x[k + '_until']; if (x.member_id === mid && x[k] && u && x.day < day && day <= u) parts.push(`${lb(k === 'allday' ? '終日' : k.toUpperCase())} ${tx(x[k], x[k + '_red'])}（${Number(x.day.slice(8))}日から続く）`); }
   if (!parts.length && !(e && e.event_off)) { const ev = eventFor(day); if (ev) parts.push(`（行事）${esc(ev.text)}`); }
   return parts.length ? parts.join('　') : '<span class="lab">予定なし</span>';
 }
