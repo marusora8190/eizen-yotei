@@ -1600,7 +1600,11 @@ let appTitleTap = 0;
 $('#appTitle').addEventListener('click', e => {
   if (e.button !== 0 || st.personal || st.viewOnly || st.t3Only || !isMobile()) return;
   const now = Date.now();
-  if (now - appTitleTap < 450) { appTitleTap = 0; showView('table3'); } else appTitleTap = now;
+  if (now - appTitleTap < 450) {
+    // 開くたびに今月にして、今日の日を画面の真ん中に出す（2026年11月11日〜。利用者の希望。ふつうのURLは来月を開いているため）
+    appTitleTap = 0; st.m3sig = null; showView('table3');
+    const t = jstTodayParts(); if (st.y !== t.y || st.m !== t.m) changeMonth(t.y, t.m);
+  } else appTitleTap = now;
 }); // スマホだけ（予定表③を見るだけ）。パソコンでは押しても何も起きない（2026年11月10日〜。利用者の希望。パソコンは予定表③だけのURLで開く）
 $('#btnSpvBack').addEventListener('click', () => setSpv(false));
 
@@ -3319,7 +3323,7 @@ function renderT3Mobile() {
   // 今月なら、はじめに今日の日まで動かす（同じ月を作り直すときは、見ていた位置のまま）
   const sig = 'm3|' + ymStr(y, m);
   fitTableBox();
-  if (st.m3sig !== sig) { st.m3sig = sig; const t = $(`#sheet .m3day[data-day="${td}"]`); if (t) setTimeout(() => t.scrollIntoView({ block: 'start' }), 0); }
+  if (st.m3sig !== sig) { st.m3sig = sig; const t = $(`#sheet .m3day[data-day="${td}"]`); if (t) setTimeout(() => t.scrollIntoView({ block: 'center' }), 0); } // 今日の日を画面の真ん中に（2026年11月11日〜。利用者の希望。それまではいちばん上）
 }
 // small：スマホの予定表③で使うとき、「AM」「PM」「終日」の印と、予定の中の「委員会」「会議」を小さく出す（2026年11月11日〜。利用者の希望）
 function cpSched(list, mid, day, small) {
