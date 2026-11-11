@@ -443,6 +443,13 @@ table.yt td.nt.ntdrop{outline:2px solid #2f6fd6;outline-offset:-2px;background:#
 table.yt td.nt.ntsrc{opacity:.45}
 #ntGhost{position:fixed;z-index:70;pointer-events:none;background:#fff;border:1px solid #2f6fd6;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.25);max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .duo .ytw .holband{position:absolute;left:0;background:#ffe6c7;pointer-events:none;z-index:0}
+/* 予定表③の「今日」（2026年11月11日〜。利用者の希望）：日付の列を青地に白い字にし、その日の2行を青い枠で囲む。画面だけで、印刷には出さない */
+@media screen{
+  .duo table.yt tr.today3 > td.dn3,.duo table.yt tr.today3 > td.dw3{background:#2f5d9a!important;color:#fff!important;font-weight:700}
+  .duo .ytw .todayframe{position:absolute;left:0;border:2.5px solid #2f5d9a;border-radius:3px;box-sizing:border-box;pointer-events:none;z-index:3;background:rgba(47,93,154,.07)}
+  .duo .ytw .todayframe span{position:absolute;right:2px;top:-1px;transform:translateY(-100%);background:#2f5d9a;color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:3px 3px 0 0}
+}
+@media print{.duo .ytw .todayframe{display:none}}
 .duo .ytw table.yt{position:relative;z-index:1}
 @media screen{
   .duo table.yt td.dn1,.duo table.yt td.dw1{position:static;box-shadow:none}
@@ -2423,7 +2430,9 @@ function renderTableBody() {
       const c2 = x => { const e = withEnds(x.id, day); return e.allday ? ''
         : `<td class="c pm" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`; };
       const nye = (m === 12 && d >= 28) || (m === 1 && d <= 4); // 年末年始（12月28日〜1月4日）も帯を引く（2026年11月10日〜。利用者の希望）
-      const hr = rd || nye ? ' class="hol3"' : ''; // 日曜・祝日・年末年始の日の行（予定表③だけ、うすいオレンジ色の帯を引く）
+      // 日曜・祝日・年末年始の日の行（予定表③だけ、うすいオレンジ色の帯を引く）。今日の行には today3（画面だけ。印刷には出さない。2026年11月11日〜。利用者の希望）
+      const tcls = [rd || nye ? 'hol3' : '', !st.print3 && day === todayJst() ? 'today3' : ''].filter(Boolean).join(' ');
+      const hr = tcls ? ` class="${tcls}"` : '';
       body += `<tr${hr} style="height:${rowH3}mm"><td class="dn${rd} dn3">${d}</td>${cellAt(day, 'L', 1)}${A ? c1(A) : ''}${cellAt(day, 'M', 1)}${Bs.map(c1).join('')}${cellAt(day, 'R', 1)}</tr>`;
       body += `<tr${hr} style="height:${rowH3}mm"><td class="dw${rd} dw3">${WD_JA[w]}</td>${cellAt(day, 'L', 2)}${A ? c2(A) : ''}${cellAt(day, 'M', 2)}${Bs.map(c2).join('')}${cellAt(day, 'R', 2)}</tr>`;
     }
@@ -3264,6 +3273,16 @@ function drawHolBands() {
       band.style.cssText = `top:${(top / zq).toFixed(2)}px;height:${(h / zq).toFixed(2)}px;width:${(tb.getBoundingClientRect().width / zq).toFixed(2)}px`;
       w.insertBefore(band, tb);
     });
+    // 今日の2行を青い枠で囲み、右上に「今日」と出す（2026年11月11日〜。利用者の希望。画面だけ）
+    $$('.todayframe', w).forEach(x => x.remove());
+    const t1 = $('tr.today3', tb), t2 = t1 && t1.nextElementSibling;
+    if (t1 && t2) {
+      const r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect(), tbr = tb.getBoundingClientRect();
+      const fr = document.createElement('div'); fr.className = 'todayframe';
+      fr.style.cssText = `top:${((r1.top - wr.top) / zq).toFixed(2)}px;height:${((r2.bottom - r1.top) / zq).toFixed(2)}px;width:${(tbr.width / zq).toFixed(2)}px`;
+      fr.innerHTML = '<span>今日</span>';
+      w.appendChild(fr);
+    }
   });
 }
 // ===== スマホの予定表③（見るだけ。2026年11月10日〜。利用者の希望）=====
