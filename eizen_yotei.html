@@ -2502,7 +2502,9 @@ function kwColor(t) { for (const [re, c] of KW_COLORS) if (re.test(String(t || '
 function segColor(seg) {
   const t = String(seg || '').trim(); if (!t) return '';
   const r = (st.requests || []).find(x => x.active !== false && x.color && String(x.body || '').trim() === t);
-  return r ? r.color : kwColor(seg);
+  // マスで色（黒以外）を選んだときは、リストの色・言葉で決まる色より、マスの色が先（--cellc。2026年11月11日〜。利用者の希望「いつでも色を変えられるように」）
+  // リストで「黒」を選んだ言葉は、マスの色に従う（マスを青にしたら青で出る。2026年11月11日〜。利用者の知らせ）。言葉で決まる色（捺印＝赤・請求書＝青）も付けない
+  return r ? (/^#0{6}$/i.test(r.color) ? '' : r.color) : kwColor(seg);
 }
 // お願いのリストの1行の見た目（色・太さは、選んでいなければ言葉で決まる）
 const reqColor = r => r.color || kwColor(r.body);
@@ -2528,7 +2530,7 @@ function noteBodyHtml1(body, mid, stk) {
   // stk：二重線を引く。文字の大きさ・色が変わるところごとに引く（線が文字の高さ・色に合うように）
   const sm0 = t => mid ? esc(t).replace(MID_SMALL, w => `<span class="nap">${w}</span>`) : esc(t);
   const sm = t => stk && t && t !== '\n' ? `<span class="nstk">${sm0(t)}</span>` : sm0(t);
-  const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : segColor(seg); return c ? `<span style="color:${c}">${sm(seg)}</span>` : sm(seg); }).join('');
+  const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : segColor(seg); return c ? `<span style="color:var(--cellc,${c})">${sm(seg)}</span>` : sm(seg); }).join('');
   const b = String(body || ''), out = []; let last = 0, m;
   SEL_SIZE_RE.lastIndex = 0;
   while ((m = SEL_SIZE_RE.exec(b))) {
@@ -2641,7 +2643,7 @@ function noteStyle(n, unit, ptBase, in0) {
   const pad = f.indent > 0 ? `padding-left:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : f.indent < 0 ? `padding-right:calc(${unit === 'mm' ? '0.8mm' : '8px'} + ${-f.indent * step}${unit === 'mm' ? 'mm' : 'px'});` : '';
   // 予定表のマスでは、上下の位置も付ける（中の文字を上・真ん中・下に寄せる）
   const va = unit === 'mm' ? `display:flex;flex-direction:column;justify-content:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[f.valign] || 'flex-start'};` : '';
-  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};` : ''}${f.bg ? `background:${f.bg};` : ''}font-weight:${f.bold ? 700 : 400};${pad}${va}`;
+  return `text-align:${f.align};font-size:${(base * (1 + f.size * 0.1)).toFixed(2)}${u};${f.color ? `color:${f.color};--cellc:${f.color};` : ''}${f.bg ? `background:${f.bg};` : ''}font-weight:${f.bold ? 700 : 400};${pad}${va}`;
 }
 // ===== 予定表③の「⚙ 設定」：先生ごとの「お願いすること」のリスト（2026年11月9日〜） =====
 const REQ_MIN_ROWS = 5;
@@ -3276,7 +3278,7 @@ function renderT3Mobile() {
     const n = st.notes.get(noteKey(day, side, line)); if (!n || !String(n.body || '').trim()) return '';
     const p = notePos(day, line); if (sp[side].covered.has(p)) return '';
     const e = sp[side].starts.get(p), endDay = e != null ? Math.floor(e / 2) + 1 : 0, f = noteFmt(n);
-    return `<div style="${f.color ? `color:${f.color};` : ''}font-weight:${f.bold ? 700 : 400}">${noteBodyHtml(n.body, true)}${endDay > Number(day.slice(8)) ? `<span class="span">（〜${endDay}日）</span>` : ''}</div>`;
+    return `<div style="${f.color ? `color:${f.color};--cellc:${f.color};` : ''}font-weight:${f.bold ? 700 : 400}">${noteBodyHtml(n.body, true)}${endDay > Number(day.slice(8)) ? `<span class="span">（〜${endDay}日）</span>` : ''}</div>`;
   }).filter(Boolean).join('');
   // 日をまたいで結合した特記の途中の日には「（○日から続く）」と出す
   const contOn = (side, day) => { const p0 = notePos(day, 1); for (const [a, e] of sp[side].starts) if (a < p0 && p0 <= e && Math.floor(a / 2) !== Math.floor(p0 / 2)) { const n = st.notes.get(noteKey(posDay(a), side, posLine(a))); if (n && String(n.body || '').trim()) return `<span class="span">（${Math.floor(a / 2) + 1}日から続く）</span> ${noteBodyHtml(n.body.split('\n')[0], true)}`; } return ''; };
