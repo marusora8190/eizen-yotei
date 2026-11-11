@@ -418,6 +418,8 @@ table.yt td.nt .ntx{font-size:8pt;line-height:1.2;white-space:pre-wrap;word-brea
 .duo table.yt td.c .ap{font-size:5.5pt}
 /* 真ん中の列（和田予定）の「AM」「PM」「終日」：先生の列と同じ割合（5.5pt ÷ 8pt）で自動で小さく（2026年11月10日〜） */
 .ntx .nap,.ntprevbox .nap{font-size:0.69em}
+/* 特記の二重線（終わった用事に引く。2026年11月11日〜。利用者の希望）。書く欄では {{済|文字}} の印。印刷にも出る */
+.nstk{text-decoration-line:line-through;text-decoration-style:double;-webkit-text-decoration-line:line-through;-webkit-text-decoration-style:double;text-decoration-thickness:max(1px,.07em)}
 table.yt td.nt.editable{cursor:pointer}
 table.yt td.nt.editable:hover{background:#fff8e1}
 /* 予定表③だけ：日曜・祝日の日は、左端の「日にち・曜日」の文字の高さの帯を、左端から右の特記まで、うすいオレンジ色で引く（印刷にも出る。2026年11月10日〜。利用者の希望）
@@ -2484,10 +2486,23 @@ const reqStyle = r => `color:${reqColor(r) || 'inherit'};font-weight:${reqBold(r
 // 特記の中身：改行・「、」で区切った1つずつのうち、「捺印」「請求書」を含むものだけ色を付ける（ほかはマスの色のまま）
 // 選んだ文字だけの大きさ（2026年11月9日〜）：書く欄では {{-1|予定}} の形で書く（-4〜6。1つで約15％）
 const SEL_SIZE_RE = /\{\{(-?\d+)\|([^{}]*)\}\}/g;
-const plainBody = body => String(body || '').replace(SEL_SIZE_RE, '$2');
+// 二重線（終わった用事。2026年11月11日〜。利用者の希望）：書く欄では {{済|請求書DL}} の形。中に大きさの印が入っていてもよい
+const STRIKE_RE = /\{\{済\|((?:[^{}]|\{\{-?\d+\|[^{}]*\}\})*)\}\}/g;
+const unStrike = body => String(body || '').replace(STRIKE_RE, '$1');
+const plainBody = body => unStrike(body).replace(SEL_SIZE_RE, '$2');
 function noteBodyHtml(body, mid) {
+  // 二重線の印の外と中を分けて、それぞれ大きさの印を読む（中は二重線を引く）
+  const b0 = String(body || ''), parts = []; let last0 = 0, m0;
+  const re0 = new RegExp(STRIKE_RE.source, 'g');
+  while ((m0 = re0.exec(b0))) { parts.push(noteBodyHtml1(b0.slice(last0, m0.index), mid)); parts.push(noteBodyHtml1(m0[1], mid, true)); last0 = re0.lastIndex; }
+  parts.push(noteBodyHtml1(b0.slice(last0), mid));
+  return parts.join('');
+}
+function noteBodyHtml1(body, mid, stk) {
   // mid：特記・真ん中の列のマスのとき、「AM」「PM」「終日」を自動で小さくする（真ん中の列は2026年11月10日〜、左右の特記も同日〜。見出しでは小さくしない）
-  const sm = t => mid ? esc(t).replace(MID_SMALL, w => `<span class="nap">${w}</span>`) : esc(t);
+  // stk：二重線を引く。文字の大きさ・色が変わるところごとに引く（線が文字の高さ・色に合うように）
+  const sm0 = t => mid ? esc(t).replace(MID_SMALL, w => `<span class="nap">${w}</span>`) : esc(t);
+  const sm = t => stk && t && t !== '\n' ? `<span class="nstk">${sm0(t)}</span>` : sm0(t);
   const kw = t => String(t).split(/(\n|、)/).map(seg => { const c = seg === '\n' || seg === '、' ? '' : segColor(seg); return c ? `<span style="color:${c}">${sm(seg)}</span>` : sm(seg); }).join('');
   const b = String(body || ''), out = []; let last = 0, m;
   SEL_SIZE_RE.lastIndex = 0;
@@ -2538,6 +2553,34 @@ function selSize(ta, d) {
   if (/[{}|]/.test(sel)) { toast('選んだところに、ほかの大きさの印がまざっています。印の外か中だけを選んでください', true); ta.focus(); return false; }
   ta.value = v.slice(0, a) + `{{${d}|${sel}}}` + v.slice(z);
   const ns = a + 3 + String(d).length; ta.focus(); ta.setSelectionRange(ns, ns + sel.length);
+  return true;
+}
+// 二重線を引く・外す（2026年11月11日〜。利用者の希望）。終わった用事に引く
+// 二重線の印の中にカーソルがあれば外す。文字を選んでいれば、その文字に引く。選んでいなければ、カーソルのある1つ分（改行・「、」で区切った1つ）に引く
+function selStrike(ta) {
+  const v = ta.value; let a = ta.selectionStart, z = ta.selectionEnd, m;
+  const marks = (re) => { const r = [], g = new RegExp(re.source, 'g'); let x; while ((x = g.exec(v))) r.push([x.index, x.index + x[0].length, x]); return r; };
+  const stk = marks(STRIKE_RE);
+  for (const [s0, e0, x] of stk) if (a >= s0 && z <= e0) { // 外す
+    ta.value = v.slice(0, s0) + x[1] + v.slice(e0); ta.focus(); ta.setSelectionRange(s0, s0 + x[1].length); return true;
+  }
+  if (a === z) { // カーソルのある1つ分（印の中の「、」では区切らない）
+    const inMark = i => stk.concat(marks(SEL_SIZE_RE)).some(([s0, e0]) => i > s0 && i < e0);
+    const sep = i => (v[i] === '\n' || v[i] === '、') && !inMark(i);
+    a = z; while (a > 0 && !sep(a - 1)) a--;
+    while (z < v.length && !sep(z)) z++;
+    while (a < z && /\s/.test(v[a])) a++;
+    while (z > a && /\s/.test(v[z - 1])) z--;
+    if (a === z) { toast('二重線を引きたい言葉の中にカーソルを置くか、文字を選んでから押してください', true); ta.focus(); return false; }
+  }
+  // 大きさの印にかかっていれば、その印ごと入れる
+  for (const [s0, e0] of marks(SEL_SIZE_RE)) { if ((a > s0 && a < e0) || (z > s0 && z < e0)) { a = Math.min(a, s0); z = Math.max(z, e0); } }
+  const sel = v.slice(a, z);
+  if (stk.some(([s0, e0]) => s0 < z && e0 > a) || /[{}|]/.test(sel.replace(SEL_SIZE_RE, ''))) {
+    toast('選んだところに、二重線の印がまざっています。印の外だけを選ぶか、二重線の中にカーソルを置いて押す（外す）ようにしてください', true); ta.focus(); return false;
+  }
+  ta.value = v.slice(0, a) + `{{済|${sel}}}` + v.slice(z);
+  ta.focus(); ta.setSelectionRange(a + 4, a + 4 + sel.length);
   return true;
 }
 // 予定表③の真ん中の列（自分の予定）の幅：その月の中身と見出しの、いちばん長い行がちょうど入る幅（最小。いちばん広くて45mm）
@@ -2870,6 +2913,7 @@ function openHeadEditor() {
     else if (b.dataset.co != null) fmt.color = b.dataset.co;
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
     else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
+    else if (b.dataset.stk) selStrike(ta);
     else return;
     paint();
   });
@@ -2897,6 +2941,7 @@ function noteBarHtml() {
       <span class="grp"><b>上下</b><button type="button" class="btn" data-va="top">上</button><button type="button" class="btn" data-va="middle">上下真ん中</button><button type="button" class="btn" data-va="bottom">下</button></span>
       <span class="grp"><b>インデント</b><button type="button" class="btn" data-in="-1">◀ 左へ</button><button type="button" class="btn" data-in="1">右へ ▶</button><span class="cur" id="ntInCur"></span></span>
       <span class="grp"><b>選んだ文字</b><button type="button" class="btn" data-ssz="-1" title="書く欄で選んだ文字だけを小さくします">A− 小さく</button><button type="button" class="btn" data-ssz="1" title="書く欄で選んだ文字だけを大きくします">A＋ 大きく</button><span class="cur" id="ntSelCur"></span></span>
+      <span class="grp"><b>済み</b><button type="button" class="btn" data-stk="1" title="終わった用事に二重線を引きます。カーソルを置いた言葉（改行・「、」で区切った1つ分）か、選んだ文字に引きます。二重線の中で押すと外れます">＝ <span class="nstk">二重線</span></button></span>
       <span class="grp"><b>全体の大きさ</b><button type="button" class="btn" data-sz="-1">A− 小さく</button><button type="button" class="btn" data-sz="1">A＋ 大きく</button><span class="cur" id="ntSzCur"></span></span>
       <span class="grp"><b>色</b>${NOTE_COLORS.map(([c, n]) => `<button type="button" class="sw" data-co="${c}" title="${n}" style="background:${c || '#1f2933'}"></button>`).join('')}</span>
       <span class="grp"><b>太さ</b><button type="button" class="btn" data-bd="1"><b>太字</b></button><button type="button" class="btn" data-bd="0">細字</button></span>`;
@@ -2978,6 +3023,7 @@ function openNoteEditor(day, side, line) {
     else if (b.dataset.bd) fmt.bold = b.dataset.bd === '1';
     else if (b.dataset.bg != null) fmt.bg = b.dataset.bg;
     else if (b.dataset.ssz) selSize(ta, Number(b.dataset.ssz));
+    else if (b.dataset.stk) selStrike(ta);
     else if (b.id === 'pkMore') { const show = b.dataset.on !== '1'; b.dataset.on = show ? '1' : ''; $$('.ntpick .pkoth', box).forEach(x => { x.hidden = !show; }); b.textContent = show ? 'ほかの月のものを隠す' : `ほかの月のものも出す（${others.length}件）`; return; }
     else if (b.id === 'ntMerge') sel.value = String(p0 + 1);
     else if (b.id === 'ntSplit') sel.value = '-1';
@@ -3364,7 +3410,7 @@ async function doCopyNotes(list, ny, nm, nNotes) {
       const tDay = it._owner ? String(it._owner.day) : day;
       const now = await fresh(tDay, it.side, line);
       if (now && String(now.body || '').trim()) { // すでに書いてある：うしろに改行で書き足す（書式・結合は今のまま）
-        await write({ day: tDay, side: it.side, line, body: now.body + '\n' + n.body, ...noteFmt(now), merged: false, span_day: now.span_day || null, span_line: now.span_line || null });
+        await write({ day: tDay, side: it.side, line, body: now.body + '\n' + unStrike(n.body), ...noteFmt(now), merged: false, span_day: now.span_day || null, span_line: now.span_line || null });
         added++; done++; continue;
       }
       // 空のマス：元の特記の書式と結合の長さで書く（日をまたいだ結合は、翌月の中で、ほかの特記の手前まで）
@@ -3379,7 +3425,7 @@ async function doCopyNotes(list, ny, nm, nNotes) {
           else if (e <= p) { span_day = tDay; span_line = 1; }
         }
       }
-      await write({ day: tDay, side: it.side, line, body: n.body, ...noteFmt(n), merged: false, span_day, span_line });
+      await write({ day: tDay, side: it.side, line, body: unStrike(n.body), ...noteFmt(n), merged: false, span_day, span_line });
       done++;
     }
     return { done, added };
@@ -3453,7 +3499,7 @@ function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>表の並び</h4><ul><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li><li>左から「日付」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日付」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります（左右の特記も同じです）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日と、毎年の年末年始（12月28日〜1月4日）は、左端の「日にち・曜日」の文字の高さの半分の帯が、左端から右の特記まで、うすいオレンジ色で引かれます（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
     <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
-    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。文字は、はじめから大きさ10.4pt・太字・インデント右1です（書く画面で変えられます）。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>特記のマスは、手の形（✋）でつかんで、ほかのマスへ移せます（文字の入ったマスで、押したまま動かして、移したいマスで離します）。移す先にすでに文字があれば、2行目に書き足します。元のマスは空になります。移したあとの「↶ 元に戻す」で戻せます。表の上・下の端に近づけると、表が自動で動きます。つかんでいる途中で Esc を押すと、やめます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
+    <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。文字は、はじめから大きさ10.4pt・太字・インデント右1です（書く画面で変えられます）。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li><b>終わった用事に二重線を引く</b>：特記のマスを押し、書く欄で終わった言葉の中にカーソルを置いて（または文字を選んで）、「済み」の「＝ 二重線」を押して保存します。「、」や改行で区切った1つ分に二重線が引かれます（書く欄には <code>{{済|請求書DL}}</code> のような印が付きます）。まちがえたときは、二重線の言葉の中にカーソルを置いてもう一度押すと外れます。二重線は印刷にも出ます。「📋 特記を翌月へ」で写すときは、二重線を外して写します。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>特記のマスは、手の形（✋）でつかんで、ほかのマスへ移せます（文字の入ったマスで、押したまま動かして、移したいマスで離します）。移す先にすでに文字があれば、2行目に書き足します。元のマスは空になります。移したあとの「↶ 元に戻す」で戻せます。表の上・下の端に近づけると、表が自動で動きます。つかんでいる途中で Esc を押すと、やめます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の右の「毎月」「12月」などは、出す月です。「✎」で、毎月か、決まった月（いくつでも）を選べます。月を決めた行は、その月の特記を書くときだけ「リストから選ぶ」に出ます（ほかの月のときは「ほかの月のものも出す」で出せます）。毎月のお願いと、1年にこの月だけのお願いを1つのリストに入れておけます。</li><li>年に何回かあるが何月かは決まっていないものは、出す月を「時々（月は決めない）」にします（印は緑の「時々」）。どの月の特記を書くときも、「リストから選ぶ」の下に「時々のもの」として分けて出ます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
     <h4>特記を翌月へ写す</h4><ul><li>上の「📋 特記を翌月へ」を押すと、この月の特記が一覧で出ます。写す日は「同じ曜日（第○週の○曜日）」か「同じ日付」で決まり、日曜・祝日に当たったら前の平日にずらすこともできます。</li><li>右の欄に、元の日と写す日の先生（左の特記は1人目、右の特記は2人目）の予定が出ます。先生の予定が1日・2日ずれているときは、「◀」「▶」か日付の欄で、写す日を直してください。写したくない行はチェックを外します。</li><li>「翌月へ写す」を押すと写して、翌月を開きます。写す先にすでに特記があるときは、消さずにうしろへ書き足します。書式・結合の長さも一緒に写ります。真ん中の列も写したいときは、チェックを入れます。</li><li>写したあとに元に戻したいときは、上の「↶ ○月→○月の写しを戻す」を押します（いちばん新しい1回分。写したパソコンだけで出ます）。写したマスを、写す前の中身に戻します。写したあとにほかの人が直したマスは戻しません。</li></ul>
