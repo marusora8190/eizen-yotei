@@ -533,7 +533,12 @@ body.tbl-three #v-table > p.note{display:none}
 .ntpick{margin:10px 0 0}
 .ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
 .ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
-#btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy,#btnT3Undo{display:none}
+#btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy,#btnT3Undo,#t3Zoom{display:none}
+/* 予定表③の「表の大きさ（−／100%／＋）」（2026年11月11日〜。利用者の希望）。パソコンの画面だけで、印刷には効かない */
+body.tbl-three #t3Zoom{display:inline-flex;align-items:center;gap:3px;font-size:13px;color:var(--sub)}
+#t3Zoom .btn{padding:3px 9px;min-width:0}
+#t3Zoom #t3ZoomV{min-width:4.2em;font-weight:700;color:var(--ink)}
+@media print{#sheet{zoom:1!important}}
 body.tbl-three #btnT3Help,body.tbl-three #btnT3Set:not([hidden]),body.tbl-three #btnT3Cols:not([hidden]),body.tbl-three #btnT3Copy:not([hidden]),body.tbl-three #btnT3Undo:not([hidden]){display:inline-flex}
 /* 予定表③の「📋 特記を翌月へ」（2026年11月10日〜。利用者の希望）：開いたとき「写す」まで見えるよう、画面に収まる高さにし、一覧だけを上下に動かす */
 #modal #modalBox.cpbox{width:min(1240px,100%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:flex;flex-direction:column;padding:12px 16px}
@@ -849,6 +854,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="t3Pick" title="予定表③に出す2人（全員共通。みんなの画面で変わります）">予定表③の2人：<select id="t3A"></select><select id="t3B"></select></span>
       <span class="admin-sub">提出：</span><span id="tbChips" class="admin-sub"></span>
       <span style="flex:1"></span>
+      <span id="t3Zoom" title="予定表③の表の大きさを変えます（このパソコンの画面だけ。印刷の大きさは変わりません）">表の大きさ<button class="btn" type="button" data-z="-1" title="小さく">−</button><button class="btn" type="button" id="t3ZoomV" data-z="0" title="100%に戻す">100%</button><button class="btn" type="button" data-z="1" title="大きく">＋</button></span>
       <button class="btn" id="btnT3Undo" title="直前の「📋 特記を翌月へ」で写した分を、写す前の中身に戻します（このパソコンで写したものだけ）" hidden>↶ 翌月への写しを戻す</button>
       <button class="btn" id="btnT3Copy" title="この月の特記を、翌月へまとめて写します（曜日・先生の予定を見ながら、写す日を1日ずつ直せます）">📋 特記を翌月へ</button>
       <button class="btn" id="btnT3Cols" title="予定表③の列の幅を、表を見ながら広く・狭くします（みんなの画面・印刷で同じになります）">↔ 列の幅</button>
@@ -2252,6 +2258,17 @@ const SMALL_WORDS = /委員会|会議/g;
 function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
 // 同じ画面（同じ月・同じ表・同じ先生）のまま作り直すときは、見ていた位置（表の枠の中と画面全体）を作り直したあとに戻す（2026年11月9日〜。保存のたびに一番上へ戻らないように）
 let lastTableSig = '';
+// 予定表③の表の大きさ（2026年11月11日〜。利用者の希望）。50%〜200%、10%ずつ。このパソコンのブラウザーに覚える（localStorage の yotei-t3zoom）
+// 表（#sheet）だけを CSS の zoom で拡大・縮小する。印刷・スマホ・予定表①②には効かない
+const T3Z_KEY = 'yotei-t3zoom';
+st.t3zoom = (() => { try { const v = Number(localStorage.getItem(T3Z_KEY)); return v >= 0.5 && v <= 2 ? v : 1; } catch (e) { return 1; } })();
+function t3Z() { return st.view === 'table' && st.tbl3 && !st.print3 && !isPrinting() && !isMobile() ? st.t3zoom : 1; }
+function setT3Zoom(step) {
+  const z = step === 0 ? 1 : Math.round(Math.min(2, Math.max(0.5, st.t3zoom + step * 0.1)) * 10) / 10;
+  st.t3zoom = z; try { if (z === 1) localStorage.removeItem(T3Z_KEY); else localStorage.setItem(T3Z_KEY, String(z)); } catch (e) {}
+  renderTable();
+}
+$('#t3Zoom').addEventListener('click', e => { const b = e.target.closest('button[data-z]'); if (b) setT3Zoom(Number(b.dataset.z)); });
 function renderTable() {
   const wrapK = $('#v-table .sheet-wrap'), sigK = [st.view, st.y, st.m, !!st.tbl3, !!st.tblOne, st.tbMember, isMobile(), !!st.print2].join('|');
   const keep = sigK === lastTableSig && wrapK ? { t: wrapK.scrollTop, l: wrapK.scrollLeft, wy: window.scrollY, wx: window.scrollX } : null;
@@ -2261,6 +2278,7 @@ function renderTable() {
 }
 function renderTableBody() {
   const { y, m } = st, nd = dim(y, m);
+  { const z = t3Z(); $('#sheet').style.zoom = z === 1 ? '' : String(z); $('#t3ZoomV').textContent = Math.round(st.t3zoom * 100) + '%'; }
   // 提出の印
   $('#tbChips').innerHTML = st.members.map(x => {
     const s = st.subs.get(x.id);
@@ -2820,7 +2838,7 @@ function t3TextMm(text, pt, bold) {
 // 予定表③の画面での横幅（mm）：予定表の枠の横幅いっぱい。狭い画面では、印刷と同じ 199.4mm（2026年11月9日〜）
 function t3ScreenWidth() {
   const w = $('#v-table .sheet-wrap'); if (!w || !w.clientWidth) return 199.4;
-  const mm = (w.clientWidth - 28 - 6) * 25.4 / 96; // 枠の中の余白（左右14px）と、少しのゆとりを引く
+  const mm = ((w.clientWidth - 6) / t3Z() - 28) * 25.4 / 96; // 枠の中の余白（左右14px）と、少しのゆとりを引く。表を拡大・縮小しているときは、その分を割り戻す
   return Math.round(Math.max(199.4, Math.min(mm, 300)) * 10) / 10; // 広げすぎない（いちばん広くて 300mm）
 }
 function t3DayWidth(nd) {
@@ -3235,13 +3253,13 @@ function drawHolBands() {
     const tb = $('table.yt', w); if (!tb) return;
     const wr = w.getBoundingClientRect(), rng = document.createRange();
     const textRect = el => { rng.selectNodeContents(el); const r = rng.getBoundingClientRect(); return r.height ? r : el.getBoundingClientRect(); };
-    const pad = pxPerMm() * 0.3;
+    const pad = pxPerMm() * 0.3 * t3Z(), zq = t3Z(); // 拡大・縮小しているときは、測った長さを割り戻して置く
     $$('tr.hol3', tb).forEach(tr => {
       const dn = $('td.dn3', tr), dw = tr.nextElementSibling && $('td.dw3', tr.nextElementSibling); if (!dn || !dw) return;
       // 高さは「日にち」の上から「曜日」の下まで（上下に少しゆとり）の半分。真ん中の位置はそのまま（2026年11月10日〜。利用者の希望）
       const a = textRect(dn), b = textRect(dw), top0 = a.top - wr.top - pad, h0 = b.bottom - a.top + pad * 2, h = h0 / 2, top = top0 + (h0 - h) / 2;
       const band = document.createElement('div'); band.className = 'holband';
-      band.style.cssText = `top:${top.toFixed(2)}px;height:${h.toFixed(2)}px;width:${tb.getBoundingClientRect().width.toFixed(2)}px`;
+      band.style.cssText = `top:${(top / zq).toFixed(2)}px;height:${(h / zq).toFixed(2)}px;width:${(tb.getBoundingClientRect().width / zq).toFixed(2)}px`;
       w.insertBefore(band, tb);
     });
   });
@@ -3507,7 +3525,7 @@ function cwDrag(box, handle) {
 function openT3Help() {
   openModal(`<div class="t3help"><h3>予定表③の使い方</h3>
     <h4>表の並び</h4><ul><li>上の「◀ 前の月」「次の月 ▶」で月を変えられます。</li><li>左から「日付」「特記」「1人目の先生」「（真ん中の列）」「2人目の先生」「特記」です。「日付」の列は、上の行に日にち、下の行に曜日が出ます。</li><li>真ん中の列の見出し（今村部長と増野次長の間）も、押すと特記と同じ書く画面で書けます（全員共通で、どの月も同じ。結合・リストはありません）。</li><li>真ん中の見出しの無い列には、自分の主な予定・年次休暇などを書けます。はじめから1日1マス（上の行・下の行を結合した形）です。書き方は特記と同じで（書式・日をまたいだ結合・リスト）、文字は上下左右とも中央寄せが標準です。「塗りつぶし」でマスに色を付けられます（黄・ピンク・水色・緑・オレンジ・紫・灰色。「なし」で戻ります。印刷にも出ます）。上の行・下の行に分けたいときは「⇕ 2行に分割」を押して保存します。文字の大きさは、標準が10.4ptです（「A−」「A＋」で変えられます。入りきらないときは自動で小さくなります）。「AM」「PM」「終日」の文字は、先生の列と同じように自動で小さくなります（左右の特記も同じです）。幅は、中身と見出しがちょうど入る最小の幅で（いちばん広くて4.5cm）、残りは左右の特記に同じだけ回ります。</li><li>先生の列と日・曜日の列は、中身がちょうど入る幅まで細くなり、真ん中の列を引いた残りが特記の幅になります。</li><li>日曜・祝日と、毎年の年末年始（12月28日〜1月4日）は、左端の「日にち・曜日」の文字の高さの半分の帯が、左端から右の特記まで、うすいオレンジ色で引かれます（印刷にも出ます）。真ん中の列で「塗りつぶし」を選んだマスは、その色になります。</li><li><b>この画面では先生の予定は直せません</b>（見るだけ）。予定を直すときは「予定表①」か「予定入力」で直します。</li></ul>
-    <h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
+    <h4>表の大きさを変える</h4><ul><li>上の「表の大きさ」の「−」「＋」で、表を小さく・大きくできます（50%〜200%、10%ずつ）。真ん中の「100%」を押すと元の大きさに戻ります。大きさは、このパソコンのブラウザーに覚えておくので、次に開いたときも同じ大きさです。印刷の大きさは変わりません。ブラウザーそのものの拡大率（Ctrl＋0 で100%に戻ります）とは別のものです。</li></ul><h4>2人の先生を変える</h4><ul><li>上の「予定表③の2人」の2つの欄で選びます（はじめは今村部長・増野次長）。みんなの画面で変わります（パスワードはいりません）。</li></ul>
     <h4>特記を書く</h4><ul><li>特記のマスを押すと、書く画面が出ます。文字は、はじめから大きさ10.4pt・太字・インデント右1です（書く画面で変えられます）。1日は、はじめから上の行・下の行を結合した1つのマスです。上の行・下の行に分けて書きたいときは「⇕ 2行に分割」を押して保存します（分けたマスは、それぞれ別に書けます）。</li><li>ボタンで、寄せ（左寄せ・中央・右寄せ）・上下の位置（上・上下真ん中・下。書く欄には出ず、保存すると表に出ます）・インデント（◀ 左へ／右へ ▶）・全体の大きさ（A− 小さく／A＋ 大きく）・色・太字／細字を選べます。</li><li>一部の文字だけ大きさを変えたいときは、書く欄でその文字を選んで「選んだ文字」の「A− 小さく」「A＋ 大きく」を押します。書く欄には <code>{{-1|予定}}</code> のような印が付き、下の「表での見え方」で仕上がりを確かめられます。印の中にカーソルを置いてもう一度押すと、さらに小さく（大きく）なり、標準に戻ると印は消えます。そのマス全体にかかります。</li><li><b>終わった用事に二重線を引く</b>：特記のマスを押し、書く欄で終わった言葉の中にカーソルを置いて（または文字を選んで）、「済み」の「＝ 二重線」を押して保存します。「、」や改行で区切った1つ分に二重線が引かれます（書く欄には <code>{{済|請求書DL}}</code> のような印が付きます）。まちがえたときは、二重線の言葉の中にカーソルを置いてもう一度押すと外れます。二重線は印刷にも出ます。「📋 特記を翌月へ」で写すときは、二重線を外して写します。</li><li>空にして「保存」すると、そのマスの特記が消えます。Ctrl＋Enter でも保存できます。</li><li>特記のマスは、手の形（✋）でつかんで、ほかのマスへ移せます（文字の入ったマスで、押したまま動かして、移したいマスで離します）。移す先にすでに文字があれば、2行目に書き足します。元のマスは空になります。移したあとの「↶ 元に戻す」で戻せます。表の上・下の端に近づけると、表が自動で動きます。つかんでいる途中で Esc を押すと、やめます。</li><li>いくつかのマスをまとめて消すときは、Ctrl（Mac は ⌘）を押しながらマスを押して選びます（もう一度押すと外れます。Shift を押しながら押すと、同じ列の続いたマスをまとめて選べます）。選んだら Delete キー（または下の帯の「🗑 選んだ特記を消す」）を押します。消したあとの「↶ 元に戻す」で戻せます。Esc で選ぶのをやめます。</li></ul>
     <h4>マスを結合する（日をまたいでもできます）</h4><ul><li>書く画面の「結合」の欄で、どこまで1つのマスにするかを選んで「保存」します（例：「12日（木）の下の行まで」）。同じ月の中だけです。</li><li>「⬚ 1行に結合」は、その日の上の行・下の行を1つにします。「⇕ 2行に分割」は、結合をやめてもとのマスに戻します。どちらも「保存」を押したときに決まります。</li><li>結合するとき、あいだのマスに書いてあった文字は、いちばん上のマスへ改行でつながります。結合をやめると、文字はいちばん上のマスに残ります（同じ日の2行の結合をやめたときだけ、2行目から下が下の行へ戻ります）。</li><li>結合したマスの書式は、いちばん上のマスのものです。</li></ul>
     <h4>お願いすることのリスト・真ん中の列のリスト</h4><ul><li>上の「⚙ 設定」（このボタンの左）を押すと、1人目の先生（左）・2人目の先生（右）への「お願いすること」のリストと、真ん中の列のリスト（真ん中）を直せます（はじめは5行。「＋ 行を追加」で増やせます）。真ん中の列のリストは、2人を変えても同じです。</li><li>書いて欄の外を押すか Enter で保存します。空にすると消えます。</li><li>各行の右の「毎月」「12月」などは、出す月です。「✎」で、毎月か、決まった月（いくつでも）を選べます。月を決めた行は、その月の特記を書くときだけ「リストから選ぶ」に出ます（ほかの月のときは「ほかの月のものも出す」で出せます）。毎月のお願いと、1年にこの月だけのお願いを1つのリストに入れておけます。</li><li>年に何回かあるが何月かは決まっていないものは、出す月を「時々（月は決めない）」にします（印は緑の「時々」）。どの月の特記を書くときも、「リストから選ぶ」の下に「時々のもの」として分けて出ます。</li><li>各行の左の「⠿」をつかんで上下に動かすと、順番を変えられます。特記・真ん中の列を書く画面の「リストから選ぶ」も、同じ順番になります。</li><li>左の特記を書くときは左のリスト、右の特記は右のリスト、真ん中の列は真ん中の列のリストがボタンで出て、押すと書き足します（手で書くこともできます）。</li><li>リストは先生ごとなので、2人を変えると、その先生のリストが出ます。</li><li>リストから特記に入れると、その行で決めた大きさ・色も一緒に入ります（大きさは「選んだ文字」の印として入ります）。</li><li>各行の右の「✎」で、その行の文字・寄せ・大きさ・色・太さを変えられます。色を選んだ行は、特記に入れたときも特記の中でその色になります。</li><li>色を選んでいない行は、「捺印」を含むものは赤、「請求書」を含むものは青の太字で出ます（両方あるときは赤）。特記の中でも、その言葉を含む部分（改行・「、」で区切った1つ分）が同じ色になります。</li></ul>
@@ -3650,8 +3668,8 @@ function fitTableBox() {
   w.style.maxHeight = '';
   const top = w.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0);
   w.style.maxHeight = Math.max(260, window.innerHeight - top - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--st')) || 0) - 12) + 'px';
-  const dn = $('#sheet td.dn1'); if (dn) $('#sheet').style.setProperty('--dnw', dn.getBoundingClientRect().width + 'px');
-  const tt = $('#sheet .s-title'); if (tt) $('#sheet').style.setProperty('--tth', tt.getBoundingClientRect().height + 'px');
+  const dn = $('#sheet td.dn1'); if (dn) $('#sheet').style.setProperty('--dnw', dn.getBoundingClientRect().width / t3Z() + 'px');
+  const tt = $('#sheet .s-title'); if (tt) $('#sheet').style.setProperty('--tth', tt.getBoundingClientRect().height / t3Z() + 'px');
 }
 window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox(); });
 // 予定表をマウスでつかんで動かす（マジックハンド。2026年10月27日〜）。パソコン用・スマホ用の画面のどちらでも。
@@ -3692,7 +3710,7 @@ window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox()
 // 「〜日まで続く」予定の矢印（黒）。始まりの日のマスの下から、最後の日のマスの上まで
 function drawArrows() {
   const sheet = $('#sheet'); $$('.yarrow', sheet).forEach(a => a.remove());
-  const MM = 1 / pxPerMm();
+  const MM = 1 / pxPerMm() / t3Z(); // 予定表③を拡大・縮小しているときは、その分を割り戻す
   const cellOf = (mid, day, k) => {
     const tds = $$(`td.c[data-mid="${mid}"][data-day="${day}"]`, sheet);
     const pick = cls => tds.find(t => t.classList.contains(cls));
@@ -3752,7 +3770,7 @@ const EDGE_MM = 0.8;
 // 1mm が画面の何点か（CSSの決まりで 96点＝25.4mm）
 function pxPerMm() { return 96 / 25.4; }
 function snapToEdges(root) {
-  const PX = pxPerMm();
+  const PX = pxPerMm() * t3Z();
   $$('td.c .fit > span[style*="left"]', root).forEach(sp => {
     const c = sp.closest('.fit').getBoundingClientRect();
     let shift = parseFloat(sp.style.left) || 0;
