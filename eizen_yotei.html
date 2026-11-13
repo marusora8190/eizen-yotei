@@ -541,6 +541,7 @@ body.tbl-three #v-table > p.note{display:none}
 .ntpick > div{font-size:13px;color:var(--sub);margin:0 0 4px}
 .ntpick .btn{margin:0 4px 4px 0;font-size:13px;padding:3px 8px}
 #btnT3Help,#btnT3Set,#btnT3Cols,#btnT3Copy,#btnT3Undo,#t3Zoom{display:none}
+#btnXlsx[hidden]{display:none!important}
 /* 予定表③の「表の大きさ（−／100%／＋）」（2026年11月11日〜。利用者の希望）。パソコンの画面だけで、印刷には効かない */
 body.tbl-three #t3Zoom{display:inline-flex;align-items:center;gap:3px;font-size:13px;color:var(--sub)}
 #t3Zoom .btn{padding:3px 9px;min-width:0}
@@ -867,6 +868,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn" id="btnT3Cols" title="予定表③の列の幅を、表を見ながら広く・狭くします（みんなの画面・印刷で同じになります）">↔ 列の幅</button>
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
+      <button class="btn" id="btnXlsx" title="表示している月の予定表①（6人分）を、手元の「R189部次課長青年予定表.xlsm」の同じ月のシート（12月なら「12」）に書き出します（ファイルを選ぶと、書き換えたファイルをダウンロードします）" hidden>📗 Excelに書き出し</button><input type="file" id="xlsxFile" accept=".xlsm,.xlsx" hidden>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。<span class="admin-sub">「未」の印をクリックすると、受け取り済み（「済」）にできます。</span></p>
@@ -1144,6 +1146,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表①」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表①」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表①」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
+      <li><b>Excelに書き出す</b>（必要なとき）：「予定表①」の「📗 Excelに書き出し」を押し、手元の「R189部次課長青年予定表.xlsm」を選ぶと、表示している月と同じ名前のシート（12月なら「12」）の6人の欄に、予定（赤字・終日・行事も）と矢印を入れたファイルをダウンロードします。そのシートの先生の欄に今ある文字・矢印は入れ替わります。マクロ・ほかのシートはそのままです。シートが無いときは、Excelでほかの月のシートをコピーして名前を月の数字にしてから選びます。手元のファイルは書き換わらないので、確かめてから入れ替えてください（パソコンの管理者用のURLだけ）。</li>
     </ol>
     <h3>予定入力のしかた</h3>
     <ul>
@@ -2322,6 +2325,7 @@ function renderTableBody() {
   $('#btnPrintTable').textContent = duo ? '印刷（A4縦）' : '印刷（A4横）';
   renderTbSwitch(solo && !(st.personal && isMobile()) ? soloMem : null);
   $('#btnPrintTable').style.display = st.tblOne && !isMobile() ? 'none' : '';
+  $('#btnXlsx').hidden = !(editable && !duo && !solo); // 「📗 Excelに書き出し」は、パソコンの予定表①（管理者用のURL）だけ（2026年11月13日〜）
   document.body.classList.toggle('tbl-one', solo && !isMobile());
   const groups = [];
   if (duo) groups.push(t3Members());
@@ -4185,6 +4189,299 @@ function renderForm() {
 }
 $('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
 $('#fmFill').addEventListener('change', renderForm);
+
+// ===== Excel（R189部次課長青年予定表.xlsm）への書き出し（2026年11月13日〜。利用者の希望） =====
+// 予定表①（パソコン）の「📗 Excelに書き出し」で、手元の Excel ファイルを選ぶと、表示している月と同じ名前のシート（12月なら「12」）の
+// 6人の欄（C・D・E列／H・I・J列。1日の午前が4行目、1日2行）を、この画面の予定で書き換えたファイルをダウンロードする。
+// 赤字（一部だけ赤字も）・終日（2行を結合）・「〜日まで続く」の矢印・手で引いた矢印・行事も入れる。マクロ・ほかのシートはそのまま。
+// データベースは読むだけで、何も変えない
+const JSZIP_URL = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+const JSZIP_SRI = 'sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG';
+const XL_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const XL_R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const XL_PR_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const XL_CT_NS = 'http://schemas.openxmlformats.org/package/2006/content-types';
+const XL_XDR_NS = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
+const XL_A_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+const XL_COLS = [[2, 3, 4], [7, 8, 9]]; // 左の3人：C・D・E列、右の3人：H・I・J列（A列を0として数える）
+const XL_ROW0 = 4; // 1日の午前の行。午後はその下の行。1日2行
+const XL_PT = 8.5, XL_PT_SMALL = 6, XL_FONT = 'Meiryo UI'; // 元のExcelと同じ（予定の文字 8.5pt、AM・PM・「委員会」「会議」は 6pt）
+const XL_SMALL = /(委員会|会議)/;
+let jszipP = null;
+function loadJSZip() {
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  if (!jszipP) jszipP = new Promise((ok, ng) => {
+    const s = document.createElement('script'); s.src = JSZIP_URL; s.integrity = JSZIP_SRI; s.crossOrigin = 'anonymous';
+    s.onload = () => (window.JSZip ? ok(window.JSZip) : ng(new Error('Excelを読む部品（JSZip）を読み込めませんでした')));
+    s.onerror = () => { jszipP = null; s.remove(); ng(new Error('Excelを読む部品（JSZip）を読み込めませんでした。インターネットにつながっているか確かめてください')); };
+    document.head.appendChild(s);
+  });
+  return jszipP;
+}
+const xlColName = n => { let s = ''; for (n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
+const xlColIdx = s => [...s].reduce((a, c) => a * 26 + c.charCodeAt(0) - 64, 0) - 1;
+const xlKids = (el, name) => [...el.children].filter(x => x.localName === name);
+const xlFirst = (doc, ns, name) => doc.getElementsByTagNameNS(ns, name)[0] || null;
+function xlParse(text, what) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error(`Excelのファイルの中（${what}）を読めませんでした`);
+  return doc;
+}
+const xlSer = doc => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' + new XMLSerializer().serializeToString(doc).replace(/^<\?xml[^>]*\?>\s*/, '');
+function xlResolve(baseDir, target) {
+  if (target.startsWith('/')) return target.slice(1);
+  const out = baseDir.split('/').filter(Boolean);
+  for (const p of target.split('/')) { if (p === '..') out.pop(); else if (p && p !== '.') out.push(p); }
+  return out.join('/');
+}
+const xlRelsPath = path => { const i = path.lastIndexOf('/'); return `${path.slice(0, i)}/_rels/${path.slice(i + 1)}.rels`; };
+// 予定表①と同じ決まりで、その日の予定を出す（「〜日まで続く」の最後の日の名前・行事も入れる。renderTableBody の withEnds と同じ）
+function xlEntry(mid, day, ends) {
+  const e = { ...(getEntry(mid, day) || {}) };
+  const ea = ends.get(key(mid, day) + '|allday'), em = ends.get(key(mid, day) + '|am'), ep = ends.get(key(mid, day) + '|pm');
+  if (ea && !e.allday && !e.am && !e.pm) { e.allday = ea.text; e.allday_red = ea.red; e.allday_red_parts = ea.redParts; e.allday_indent = ea.indent; e.allday_size = ea.size; }
+  if (!e.allday) {
+    if (em && !e.am) { e.am = em.text; e.am_red = em.red; e.am_red_parts = em.redParts; e.am_indent = em.indent; e.am_size = em.size; }
+    if (ep && !e.pm) { e.pm = ep.text; e.pm_red = ep.red; e.pm_red_parts = ep.redParts; e.pm_indent = ep.indent; e.pm_size = ep.size; }
+  }
+  if (!e.am && !e.pm && !e.allday) return effEntry(mid, day);
+  return e;
+}
+// 予定の文字を、大きさ・色ごとの切れ目（Excelの「一部だけ書式を変えた文字」）に分ける
+function xlRuns(t, red, parts, prefix, size) {
+  const ps = red && parts ? String(parts).split('\n').filter(Boolean) : [];
+  const whole = !!red && !ps.length;
+  const base = Math.round(XL_PT * (1 + (size || 0) * 0.1) * 10) / 10;
+  const out = [];
+  const push = (text, sz, r) => { if (!text) return; const l = out[out.length - 1]; if (l && l.sz === sz && l.red === r) l.t += text; else out.push({ t: text, sz, red: r }); };
+  if (prefix) push(prefix, XL_PT_SMALL, whole);
+  String(t || '').split(RED_SEP).forEach((x, i) => {
+    const r = whole || (i % 2 === 0 && !!x.trim() && ps.includes(x.trim()));
+    x.split(XL_SMALL).forEach((w, j) => push(w, j % 2 === 1 ? XL_PT_SMALL : base, r));
+  });
+  return out;
+}
+// 予定表①に描いてある矢印（「〜日まで続く」・手で引いた矢印）を、先生の列の中の位置と行の中の位置に直す
+function xlArrowSegs() {
+  const page = $('#sheet .ypage'); if (!page) return [];
+  const MM = 1 / pxPerMm(), base = page.getBoundingClientRect();
+  const trs = $$('table.yt tbody tr', page).map(tr => { const r = tr.getBoundingClientRect(); return [(r.top - base.top) * MM, (r.bottom - base.top) * MM]; });
+  const tds = $$('table.yt tbody tr:first-child td.c', page).map(td => { const r = td.getBoundingClientRect(); return { mid: Number(td.dataset.mid), l: (r.left - base.left) * MM, r: (r.right - base.left) * MM }; });
+  if (!trs.length) return [];
+  const yAt = yy => {
+    const k = trs.findIndex(([, q]) => yy < q);
+    if (k < 0) return { k: trs.length - 1, f: 1 };
+    const [p, q] = trs[k]; return { k, f: q > p ? Math.max(0, Math.min(1, (yy - p) / (q - p))) : 0 };
+  };
+  return $$('.yarrow', page).map(a => {
+    const x = parseFloat(a.style.left), t = parseFloat(a.style.top), h = parseFloat(a.style.height);
+    const col = tds.find(c => x >= c.l - 0.01 && x <= c.r + 0.01);
+    if (!col || !(h > 0)) return null;
+    return { mid: col.mid, fx: (x - col.l) / (col.r - col.l), y1: yAt(t), y2: yAt(t + h), head: !a.classList.contains('nohead') };
+  }).filter(Boolean);
+}
+const xlNorm = s => String(s || '').replace(/[\s　]/g, '').replace(/濵/g, '浜').replace(/髙/g, '高').replace(/﨑/g, '崎');
+async function xlExport(file) {
+  const { y, m } = st, nd = dim(y, m);
+  const JSZip = await loadJSZip();
+  let zip;
+  try { zip = await JSZip.loadAsync(file); } catch (e) { throw new Error('Excelのファイル（.xlsm・.xlsx）として読めませんでした'); }
+  const rd = async p => { const f = zip.file(p); if (!f) throw new Error(`Excelのファイルの中に ${p} がありません`); return f.async('string'); };
+  const has = p => !!zip.file(p);
+  // シートを探す（表示している月と同じ名前。12月なら「12」）
+  const wbPath = 'xl/workbook.xml', wb = xlParse(await rd(wbPath), 'ブック');
+  const sheetName = String(m);
+  const sh = [...wb.getElementsByTagNameNS(XL_NS, 'sheet')].find(s => (s.getAttribute('name') || '').trim() === sheetName);
+  if (!sh) throw new Error(`このファイルにはシート「${sheetName}」がありません。Excelでシート「${sheetName}」を作ってから（ほかの月のシートをコピーして名前を「${sheetName}」にするなど）、もう一度選んでください`);
+  const wbRels = xlParse(await rd('xl/_rels/workbook.xml.rels'), 'ブックのつながり');
+  const rel = [...wbRels.getElementsByTagNameNS(XL_PR_NS, 'Relationship')].find(r => r.getAttribute('Id') === sh.getAttributeNS(XL_R_NS, 'id'));
+  if (!rel) throw new Error(`シート「${sheetName}」の中身が見つかりません`);
+  const shPath = xlResolve('xl', rel.getAttribute('Target')), sd = xlParse(await rd(shPath), `シート「${sheetName}」`);
+  const sst = has('xl/sharedStrings.xml') ? [...xlParse(await rd('xl/sharedStrings.xml'), '文字の一覧').getElementsByTagNameNS(XL_NS, 'si')].map(si => [...si.getElementsByTagNameNS(XL_NS, 't')].filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join('')) : [];
+  const data = xlFirst(sd, XL_NS, 'sheetData'); if (!data) throw new Error(`シート「${sheetName}」の中身が見つかりません`);
+  const rows = new Map(xlKids(data, 'row').map(r => [Number(r.getAttribute('r')), r]));
+  const getRow = n => {
+    let r = rows.get(n); if (r) return r;
+    r = sd.createElementNS(XL_NS, 'row'); r.setAttribute('r', String(n));
+    data.insertBefore(r, xlKids(data, 'row').find(x => Number(x.getAttribute('r')) > n) || null); rows.set(n, r); return r;
+  };
+  const findCell = (ci, rn) => { const r = rows.get(rn); return r ? xlKids(r, 'c').find(c => c.getAttribute('r') === xlColName(ci) + rn) || null : null; };
+  const getCell = (ci, rn) => {
+    const ex = findCell(ci, rn); if (ex) return ex;
+    const r = getRow(rn), c = sd.createElementNS(XL_NS, 'c'); c.setAttribute('r', xlColName(ci) + rn);
+    r.insertBefore(c, xlKids(r, 'c').find(x => xlColIdx(x.getAttribute('r').replace(/\d+/g, '')) > ci) || null); return c;
+  };
+  const textOf = c => {
+    if (!c) return '';
+    const t = c.getAttribute('t'), v = xlKids(c, 'v')[0];
+    if (t === 's') return sst[Number(v && v.textContent)] || '';
+    if (t === 'inlineStr') return [...c.getElementsByTagNameNS(XL_NS, 't')].map(x => x.textContent).join('');
+    return v ? v.textContent : '';
+  };
+  // 並びの確かめ：2行目の A列・F列が「日・曜日」（元の R189 の予定表の形）
+  if (!textOf(findCell(0, 2)).includes('日') || !textOf(findCell(5, 2)).includes('日')) throw new Error(`シート「${sheetName}」は、予定表①の形（A列・F列が「日・曜日」、C〜E列・H〜J列が先生）ではないため、書き出せません`);
+  // 先生の並び（予定表①と同じ。左の3人・右の3人）
+  const [L, R] = halves(st.members.slice(0, PER_PAGE));
+  const map = [...L.map((x, i) => ({ mem: x, col: XL_COLS[0][i] })), ...R.map((x, i) => ({ mem: x, col: XL_COLS[1][i] }))].filter(o => o.col != null);
+  const bad = map.filter(o => { const h = xlNorm(textOf(findCell(o.col, 2))); return h && !xlNorm(o.mem.name).includes(h) && !h.includes(xlNorm(o.mem.name)) && !xlNorm(o.mem.header_name).includes(h); });
+  if (bad.length && !confirm(`シート「${sheetName}」の見出しと、先生の並びが合っていません。\n\n${bad.map(o => `${xlColName(o.col)}列：見出し「${textOf(findCell(o.col, 2)).trim()}」 ← ${dispName(o.mem)}の予定`).join('\n')}\n\nこのまま書き出しますか？`)) return null;
+  // 書式（元のマスの罫線はそのまま。字の寄せと文字の大きさ・色だけを決める）
+  const stPath = 'xl/styles.xml', sty = xlParse(await rd(stPath), '書式');
+  const fontsEl = xlFirst(sty, XL_NS, 'fonts'), xfsEl = xlFirst(sty, XL_NS, 'cellXfs');
+  if (!fontsEl || !xfsEl) throw new Error('Excelのファイルの書式を読めませんでした');
+  const el = (doc, ns, name, attrs) => { const e = doc.createElementNS(ns, name); for (const k in attrs || {}) e.setAttribute(k, attrs[k]); return e; };
+  const font = el(sty, XL_NS, 'font');
+  [['sz', { val: String(XL_PT) }], ['color', { auto: '1' }], ['name', { val: XL_FONT }], ['family', { val: '3' }], ['charset', { val: '128' }]].forEach(([n, a]) => font.appendChild(el(sty, XL_NS, n, a)));
+  fontsEl.appendChild(font); const fontId = xlKids(fontsEl, 'font').length - 1; fontsEl.setAttribute('count', String(fontId + 1));
+  const xfs = xlKids(xfsEl, 'xf'), xfCache = new Map();
+  const styleFor = (s, center, ind) => {
+    const k = `${s}|${center}|${ind}`; if (xfCache.has(k)) return xfCache.get(k);
+    const src = xfs[s] || xfs[0], x = src.cloneNode(true);
+    x.setAttribute('fontId', String(fontId)); x.setAttribute('applyFont', '1'); x.setAttribute('applyAlignment', '1');
+    xlKids(x, 'alignment').forEach(a => a.remove());
+    const al = el(sty, XL_NS, 'alignment', center ? { horizontal: 'center', vertical: 'center', shrinkToFit: '1' } : { horizontal: 'left', vertical: 'center', shrinkToFit: '1' });
+    if (!center && ind > 0) al.setAttribute('indent', String(ind));
+    x.insertBefore(al, x.firstChild);
+    xfsEl.appendChild(x); const id = xlKids(xfsEl, 'xf').length - 1; xfsEl.setAttribute('count', String(id + 1));
+    xfCache.set(k, id); return id;
+  };
+  const setRuns = (c, runs, center, ind) => {
+    while (c.firstChild) c.removeChild(c.firstChild);
+    c.removeAttribute('t');
+    if (!runs.length) return;
+    c.setAttribute('t', 'inlineStr');
+    const is = el(sd, XL_NS, 'is');
+    for (const r of runs) {
+      const re = el(sd, XL_NS, 'r'), pr = el(sd, XL_NS, 'rPr');
+      pr.appendChild(el(sd, XL_NS, 'rFont', { val: XL_FONT })); pr.appendChild(el(sd, XL_NS, 'charset', { val: '128' })); pr.appendChild(el(sd, XL_NS, 'family', { val: '3' }));
+      pr.appendChild(el(sd, XL_NS, 'color', r.red ? { rgb: 'FFFF0000' } : { auto: '1' })); pr.appendChild(el(sd, XL_NS, 'sz', { val: String(r.sz) }));
+      const t = el(sd, XL_NS, 't'); t.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:space', 'preserve'); t.textContent = r.t;
+      re.appendChild(pr); re.appendChild(t); is.appendChild(re);
+    }
+    c.appendChild(is);
+    c.setAttribute('s', String(styleFor(Number(c.getAttribute('s') || 0), center, ind)));
+  };
+  const setNum = (ci, rn, v) => { const c = getCell(ci, rn); if (textOf(c) === String(v) && c.getAttribute('t') !== 's') return; while (c.firstChild) c.removeChild(c.firstChild); c.removeAttribute('t'); const ve = el(sd, XL_NS, 'v'); ve.textContent = String(v); c.appendChild(ve); };
+  // 年（L2）と月（M1）を合わせる。日付・曜日の式は、Excelで開いたときに計算し直す
+  setNum(11, 2, y); setNum(12, 1, m);
+  // 先生の欄の結合（終日）をいったん外す
+  const memCols = new Set(XL_COLS.flat()), lastRow = XL_ROW0 + 31 * 2 - 1;
+  let mcs = xlFirst(sd, XL_NS, 'mergeCells');
+  if (mcs) xlKids(mcs, 'mergeCell').forEach(mc => {
+    const ref = (mc.getAttribute('ref') || '').split(':'), p = ref.map(s => [xlColIdx(s.replace(/\d+/g, '')), Number(s.replace(/[A-Z]+/g, ''))]);
+    const [[c1, r1], [c2, r2]] = [p[0], p[1] || p[0]];
+    let hit = false; for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) if (memCols.has(c)) hit = true;
+    if (hit && Math.max(r1, r2) >= XL_ROW0 && Math.min(r1, r2) <= lastRow) mc.remove();
+  });
+  const merges = [];
+  // 予定を書く（今ある文字は消してから）
+  const ends = new Map(); for (const c of continuations(null)) ends.set(key(c.mid, c.until) + '|' + c.k, c);
+  const ind = v => Math.max(0, Math.round(1 + (v || 0) * INDENT_MM / 2.5)); // 予定表の「右へ」1つ（1.5mm）を、Excelのインデントに置きかえる（はじめは1）
+  let cnt = 0;
+  for (const col of memCols) for (let d = 1; d <= 31; d++) { for (const rn of [XL_ROW0 + (d - 1) * 2, XL_ROW0 + (d - 1) * 2 + 1]) { const c = findCell(col, rn); if (c) setRuns(c, []); } }
+  for (const { mem, col } of map) {
+    for (let d = 1; d <= nd; d++) {
+      const day = dstr(y, m, d), ra = XL_ROW0 + (d - 1) * 2, e = xlEntry(mem.id, day, ends);
+      if (e.allday) { setRuns(getCell(col, ra), xlRuns(e.allday, e.allday_red, e.allday_red_parts, '', e.allday_size), true, 0); merges.push(`${xlColName(col)}${ra}:${xlColName(col)}${ra + 1}`); cnt++; continue; }
+      if (e.am) { setRuns(getCell(col, ra), xlRuns(e.am, e.am_red, e.am_red_parts, 'AM', e.am_size), false, ind(e.am_indent)); cnt++; }
+      if (e.pm) { setRuns(getCell(col, ra + 1), xlRuns(e.pm, e.pm_red, e.pm_red_parts, 'PM', e.pm_size), false, ind(e.pm_indent)); cnt++; }
+    }
+  }
+  if (merges.length) {
+    if (!mcs) {
+      mcs = el(sd, XL_NS, 'mergeCells');
+      const after = ['phoneticPr', 'conditionalFormatting', 'dataValidations', 'hyperlinks', 'printOptions', 'pageMargins', 'pageSetup', 'headerFooter', 'rowBreaks', 'colBreaks', 'customProperties', 'cellWatches', 'ignoredErrors', 'smartTags', 'drawing', 'legacyDrawing', 'legacyDrawingHF', 'drawingHF', 'picture', 'oleObjects', 'controls', 'webPublishItems', 'tableParts', 'extLst'];
+      sd.documentElement.insertBefore(mcs, [...sd.documentElement.children].find(x => after.includes(x.localName)) || null);
+    }
+    merges.forEach(ref => mcs.appendChild(el(sd, XL_NS, 'mergeCell', { ref })));
+  }
+  if (mcs) { const n = xlKids(mcs, 'mergeCell').length; if (n) mcs.setAttribute('count', String(n)); else mcs.remove(); }
+  // 矢印（Excelの図形の線。始まりから終わりまで、文字をよけて切れているところは切れたまま）
+  const segs = xlArrowSegs(), colOf = new Map(map.map(o => [o.mem.id, o.col]));
+  const sfp = xlFirst(sd, XL_NS, 'sheetFormatPr');
+  const defH = Number(sfp && sfp.getAttribute('defaultRowHeight')) || 15;
+  const colW = new Map(); xlKids(xlFirst(sd, XL_NS, 'cols') || sd.createElementNS(XL_NS, 'cols'), 'col').forEach(c => { for (let i = Number(c.getAttribute('min')); i <= Math.min(Number(c.getAttribute('max')), 64); i++) colW.set(i - 1, Number(c.getAttribute('width'))); });
+  const colEmu = ci => Math.trunc(((256 * (colW.get(ci) || 9) + Math.trunc(128 / 8)) / 256) * 8) * 9525; // 1文字＝8点（このExcelの文字の幅）
+  const rowEmu = ri => { const r = rows.get(ri + 1), h = r && Number(r.getAttribute('ht')); return Math.round((h || defH) * 12700); };
+  const xOf = ci => { let s = 0; for (let i = 0; i < ci; i++) s += colEmu(i); return s; };
+  const yOf = ri => { let s = 0; for (let i = 0; i < ri; i++) s += rowEmu(i); return s; };
+  const anchors = [];
+  for (const g of segs) {
+    const ci = colOf.get(g.mid); if (ci == null) continue;
+    const co = Math.round(g.fx * colEmu(ci)), r1 = XL_ROW0 - 1 + g.y1.k, r2 = XL_ROW0 - 1 + g.y2.k;
+    const o1 = Math.round(g.y1.f * rowEmu(r1)), o2 = Math.round(g.y2.f * rowEmu(r2));
+    const X = xOf(ci) + co, Y1 = yOf(r1) + o1, Y2 = yOf(r2) + o2; if (Y2 - Y1 < 1000) continue;
+    anchors.push({ ci, co, r1, o1, r2, o2, X, Y1, Y2, head: g.head });
+  }
+  // シートに前からある図形の線（前に書き出した矢印など）は消し、新しい矢印に入れ替える。線でない図形は残す
+  const sRelsPath = xlRelsPath(shPath);
+  let sRels = has(sRelsPath) ? xlParse(await rd(sRelsPath), 'シートのつながり') : null;
+  const drEl = xlFirst(sd, XL_NS, 'drawing');
+  let drPath = null, dr = null;
+  if (drEl && sRels) {
+    const r = [...sRels.getElementsByTagNameNS(XL_PR_NS, 'Relationship')].find(x => x.getAttribute('Id') === drEl.getAttributeNS(XL_R_NS, 'id'));
+    if (r) { drPath = xlResolve(shPath.slice(0, shPath.lastIndexOf('/')), r.getAttribute('Target')); if (has(drPath)) dr = xlParse(await rd(drPath), '図形'); }
+  }
+  let removed = 0;
+  if (dr) [...dr.documentElement.children].forEach(an => {
+    if (!/Anchor$/.test(an.localName)) return;
+    const isLine = [...an.getElementsByTagNameNS(XL_A_NS, 'prstGeom')].some(p => /line|Connector/i.test(p.getAttribute('prst') || '')) || an.getElementsByTagNameNS(XL_XDR_NS, 'cxnSp').length;
+    const fr = an.getElementsByTagNameNS(XL_XDR_NS, 'from')[0], frRow = fr ? Number((fr.getElementsByTagNameNS(XL_XDR_NS, 'row')[0] || {}).textContent) : -1;
+    if (isLine && frRow >= XL_ROW0 - 2) { an.remove(); removed++; }
+  });
+  const files = { [shPath]: sd, [stPath]: sty, [wbPath]: wb };
+  if (anchors.length || dr) {
+    if (!dr) {
+      // 図形の入れ物を新しく作る（xl/drawings/drawing○.xml）
+      let n = 1; while (has(`xl/drawings/drawing${n}.xml`)) n++;
+      drPath = `xl/drawings/drawing${n}.xml`;
+      dr = xlParse(`<xdr:wsDr xmlns:xdr="${XL_XDR_NS}" xmlns:a="${XL_A_NS}"></xdr:wsDr>`, '図形');
+      if (!sRels) sRels = xlParse(`<Relationships xmlns="${XL_PR_NS}"></Relationships>`, 'シートのつながり');
+      const ids = [...sRels.getElementsByTagNameNS(XL_PR_NS, 'Relationship')].map(r => Number(String(r.getAttribute('Id')).replace(/\D/g, '')) || 0);
+      const rid = 'rId' + (Math.max(0, ...ids) + 1);
+      sRels.documentElement.appendChild(el(sRels, XL_PR_NS, 'Relationship', { Id: rid, Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing', Target: `../drawings/drawing${n}.xml` }));
+      const de = sd.createElementNS(XL_NS, 'drawing'); de.setAttributeNS(XL_R_NS, 'r:id', rid);
+      const after = ['legacyDrawing', 'legacyDrawingHF', 'drawingHF', 'picture', 'oleObjects', 'controls', 'webPublishItems', 'tableParts', 'extLst'];
+      sd.documentElement.insertBefore(de, [...sd.documentElement.children].find(x => after.includes(x.localName)) || null);
+      const ct = xlParse(await rd('[Content_Types].xml'), '中身の種類');
+      ct.documentElement.appendChild(el(ct, XL_CT_NS, 'Override', { PartName: '/' + drPath, ContentType: 'application/vnd.openxmlformats-officedocument.drawing+xml' }));
+      files['[Content_Types].xml'] = ct; files[sRelsPath] = sRels;
+    }
+    let id = Math.max(1, ...[...dr.getElementsByTagNameNS(XL_XDR_NS, 'cNvPr')].map(c => Number(c.getAttribute('id')) || 0));
+    for (const a of anchors) {
+      id++;
+      const xml = `<xdr:twoCellAnchor xmlns:xdr="${XL_XDR_NS}" xmlns:a="${XL_A_NS}"><xdr:from><xdr:col>${a.ci}</xdr:col><xdr:colOff>${a.co}</xdr:colOff><xdr:row>${a.r1}</xdr:row><xdr:rowOff>${a.o1}</xdr:rowOff></xdr:from><xdr:to><xdr:col>${a.ci}</xdr:col><xdr:colOff>${a.co}</xdr:colOff><xdr:row>${a.r2}</xdr:row><xdr:rowOff>${a.o2}</xdr:rowOff></xdr:to><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${id}" name="予定表の矢印 ${id}"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${a.X}" y="${a.Y1}"/><a:ext cx="0" cy="${a.Y2 - a.Y1}"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="9525"><a:solidFill><a:srgbClr val="000000"/></a:solidFill><a:headEnd type="none"/><a:tailEnd type="${a.head ? 'triangle' : 'none'}"/></a:ln></xdr:spPr></xdr:sp><xdr:clientData/></xdr:twoCellAnchor>`;
+      dr.documentElement.appendChild(dr.importNode(xlParse(xml, '矢印').documentElement, true));
+    }
+    files[drPath] = dr;
+  }
+  // Excelで開いたときに、日付・曜日などの式を計算し直す
+  const calc = xlFirst(wb, XL_NS, 'calcPr');
+  if (calc) calc.setAttribute('fullCalcOnLoad', '1');
+  else { const c = el(wb, XL_NS, 'calcPr', { fullCalcOnLoad: '1' }); const after = ['oleSize', 'customWorkbookViews', 'pivotCaches', 'smartTagPr', 'smartTagTypes', 'webPublishing', 'fileRecoveryPr', 'webPublishObjects', 'extLst']; wb.documentElement.insertBefore(c, [...wb.documentElement.children].find(x => after.includes(x.localName)) || null); }
+  for (const [p, doc] of Object.entries(files)) zip.file(p, xlSer(doc));
+  const isM = /\.xlsm$/i.test(file.name) || has('xl/vbaProject.bin');
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 }, mimeType: isM ? 'application/vnd.ms-excel.sheet.macroEnabled.12' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  return { blob, sheetName, cnt, arrows: anchors.length, removed, names: map.map(o => `${xlColName(o.col)}列 ${dispName(o.mem)}`) };
+}
+$('#btnXlsx').addEventListener('click', () => {
+  if (st.members.length > PER_PAGE && !confirm(`先生が${st.members.length}人います。Excelのシートは6人分のため、7人目からは書き出しません。よろしいですか？`)) return;
+  const f = $('#xlsxFile'); f.value = ''; f.click();
+});
+$('#xlsxFile').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0]; if (!file) return;
+  const { y, m } = st;
+  if (!confirm(`「${file.name}」のシート「${m}」の6人の欄（C〜E列・H〜J列）を、${monthTitle(y, m)}の予定表①の予定で書き換えたファイルを作ります。\n（今そのシートの先生の欄にある文字・矢印は消えます。手元のファイルはそのままで、書き換えたファイルをダウンロードします）\n\nよろしいですか？`)) return;
+  const btn = $('#btnXlsx'); btn.disabled = true; const old = btn.textContent; btn.textContent = '書き出し中…';
+  try {
+    const r = await xlExport(file); if (!r) return;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(r.blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    openModal(`<h3>Excelに書き出しました</h3><p style="line-height:1.7">「<b>${esc(file.name)}</b>」のシート「<b>${r.sheetName}</b>」に、${monthTitle(y, m)}の予定（${r.cnt}マス）と矢印（${r.arrows}本）を入れたファイルをダウンロードしました。<br>（${r.names.map(esc).join('・')}）</p><ul style="line-height:1.7;padding-left:1.2em"><li>ダウンロードしたファイルを開いて確かめてから、元のファイルと入れ替えてください（ファイルの名前が「${esc(file.name.replace(/(\.[^.]+)$/, ' (1)$1'))}」のようになっていたら、元の名前に直します）。</li><li>マクロ・ほかのシートはそのままです。Excelで開いたときに上に黄色い帯が出たら「編集を有効にする」「コンテンツの有効化」を押します。</li><li>閉じるときに「変更を保存しますか？」と出るのは、日付・曜日を計算し直したためです。「保存」でかまいません。</li></ul><div class="acts"><button type="button" class="btn pri" id="xlOk">閉じる</button></div>`);
+    $('#xlOk').addEventListener('click', closeModal);
+  } catch (err) { console.error(err); toast('書き出せませんでした：' + (err && err.message ? err.message : err), true); }
+  finally { btn.disabled = false; btn.textContent = old; }
+});
 
 // ===== 印刷 =====
 function doPrint(pageCss) {
