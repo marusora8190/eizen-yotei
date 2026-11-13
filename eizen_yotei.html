@@ -742,10 +742,12 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 .k-body td.kw{text-align:left;font-size:9.5pt;border-left:0}
 .k-body td.red-day{color:var(--red)}
 .k-body td.k26{background:#fbe5d6}
-.k-body td.kt{font-size:9pt;white-space:nowrap}
+.k-body td.kt{font-size:9pt;white-space:nowrap;font-weight:700} /* 記入表の予定の文字は太字（2026年11月13日〜） */
 .k-body td.kt.r{color:var(--red)}
 .k-body td.kt .r{color:var(--red)}
 .k-body td.km{text-align:center;padding:0}
+.k-body td.km .kx{font-family:"Yu Gothic","Meiryo",sans-serif;font-size:12pt;line-height:1} /* 昼食の「いらない」は細い「×」（2026年11月13日〜。それまでは太い「✖」） */
+.kpage{position:relative} /* 記入表の矢印の位置の元（2026年11月13日〜） */
 .k-body table + table{border-left:0}
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
 
@@ -889,7 +891,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
-    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。</p>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます）。</p>
     <div class="sheet-wrap" id="fmPages"></div>
   </section>
 
@@ -4171,21 +4173,77 @@ function renderForm() {
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
         const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
-        if (e.allday) ad = `<td colspan="2" class="kt${e.allday_red && !e.allday_red_parts ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
+        if (e.allday) ad = `<td colspan="2" data-k="allday" class="kt${e.allday_red && !e.allday_red_parts ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
-          am = e.am ? `<td class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td></td>';
-          pm = e.pm ? `<td class="kt${e.pm_red && !e.pm_red_parts ? ' r' : ''}">${tx('pm')}</td>` : '<td></td>';
+          am = e.am ? `<td data-k="am" class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td data-k="am"></td>';
+          pm = e.pm ? `<td data-k="pm" class="kt${e.pm_red && !e.pm_red_parts ? ' r' : ''}">${tx('pm')}</td>` : '<td data-k="pm"></td>';
         }
-        h += `<tr><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${fill ? mealMark(e.meal, day) : ''}</td>` : ''}${ad || am + pm}</tr>`;
+        // 昼食の「いらない」は、記入表では細い「×」にする（2026年11月13日〜。予定入力などの画面は「✖」のまま）
+        const mk = fill ? mealMark(e.meal, day) : '';
+        h += `<tr data-d="${d}"><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${mk === '✖' ? '<span class="kx">×</span>' : mk}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
     };
-    return `<div class="kpage"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span><span>${monthTitle(y, m)}予定記入表</span></div>
+    return `<div class="kpage" data-mid="${mem.id}"><div class="k-head"><span>${esc(mem.form_title || mem.name + '先生')}</span><span>${monthTitle(y, m)}予定記入表</span></div>
       <div class="k-body">${half(1, 15)}${half(16, nd)}</div>
       <div class="k-foot"><span>${esc(deadlineText(y, m))}</span><span>${esc(st.settings.submit_to || '')}</span></div></div>`;
   });
   $('#fmPages').innerHTML = pages.length ? pages.join('') : '<div class="empty">印刷する先生を選んでください</div>';
   $$('#fmPages .kt').forEach(td => { let s = 9, g = 0; td.style.fontSize = s + 'pt'; while (td.scrollWidth > td.clientWidth + 0.5 && s > 6 && g++ < 20) { s -= 0.5; td.style.fontSize = s + 'pt'; } });
+  if (fill) drawFormArrows();
+}
+// 記入表の矢印（2026年11月13日〜。「入力済みの予定も印刷する」のときだけ）
+// 「〜日まで続く」予定は、始まりの日の予定の1文字目の下から、最後の日の下の端まで（予定表①と同じく「右へ」「左へ」で動かした分も入れる）。
+// 手で引いた矢印は、予定表①と同じマス（始まりのマスのまん中から）。1〜15日の左半分から16日〜の右半分へまたぐときは、15日の下で切って、16日の上から続ける
+function drawFormArrows() {
+  const MM = 1 / pxPerMm();
+  $$('#fmPages .kpage').forEach(page => {
+    const mid = Number(page.dataset.mid), base = page.getBoundingClientRect(), ym = `${st.y}-${pad(st.m)}`;
+    const X = v => (v - base.left) * MM, Y = v => (v - base.top) * MM;
+    const rowOf = d => $(`tr[data-d="${d}"]`, page);
+    const colOf = (tr, k) => { // その行の表の「午前」「午後」の列の左右の端（終日は両方の列）
+      const ths = $$('thead th', tr.closest('table')), a = ths[ths.length - 2].getBoundingClientRect(), p = ths[ths.length - 1].getBoundingClientRect();
+      return k === 'am' ? [X(a.left), X(a.right)] : k === 'pm' ? [X(p.left), X(p.right)] : [X(a.left), X(p.right)];
+    };
+    const clamp = (x, [l, r]) => Math.max(l + 0.8, Math.min(r - 0.8, x));
+    // 線のとちゅうに予定の文字があれば、その文字のところだけ線を切ってよける（予定表①と同じ）
+    const texts = $$('td.kt', page).map(td => { const rg = document.createRange(); rg.selectNodeContents(td); const r = rg.getBoundingClientRect(); return r.width ? [X(r.left) - 0.8, X(r.right) + 0.8, Y(r.top) - 0.5, Y(r.bottom) + 0.5] : null; }).filter(Boolean);
+    const line = (x, y1, y2, head) => {
+      if (y2 - y1 < 1) return;
+      const gaps = texts.filter(([l, r, t, bt]) => x >= l && x <= r && bt > y1 && t < y2).map(([, , t, bt]) => [t, bt]).sort((p, q) => p[0] - q[0]);
+      const segs = []; let cur = y1;
+      for (const [g1, g2] of gaps) { if (g1 > cur) segs.push([cur, Math.min(g1, y2)]); cur = Math.max(cur, g2); }
+      if (cur < y2) segs.push([cur, y2]);
+      segs.forEach(([s1, s2], i) => {
+        if (s2 - s1 < 0.6) return;
+        const el = document.createElement('div'); el.className = 'yarrow' + (head && i === segs.length - 1 && s2 === y2 ? '' : ' nohead');
+        el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm'; page.appendChild(el);
+      });
+    };
+    const draw = (k, d1, d2, xOf, top, bot, endBottom) => {
+      const ta = rowOf(d1), tb = rowOf(d2); if (!ta || !tb || d2 <= d1) return;
+      const ca = colOf(ta, k), x = clamp(xOf(ta, ca), ca);
+      const y1 = Y(ta.getBoundingClientRect().bottom) + 0.3 + top;
+      const y2 = Y(endBottom ? tb.getBoundingClientRect().bottom : tb.getBoundingClientRect().top) - 0.2 + bot;
+      const tA = ta.closest('table'), tB = tb.closest('table');
+      if (tA === tB) { line(x, y1, y2, true); return; }
+      const lastA = $$('tr[data-d]', tA).pop(), firstB = $('tr[data-d]', tB), cb = colOf(firstB, k);
+      line(x, y1, Y(lastA.getBoundingClientRect().bottom) - 0.2, false);
+      line(clamp(x - ca[0] + cb[0], cb), Y(firstB.getBoundingClientRect().top) + 0.3, y2, true);
+    };
+    for (const c of continuations(mid)) {
+      if (c.start.slice(0, 7) !== ym || c.until.slice(0, 7) !== ym) continue;
+      draw(c.k, Number(c.start.slice(8)), Number(c.until.slice(8)), (ta, [l, r]) => {
+        const rt = firstCharRect($(`td[data-k="${c.k}"]`, ta));
+        return (rt ? X(rt.left + rt.width / 2) : l + 3) + c.arrow * INDENT_MM;
+      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, true);
+    }
+    for (const r of st.arrows || []) {
+      if (r.member_id !== mid || String(r.day_from).slice(0, 7) !== ym || String(r.day_to).slice(0, 7) !== ym) continue;
+      const k = r.slot_from === 'pmb' ? 'pm' : r.slot_from;
+      draw(k, Number(String(r.day_from).slice(8)), Number(String(r.day_to).slice(8)), (ta, [l, rr]) => (l + rr) / 2 + (r.x || 0) * INDENT_MM, (r.top_adj || 0) * ARROW_END_MM, (r.bot_adj || 0) * ARROW_END_MM, r.slot_to === 'pmb');
+    }
+  });
 }
 $('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
 $('#fmFill').addEventListener('change', renderForm);
