@@ -4158,6 +4158,7 @@ function renderForm() {
   const { y, m } = st, nd = dim(y, m);
   // 先生ごとのURLでは、その先生の記入表だけを出す（印刷する先生の選択欄は出さない）
   $('#fmMembersWrap').style.display = st.personal ? 'none' : '';
+  const fmEnds = new Map(); for (const c of continuations(null)) fmEnds.set(key(c.mid, c.until) + '|' + c.k, c);
   const pages = st.members.filter(x => st.personal ? x.id === st.personal : fmSelected.has(x.id)).map(mem => {
     const meal = mem.meal_survey;
     const half = (from, to) => {
@@ -4169,7 +4170,8 @@ function renderForm() {
         if (d > to) { h += `<tr><td class="kd"></td><td class="kw"></td>${meal ? '<td class="km"></td>' : ''}<td></td><td></td></tr>`; continue; }
         const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
         const ev = eventFor(day);
-        const e = fill ? effEntry(mem.id, day) : evEntry(ev);
+        // 「〜日まで続く」予定は、予定表①と同じく最後の日にも同じ文字を出す（2026年11月13日〜。xlEntry は Excel への書き出しと同じ決まり）
+        const e = fill ? xlEntry(mem.id, day, fmEnds) : evEntry(ev);
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
         const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
@@ -4193,7 +4195,7 @@ function renderForm() {
   if (fill) drawFormArrows();
 }
 // 記入表の矢印（2026年11月13日〜。「入力済みの予定も印刷する」のときだけ）
-// 「〜日まで続く」予定は、始まりの日の予定の1文字目の下から、最後の日の下の端まで（予定表①と同じく「右へ」「左へ」で動かした分も入れる）。
+// 「〜日まで続く」予定は、始まりの日の予定の1文字目の下から、最後の日（同じ文字をもう一度出す）の上の端まで（予定表①と同じく「右へ」「左へ」で動かした分も入れる）。
 // 手で引いた矢印は、予定表①と同じマス（始まりのマスのまん中から）。1〜15日の左半分から16日〜の右半分へまたぐときは、15日の下で切って、16日の上から続ける
 function drawFormArrows() {
   const MM = 1 / pxPerMm();
@@ -4236,7 +4238,7 @@ function drawFormArrows() {
       draw(c.k, Number(c.start.slice(8)), Number(c.until.slice(8)), (ta, [l, r]) => {
         const rt = firstCharRect($(`td[data-k="${c.k}"]`, ta));
         return (rt ? X(rt.left + rt.width / 2) : l + 3) + c.arrow * INDENT_MM;
-      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, true);
+      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, false);
     }
     for (const r of st.arrows || []) {
       if (r.member_id !== mid || String(r.day_from).slice(0, 7) !== ym || String(r.day_to).slice(0, 7) !== ym) continue;
