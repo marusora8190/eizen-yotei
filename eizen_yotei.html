@@ -749,6 +749,16 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 .k-body td.km .kx{font-family:"Yu Gothic","Meiryo",sans-serif;font-size:12pt;line-height:1} /* 昼食の「いらない」は細い「×」（2026年11月13日〜。それまでは太い「✖」） */
 .kpage{position:relative} /* 記入表の矢印の位置の元（2026年11月13日〜） */
 .kpage .yarrow.red{border-left-color:var(--red)} .kpage .yarrow.red::after{border-top-color:var(--red)} /* 記入表で、赤字の予定の矢印は赤（2026年11月13日〜） */
+/* 記入表の矢印をクリックして動かす（2026年11月13日〜。管理者用のURLだけ） */
+.kpage .yarrow.fa{pointer-events:auto;cursor:pointer}
+.kpage .yarrow.fa::before{content:"";position:absolute;left:-1.8mm;width:3.6mm;top:0;bottom:0}
+@media screen{.kpage .yarrow.fa:hover,.kpage .yarrow.fa.sel{border-left-color:#1a73e8}.kpage .yarrow.fa:hover::after,.kpage .yarrow.fa.sel::after{border-top-color:#1a73e8}}
+#faPanel{position:fixed;right:18px;bottom:18px;z-index:60;background:#fff;border:1px solid #bbb;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.2);padding:12px 14px;font-size:14px;min-width:300px}
+#faPanel[hidden]{display:none}
+#faPanel .farow{display:flex;align-items:center;gap:6px;margin:6px 0}
+#faPanel .farow .lb{width:6.5em}
+#faPanel .farow .v{min-width:3.5em;text-align:center;color:#555}
+@media print{#faPanel{display:none!important}}
 .k-body table + table{border-left:0}
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
 
@@ -892,8 +902,9 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span style="flex:1"></span>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
-    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます）。</p>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
     <div class="sheet-wrap" id="fmPages"></div>
+    <div id="faPanel" hidden></div>
   </section>
 
   <!-- マスター -->
@@ -1459,6 +1470,10 @@ function makeRec(mid, day, data) {
     am_arrow: keep('am', 'arrow'), pm_arrow: keep('pm', 'arrow'), allday_arrow: keep('allday', 'arrow'),
     am_arrow_top: keep('am', 'arrow_top'), pm_arrow_top: keep('pm', 'arrow_top'), allday_arrow_top: keep('allday', 'arrow_top'),
     am_arrow_bot: keep('am', 'arrow_bot'), pm_arrow_bot: keep('pm', 'arrow_bot'), allday_arrow_bot: keep('allday', 'arrow_bot'),
+    // 記入表だけの矢印の位置（2026年11月13日〜。予定表①の矢印とは別）
+    am_farrow: keep('am', 'farrow'), pm_farrow: keep('pm', 'farrow'), allday_farrow: keep('allday', 'farrow'),
+    am_farrow_top: keep('am', 'farrow_top'), pm_farrow_top: keep('pm', 'farrow_top'), allday_farrow_top: keep('allday', 'farrow_top'),
+    am_farrow_bot: keep('am', 'farrow_bot'), pm_farrow_bot: keep('pm', 'farrow_bot'), allday_farrow_bot: keep('allday', 'farrow_bot'),
     member_id: mid, day,
     am: data.am || null, pm: data.pm || null, allday: data.allday || null,
     am_red: !!(data.am && data.am_red), pm_red: !!(data.pm && data.pm_red), allday_red: !!(data.allday && data.allday_red),
@@ -4194,6 +4209,8 @@ function renderForm() {
   $('#fmPages').innerHTML = pages.length ? pages.join('') : '<div class="empty">印刷する先生を選んでください</div>';
   $$('#fmPages .kt').forEach(td => { let s = 9, g = 0; td.style.fontSize = s + 'pt'; while (td.scrollWidth > td.clientWidth + 0.5 && s > 6 && g++ < 20) { s -= 0.5; td.style.fontSize = s + 'pt'; } });
   if (fill) drawFormArrows();
+  // 動かしている矢印が出なくなったら（「入力済みの予定も印刷する」を外した・月を変えたなど）、動かす枠を閉じて元に戻す
+  if (faEdit && !$(`#fmPages .yarrow[data-fa="${CSS.escape(faEdit.key)}"]`)) { faCancel(true); }
 }
 // 記入表の矢印（2026年11月13日〜。「入力済みの予定も印刷する」のときだけ）
 // 「〜日まで続く」予定は、始まりの日の予定の1文字目の下から、最後の日（同じ文字をもう一度出す）の上の端まで（予定表①と同じく「右へ」「左へ」で動かした分も入れる）。
@@ -4211,7 +4228,7 @@ function drawFormArrows() {
     const clamp = (x, [l, r]) => Math.max(l + 0.8, Math.min(r - 0.8, x));
     // 線のとちゅうに予定の文字があれば、その文字のところだけ線を切ってよける（予定表①と同じ）
     const texts = $$('td.kt', page).map(td => { const rg = document.createRange(); rg.selectNodeContents(td); const r = rg.getBoundingClientRect(); return r.width ? [X(r.left) - 0.8, X(r.right) + 0.8, Y(r.top) - 0.5, Y(r.bottom) + 0.5] : null; }).filter(Boolean);
-    const line = (x, y1, y2, head, red) => {
+    const line = (x, y1, y2, head, red, fk) => {
       if (y2 - y1 < 1) return;
       const gaps = texts.filter(([l, r, t, bt]) => x >= l && x <= r && bt > y1 && t < y2).map(([, , t, bt]) => [t, bt]).sort((p, q) => p[0] - q[0]);
       const segs = []; let cur = y1;
@@ -4220,36 +4237,92 @@ function drawFormArrows() {
       segs.forEach(([s1, s2], i) => {
         if (s2 - s1 < 0.6) return;
         const el = document.createElement('div'); el.className = 'yarrow' + (head && i === segs.length - 1 && s2 === y2 ? '' : ' nohead') + (red ? ' red' : '');
-        el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm'; page.appendChild(el);
+        el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm';
+        if (fk && faCanMove()) { el.classList.add('fa'); el.dataset.fa = fk; el.title = 'クリックすると、この矢印を記入表の中だけで動かせます'; if (faEdit && faEdit.key === fk) el.classList.add('sel'); }
+        page.appendChild(el);
       });
     };
-    const draw = (k, d1, d2, xOf, top, bot, endBottom, red) => {
+    const draw = (k, d1, d2, xOf, top, bot, endBottom, red, fk) => {
       const ta = rowOf(d1), tb = rowOf(d2); if (!ta || !tb || d2 <= d1) return;
       const ca = colOf(ta, k), x = clamp(xOf(ta, ca), ca);
       const y1 = Y(ta.getBoundingClientRect().bottom) + 0.3 + top;
       const y2 = Y(endBottom ? tb.getBoundingClientRect().bottom : tb.getBoundingClientRect().top) - 0.2 + bot;
       const tA = ta.closest('table'), tB = tb.closest('table');
-      if (tA === tB) { line(x, y1, y2, true, red); return; }
+      if (tA === tB) { line(x, y1, y2, true, red, fk); return; }
       const lastA = $$('tr[data-d]', tA).pop(), firstB = $('tr[data-d]', tB), cb = colOf(firstB, k);
-      line(x, y1, Y(lastA.getBoundingClientRect().bottom) - 0.2, false, red);
-      line(clamp(x - ca[0] + cb[0], cb), Y(firstB.getBoundingClientRect().top) + 0.3, y2, true, red);
+      line(x, y1, Y(lastA.getBoundingClientRect().bottom) - 0.2, false, red, fk);
+      line(clamp(x - ca[0] + cb[0], cb), Y(firstB.getBoundingClientRect().top) + 0.3, y2, true, red, fk);
     };
+    // 矢印の位置は、記入表だけの値（予定表①で動かした分は使わない。2026年11月13日〜）
     for (const c of continuations(mid)) {
       if (c.start.slice(0, 7) !== ym || c.until.slice(0, 7) !== ym) continue;
+      const e0 = getEntry(c.mid, c.start) || {}, fx = Number(e0[c.k + '_farrow']) || 0;
       draw(c.k, Number(c.start.slice(8)), Number(c.until.slice(8)), (ta, [l, r]) => {
         const rt = firstCharRect($(`td[data-k="${c.k}"]`, ta));
-        return (rt ? X(rt.left + rt.width / 2) : l + 3) + c.arrow * INDENT_MM;
-      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, false, !!c.red); // 赤字（一部だけ赤字も）の予定の矢印は赤
+        return (rt ? X(rt.left + rt.width / 2) : l + 3) + fx * INDENT_MM;
+      }, (Number(e0[c.k + '_farrow_top']) || 0) * ARROW_END_MM, (Number(e0[c.k + '_farrow_bot']) || 0) * ARROW_END_MM, false, !!c.red, `c|${c.mid}|${c.start}|${c.k}`); // 赤字（一部だけ赤字も）の予定の矢印は赤
     }
     for (const r of st.arrows || []) {
       if (r.member_id !== mid || String(r.day_from).slice(0, 7) !== ym || String(r.day_to).slice(0, 7) !== ym) continue;
       const k = r.slot_from === 'pmb' ? 'pm' : r.slot_from;
-      draw(k, Number(String(r.day_from).slice(8)), Number(String(r.day_to).slice(8)), (ta, [l, rr]) => (l + rr) / 2 + (r.x || 0) * INDENT_MM, (r.top_adj || 0) * ARROW_END_MM, (r.bot_adj || 0) * ARROW_END_MM, r.slot_to === 'pmb');
+      draw(k, Number(String(r.day_from).slice(8)), Number(String(r.day_to).slice(8)), (ta, [l, rr]) => (l + rr) / 2 + (r.f_x || 0) * INDENT_MM, (r.f_top || 0) * ARROW_END_MM, (r.f_bot || 0) * ARROW_END_MM, r.slot_to === 'pmb', false, `a|${r.id}`);
     }
   });
 }
 $('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
 $('#fmFill').addEventListener('change', renderForm);
+
+// ===== 記入表の矢印を動かす（2026年11月13日〜。利用者の希望。管理者用のURLだけ） =====
+// 記入表の矢印をクリックすると、右下に「左へ・右へ・上の端・下の端」の枠が出る。動かした分は記入表だけに使う（予定表①の矢印は変わらない）。
+// 「〜日まで続く」の矢印は yotei_entries の ○_farrow・○_farrow_top・○_farrow_bot、手で引いた矢印は yotei_arrows の f_x・f_top・f_bot に入れる
+let faEdit = null; // { key, obj, f:[左右, 上の端, 下の端の欄の名前], orig, table, mid, day, id }
+const faCanMove = () => !st.personal && !st.viewOnly && !st.t3Only;
+function faOpen(fk) {
+  const [t, a, b, k] = fk.split('|');
+  let obj, f;
+  if (t === 'c') { obj = getEntry(Number(a), b); f = [k + '_farrow', k + '_farrow_top', k + '_farrow_bot']; }
+  else { obj = (st.arrows || []).find(r => String(r.id) === a); f = ['f_x', 'f_top', 'f_bot']; }
+  if (!obj) return;
+  if (faEdit) faCancel(true);
+  faEdit = { key: fk, obj, f, orig: f.map(x => Number(obj[x]) || 0), t, mid: Number(a), day: b, id: a };
+  faShow(); renderForm();
+}
+function faShow() {
+  const p = $('#faPanel'); if (!faEdit) { p.hidden = true; p.innerHTML = ''; return; }
+  const v = i => Number(faEdit.obj[faEdit.f[i]]) || 0, sg = n => (n > 0 ? '+' : '') + n;
+  const who = dispName(memberById(faEdit.t === 'c' ? faEdit.mid : faEdit.obj.member_id));
+  p.innerHTML = `<div style="font-weight:700;margin-bottom:4px">記入表の矢印を動かす <span style="font-weight:400;color:#666;font-size:12px">（${esc(who)}）</span></div>
+    <div class="farow"><span class="lb">矢印の位置</span><button type="button" class="btn sm" data-fa="0" data-d="-1">◀ 左へ</button><span class="v">${sg(v(0))}</span><button type="button" class="btn sm" data-fa="0" data-d="1">右へ ▶</button></div>
+    <div class="farow"><span class="lb">上の端</span><button type="button" class="btn sm" data-fa="1" data-d="-1">▲ 上へ</button><span class="v">${sg(v(1))}</span><button type="button" class="btn sm" data-fa="1" data-d="1">▼ 下へ</button></div>
+    <div class="farow"><span class="lb">下の端（先）</span><button type="button" class="btn sm" data-fa="2" data-d="-1">▲ 上へ</button><span class="v">${sg(v(2))}</span><button type="button" class="btn sm" data-fa="2" data-d="1">▼ 下へ</button></div>
+    <div class="farow" style="margin-top:10px"><button type="button" class="btn sm" data-fa="reset">はじめの位置</button><span style="flex:1"></span><button type="button" class="btn sm" data-fa="cancel">やめる</button><button type="button" class="btn sm pri" data-fa="save">保存</button></div>
+    <div style="font-size:12px;color:#666">左右は1回で1.5mm、上・下の端は1回で1mm。予定表①の矢印は変わりません。</div>`;
+  p.hidden = false;
+}
+function faCancel(quiet) {
+  if (!faEdit) return;
+  faEdit.f.forEach((x, i) => { faEdit.obj[x] = faEdit.orig[i]; });
+  faEdit = null; faShow(); if (!quiet) renderForm();
+}
+async function faSave() {
+  if (!faEdit) return;
+  const ed = faEdit, patch = {}; ed.f.forEach(x => { patch[x] = Number(ed.obj[x]) || 0; });
+  const btn = $('#faPanel [data-fa="save"]'); if (btn) btn.disabled = true;
+  const q = ed.t === 'c' ? sb.from('yotei_entries').update(patch).eq('member_id', ed.mid).eq('day', ed.day) : sb.from('yotei_arrows').update(patch).eq('id', Number(ed.id));
+  const { error } = await q;
+  if (error) { if (btn) btn.disabled = false; toast('矢印の位置を保存できませんでした：' + errMsg(error), true); return; }
+  faEdit = null; faShow(); renderForm(); toast('記入表の矢印の位置を保存しました');
+}
+$('#fmPages').addEventListener('click', ev => { const a = ev.target.closest('.yarrow.fa'); if (a) faOpen(a.dataset.fa); });
+$('#faPanel').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-fa]'); if (!b || !faEdit) return;
+  const a = b.dataset.fa;
+  if (a === 'save') return faSave();
+  if (a === 'cancel') return faCancel();
+  if (a === 'reset') faEdit.f.forEach(x => { faEdit.obj[x] = 0; });
+  else { const x = faEdit.f[Number(a)]; faEdit.obj[x] = Math.max(-60, Math.min(60, (Number(faEdit.obj[x]) || 0) + Number(b.dataset.d))); }
+  faShow(); renderForm();
+});
 
 // ===== Excel（R189部次課長青年予定表.xlsm）への書き出し（2026年11月13日〜。利用者の希望） =====
 // 予定表①（パソコン）の「📗 Excelに書き出し」で、手元の Excel ファイルを選ぶと、表示している月と同じ名前のシート（12月なら「12」）の
