@@ -748,6 +748,7 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 .k-body td.km{text-align:center;padding:0}
 .k-body td.km .kx{font-family:"Yu Gothic","Meiryo",sans-serif;font-size:12pt;line-height:1} /* 昼食の「いらない」は細い「×」（2026年11月13日〜。それまでは太い「✖」） */
 .kpage{position:relative} /* 記入表の矢印の位置の元（2026年11月13日〜） */
+.kpage .yarrow.red{border-left-color:var(--red)} .kpage .yarrow.red::after{border-top-color:var(--red)} /* 記入表で、赤字の予定の矢印は赤（2026年11月13日〜） */
 .k-body table + table{border-left:0}
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
 
@@ -4174,7 +4175,7 @@ function renderForm() {
         const e = fill ? xlEntry(mem.id, day, fmEnds) : evEntry(ev);
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
-        const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']) + (e[k + '_until'] ? `（〜${Number(e[k + '_until'].slice(8))}日）` : '');
+        const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']); // 「（〜○日）」は付けない（2026年11月13日〜。矢印と最後の日の文字で分かるため）
         if (e.allday) ad = `<td colspan="2" data-k="allday" class="kt${e.allday_red && !e.allday_red_parts ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
           am = e.am ? `<td data-k="am" class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td data-k="am"></td>';
@@ -4210,7 +4211,7 @@ function drawFormArrows() {
     const clamp = (x, [l, r]) => Math.max(l + 0.8, Math.min(r - 0.8, x));
     // 線のとちゅうに予定の文字があれば、その文字のところだけ線を切ってよける（予定表①と同じ）
     const texts = $$('td.kt', page).map(td => { const rg = document.createRange(); rg.selectNodeContents(td); const r = rg.getBoundingClientRect(); return r.width ? [X(r.left) - 0.8, X(r.right) + 0.8, Y(r.top) - 0.5, Y(r.bottom) + 0.5] : null; }).filter(Boolean);
-    const line = (x, y1, y2, head) => {
+    const line = (x, y1, y2, head, red) => {
       if (y2 - y1 < 1) return;
       const gaps = texts.filter(([l, r, t, bt]) => x >= l && x <= r && bt > y1 && t < y2).map(([, , t, bt]) => [t, bt]).sort((p, q) => p[0] - q[0]);
       const segs = []; let cur = y1;
@@ -4218,27 +4219,27 @@ function drawFormArrows() {
       if (cur < y2) segs.push([cur, y2]);
       segs.forEach(([s1, s2], i) => {
         if (s2 - s1 < 0.6) return;
-        const el = document.createElement('div'); el.className = 'yarrow' + (head && i === segs.length - 1 && s2 === y2 ? '' : ' nohead');
+        const el = document.createElement('div'); el.className = 'yarrow' + (head && i === segs.length - 1 && s2 === y2 ? '' : ' nohead') + (red ? ' red' : '');
         el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm'; page.appendChild(el);
       });
     };
-    const draw = (k, d1, d2, xOf, top, bot, endBottom) => {
+    const draw = (k, d1, d2, xOf, top, bot, endBottom, red) => {
       const ta = rowOf(d1), tb = rowOf(d2); if (!ta || !tb || d2 <= d1) return;
       const ca = colOf(ta, k), x = clamp(xOf(ta, ca), ca);
       const y1 = Y(ta.getBoundingClientRect().bottom) + 0.3 + top;
       const y2 = Y(endBottom ? tb.getBoundingClientRect().bottom : tb.getBoundingClientRect().top) - 0.2 + bot;
       const tA = ta.closest('table'), tB = tb.closest('table');
-      if (tA === tB) { line(x, y1, y2, true); return; }
+      if (tA === tB) { line(x, y1, y2, true, red); return; }
       const lastA = $$('tr[data-d]', tA).pop(), firstB = $('tr[data-d]', tB), cb = colOf(firstB, k);
-      line(x, y1, Y(lastA.getBoundingClientRect().bottom) - 0.2, false);
-      line(clamp(x - ca[0] + cb[0], cb), Y(firstB.getBoundingClientRect().top) + 0.3, y2, true);
+      line(x, y1, Y(lastA.getBoundingClientRect().bottom) - 0.2, false, red);
+      line(clamp(x - ca[0] + cb[0], cb), Y(firstB.getBoundingClientRect().top) + 0.3, y2, true, red);
     };
     for (const c of continuations(mid)) {
       if (c.start.slice(0, 7) !== ym || c.until.slice(0, 7) !== ym) continue;
       draw(c.k, Number(c.start.slice(8)), Number(c.until.slice(8)), (ta, [l, r]) => {
         const rt = firstCharRect($(`td[data-k="${c.k}"]`, ta));
         return (rt ? X(rt.left + rt.width / 2) : l + 3) + c.arrow * INDENT_MM;
-      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, false);
+      }, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, false, !!c.red); // 赤字（一部だけ赤字も）の予定の矢印は赤
     }
     for (const r of st.arrows || []) {
       if (r.member_id !== mid || String(r.day_from).slice(0, 7) !== ym || String(r.day_to).slice(0, 7) !== ym) continue;
