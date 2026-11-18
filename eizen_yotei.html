@@ -619,10 +619,10 @@ body.tbl-one .atpanel{display:block;flex:1;min-width:340px;max-width:760px;posit
 .at-ctl .seg .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .at-when{font-size:15px;font-weight:700;margin:0 0 6px}
 table.attbl{width:100%;border-collapse:collapse;font-size:15px}
-table.attbl th,table.attbl td{border-top:1px solid #e3e6ea;padding:7px 6px;text-align:left;vertical-align:top}
+table.attbl th,table.attbl td{border:1px solid #333;padding:7px 6px;text-align:left;vertical-align:top}
 table.attbl th{width:7.5em;white-space:nowrap}
-table.attbl thead th{width:auto;font-size:13px;color:var(--sub);text-align:center;border-top:0;padding:3px 6px}
-table.attbl td.am{width:calc((100% - 7.5em) / 2);border-right:1px dashed #e3e6ea}
+table.attbl thead th{width:auto;font-size:13px;color:var(--sub);text-align:center;padding:3px 6px}
+table.attbl td.am{width:calc((100% - 7.5em) / 2)}
 table.attbl td.pm{width:calc((100% - 7.5em) / 2)}
 table.attbl .r{color:var(--red);font-weight:700}
 .at-lab{display:inline-block;font-size:11.5px;color:var(--sub);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-right:6px;vertical-align:1px}
@@ -3691,7 +3691,7 @@ async function renderAtPanel() {
     list = r.data;
   }
   if (seq !== atSeq) return;
-  const cell = (its, k) => its.length ? its.map(o => `<div class="at-item">${o.lab === SLOT_LABEL[k] ? '' : `<span class="at-lab">${o.lab}</span>`}${o.red && !o.parts ? `<span class="r">${esc(o.t)}</span>` : redHtml(o.t, o.red, o.parts)}${o.tag ? `<span class="at-tag">（${esc(o.tag)}）</span>` : ''}</div>`).join('') : '<span class="at-none">予定なし</span>';
+  const cell = (its, k) => its.length ? its.map(o => `<div class="at-item">${o.lab === SLOT_LABEL[k] ? '' : `<span class="at-lab">${o.lab}</span>`}${o.red && !o.parts ? `<span class="r">${esc(o.t)}</span>` : redHtml(o.t, o.red, o.parts)}${o.tag ? `<span class="at-tag">（${esc(o.tag)}）</span>` : ''}</div>`).join('') : '';
   // 午前を左、午後を右に同時に出す。午前・午後がまったく同じ終日の予定（終日・行事・何日か続く予定）は、2列をまたいで1つにまとめる
   $('#atList', box).innerHTML = `<table class="attbl"><thead><tr><th></th><th>午前</th><th>午後</th></tr></thead><tbody>${st.members.map(x => {
     const a = atItems(list, x.id, day, 'am'), p = atItems(list, x.id, day, 'pm');
