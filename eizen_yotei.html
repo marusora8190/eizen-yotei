@@ -643,6 +643,7 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 .solo table.yt thead th.dh{font-size:11px}
 .sheet.solo table.yt thead th .ttl{font-size:11px}
 .solo table.yt td.dn{font-size:15px}
+@media screen{.solo table.yt tbody td.dn,.solo table.yt tbody td.dw{cursor:pointer}.solo table.yt tbody tr:not(.today2) > td.dn:hover,.solo table.yt tbody tr:not(.today2) > td.dw:hover{background-color:#e8f0fa}} /* 押すと右の「日付と時間で見る」がその日になる */
 .solo table.yt td.dw{font-size:11px}
 .solo table.yt td.c .fit{font-size:13px;padding:2px 6px;white-space:normal;line-height:1.25}
 .solo table.yt td.c.ad .fit{font-size:14px}
@@ -2413,7 +2414,7 @@ function renderTableBody() {
   let body = '';
   for (let d = 1; d <= nd; d++) {
     const day = dstr(y, m, d), w = wdOf(y, m, d), rd = isRedDay(y, m, d) ? ' red-day' : '';
-    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? ' dn1' : ' half-l'}">${d}</td><td rowspan="2" class="dw${rd}${first ? ' dw1' : ''}">(${WD_JA[w]})</td>`;
+    const dcell = (first) => `<td rowspan="2" class="dn${rd}${first ? ' dn1' : ' half-l'}" data-day="${day}">${d}</td><td rowspan="2" class="dw${rd}${first ? ' dw1' : ''}" data-day="${day}">(${WD_JA[w]})</td>`;
     // いちばん右の先生の欄だけ、右の罫線（表の右端）を描く
     const le = x => (x === (R.length ? R[R.length - 1] : L[L.length - 1]) ? ' redge' : '');
     const cell1 = x => {
@@ -4019,6 +4020,9 @@ async function moveNote(srcTd, dstTd) {
   finally { pendingSaves--; }
 }
 $('#sheet').addEventListener('click', e => {
+  // 予定表②（パソコン）：左の表の「日・曜日」を押すと、右の「日付と時間で見る」がその日になる（2026年11月18日〜。利用者の希望）
+  const dc = st.tblOne && !isMobile() && e.target.closest('.solo td.dn, .solo td.dw');
+  if (dc && dc.dataset.day) { st.atDate = dc.dataset.day; renderAtPanel(); return; }
   if (e.target.closest('th.nthm.editable')) { openHeadEditor(); return; }
   const nt = e.target.closest('td.nt.editable');
   if (nt && (e.ctrlKey || e.metaKey || e.shiftKey)) { ntSelClick(nt, e.shiftKey); return; } // Ctrl＋クリック・Shift＋クリックは、マスを選ぶ（2026年11月10日〜）
