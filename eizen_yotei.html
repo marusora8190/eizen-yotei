@@ -1616,7 +1616,20 @@ function render() {
   else if (st.view === 'form') renderForm();
   else if (st.view === 'master') renderMaster();
 }
-$$('nav a[data-view], .mnav [data-view]').forEach(a => a.addEventListener('click', () => showView(a.dataset.view)));
+// 予定表①②を開くときは、当月・当日で開く（2026年11月18日〜。利用者の希望。ふつうのURLは来月を開いているため）。
+// すでに予定表①②を出しているときに押し直しても、見ていた月・日は変えない
+function curViewName() { return st.view === 'table' && st.tbl3 ? 'table3' : st.view === 'table' && st.tblOne ? 'table1' : st.view; }
+$$('nav a[data-view], .mnav [data-view]').forEach(a => a.addEventListener('click', () => {
+  const v = a.dataset.view;
+  if ((v === 'table' || v === 'table1') && curViewName() !== v) {
+    const td = todayJst();
+    st.atDate = td; // 予定表②の「日付と時間で見る」は当日（午前・午後が同時に出る）
+    showView(v);
+    if (pendingSaves === 0 && ymStr(st.y, st.m) !== td.slice(0, 7)) changeMonth(Number(td.slice(0, 4)), Number(td.slice(5, 7)));
+    return;
+  }
+  showView(v);
+}));
 $('#btnUpdateM').addEventListener('click', () => $('#btnUpdate').click());
 $('#btnUpdateH').addEventListener('click', () => $('#btnUpdate').click());
 // 上の「営繕部予定表」の文字を押すと、予定表③を開く（ふつうのURLのスマホだけ。2026年11月10日から、パソコンでは何も起きない）
@@ -4950,6 +4963,8 @@ $('#msHolAdd').addEventListener('click', async () => {
       try { const q = params.toString(); history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); } catch (e) {}
     }
     try { const { data } = await adminSb.auth.getSession(); if (data && data.session && data.session.user && data.session.user.email === ADMIN_EMAIL) setAdmin(true); } catch (e) {}
+    // はじめから予定表①②を開くURL（#table・#table1）は、当月で開く（2026年11月18日〜。Update のあとは見ていた月のまま）
+    if (!st.personal && ['#table', '#table1'].includes(location.hash) && !(mq && /^\d{4}-\d{2}$/.test(mq))) { const td = todayJst(); st.y = Number(td.slice(0, 4)); st.m = Number(td.slice(5, 7)); st.atDate = td; }
     await loadMonth();
     $('#loading').style.display = 'none';
     showView((location.hash || (st.viewOnly || st.t3Only ? '#table' : '#input')).slice(1));
