@@ -677,6 +677,8 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
   table.yt thead th.dh1{left:0;z-index:4;box-shadow:inset 0 -1px 0 var(--stk,#000),inset -1px 0 0 var(--stk,#000)}
   .solo table.yt td.dn1,.solo table.yt td.dw1,.solo table.yt thead th.dh1{position:static;box-shadow:none}
   .solo table.yt thead th.dh1{position:sticky;box-shadow:inset 0 -1px 0 var(--stk,#000)}
+  /* 予定表②：下に動かして見出しが上に残ったとき、見出しの上の横線（黒）が消えないようにする。見出しを題名の帯の真下に止め、上の線を見出し自身に描く（2026年11月18日〜。利用者の希望。予定表③と同じ作り） */
+  .solo table.yt thead th,.solo table.yt thead th.dh1{top:var(--tth,7mm);box-shadow:inset 0 1px 0 #000,inset 0 -1px 0 var(--stk,#000)}
 }
 /* 予定表①②③の文字は「Meiryo UI」（2026年11月9日〜。利用者の希望。Meiryo UI の無いパソコン・スマホでは、メイリオなど近い文字になる） */
 .sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
