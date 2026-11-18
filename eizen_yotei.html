@@ -446,10 +446,11 @@ table.yt td.nt.ntsrc{opacity:.45}
 /* 予定表③の「今日」（2026年11月11日〜。利用者の希望）：日付の列を青地に白い字にし、その日の2行を青い枠で囲む。画面だけで、印刷には出さない */
 @media screen{
   .duo table.yt tr.today3 > td.dn3,.duo table.yt tr.today3 > td.dw3{background:#2f5d9a!important;color:#fff!important;font-weight:700}
-  .duo .ytw .todayframe{position:absolute;left:0;border:2.5px solid #2f5d9a;border-radius:3px;box-sizing:border-box;pointer-events:none;z-index:3;background:rgba(47,93,154,.07)}
-  .duo .ytw .todayframe span{position:absolute;right:2px;top:-1px;transform:translateY(-100%);background:#2f5d9a;color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:3px 3px 0 0}
+  .duo .ytw .todayframe,.solo>.todayframe{position:absolute;left:0;border:2.5px solid #2f5d9a;border-radius:3px;box-sizing:border-box;pointer-events:none;z-index:3;background:rgba(47,93,154,.07)}
+  .duo .ytw .todayframe span,.solo>.todayframe span{position:absolute;right:2px;top:-1px;transform:translateY(-100%);background:#2f5d9a;color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:3px 3px 0 0}
 }
-@media print{.duo .ytw .todayframe{display:none}}
+@media print{.duo .ytw .todayframe,.solo>.todayframe{display:none}}
+.sheet.solo{position:relative}
 .duo .ytw table.yt{position:relative;z-index:1}
 @media screen{
   .duo table.yt td.dn1,.duo table.yt td.dw1{position:static;box-shadow:none}
@@ -2327,7 +2328,14 @@ function renderTable() {
   lastTableSig = sigK;
   renderTableBody();
   if (keep) { wrapK.scrollTop = keep.t; wrapK.scrollLeft = keep.l; window.scrollTo(keep.wx, keep.wy); }
+  else {
+    // 開いたとき・月や先生を切り替えたとき：今日の行を真ん中に。画面の大きさが落ち着くまで、動かしていなければ2回直す
+    const c0 = centerToday();
+    if (c0 !== null) [60, 400].forEach(ms => setTimeout(() => { const w = $('#v-table .sheet-wrap'); if (w && Math.abs(w.scrollTop - (c0 === null ? 0 : lastCenter)) < 3) lastCenter = centerToday() ?? lastCenter; }, ms));
+    lastCenter = c0 === null ? 0 : c0;
+  }
 }
+let lastCenter = 0;
 function renderTableBody() {
   const { y, m } = st, nd = dim(y, m);
   { const z = t3Z(); $('#sheet').style.zoom = z === 1 ? '' : String(z); $('#t3ZoomV').textContent = Math.round(st.t3zoom * 100) + '%'; }
@@ -2512,6 +2520,7 @@ function renderTableBody() {
   if (duo) { fitNotes($('#sheet')); drawHolBands(); }
   snapToEdges($('#sheet'));
   drawArrows();
+  if (solo) drawTodayFrame2(); // 印刷用（print2）の表には今日の行の印が無いので、枠も出ない
   $$('.hide-personal-note').forEach(n => (n.style.display = st.personal ? 'none' : ''));
   if (st.tblOne && !isMobile()) renderAtPanel();
 }
@@ -3338,6 +3347,34 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); ntSelDelete(); }
   else if (ev.key === 'Escape') ntSelClear();
 });
+// 予定表②の今日の2行を青い枠で囲み、右上に「今日」と出す（2026年11月18日〜。利用者の希望。予定表③と同じ形。画面だけ）
+function drawTodayFrame2() {
+  $$('#sheet .sheet.solo').forEach(pg => {
+    $$('.todayframe', pg).forEach(x => x.remove());
+    const tb = $('table.yt', pg), t1 = tb && $('tr.today2', tb), t2 = t1 && t1.nextElementSibling;
+    if (!t1 || !t2) return;
+    const zq = t3Z(), pr = pg.getBoundingClientRect(), r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect(), tbr = tb.getBoundingClientRect();
+    const fr = document.createElement('div'); fr.className = 'todayframe';
+    fr.style.cssText = `top:${((r1.top - pr.top) / zq).toFixed(2)}px;left:${((tbr.left - pr.left) / zq).toFixed(2)}px;height:${((r2.bottom - r1.top) / zq).toFixed(2)}px;width:${(tbr.width / zq).toFixed(2)}px`;
+    fr.innerHTML = '<span>今日</span>';
+    pg.appendChild(fr);
+  });
+}
+// 予定表②③を開いたとき・月や先生を切り替えたときに、今日の行を、見出しの下の見えるところの真ん中にする（2026年11月18日〜。利用者の希望）
+function centerToday() {
+  const w = $('#v-table .sheet-wrap'); if (!w || st.view !== 'table' || !w.clientHeight) return null;
+  const t1 = $('#sheet tr.today3, #sheet tr.today2'); if (!t1) return null;
+  const t2 = t1.nextElementSibling || t1, r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect();
+  if (!r1.height) return null;
+  const mid = (r1.top + r2.bottom) / 2, th = $('#sheet thead th'); // 見出しのマス（上に残るもの）の下の端から下を、見えるところとする
+  if (w.scrollHeight > w.clientHeight + 1) {
+    const wr = w.getBoundingClientRect(), hb = th ? Math.max(0, th.getBoundingClientRect().bottom - wr.top) : 0;
+    w.scrollTop += (mid - wr.top) - (hb + (w.clientHeight - hb) / 2);
+    return w.scrollTop;
+  }
+  window.scrollBy(0, mid - window.innerHeight / 2);
+  return null;
+}
 // 予定表③の日曜・祝日の帯（2026年11月10日〜）：その日の「日にち」の文字の上の端から「曜日」の文字の下の端まで（少しゆとりを付ける）の高さで、表の左端から右端まで
 function drawHolBands() {
   $$('#sheet .duo .ytw').forEach(w => {
@@ -3727,7 +3764,7 @@ function setTbMember(id) {
   st.tbMember = id;
   try { localStorage.setItem('yotei-tb-member', String(id)); } catch (e) {}
   renderTable();
-  const w = $('#v-table .sheet-wrap'); if (w) w.scrollTop = 0;
+  const w = $('#v-table .sheet-wrap'); if (w && !$('#sheet tr.today2, #sheet tr.today3')) w.scrollTop = 0;
 }
 function stepTbMember(d) {
   const n = st.members.length; if (!n || (st.personal && isMobile())) return;
