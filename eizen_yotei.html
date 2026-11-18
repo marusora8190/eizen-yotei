@@ -650,6 +650,9 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 /* 罫線（border）だけだと、スマホ（とくにiPhone）では細すぎて見えないことがあるため、マスの下の端に1点の線の絵も重ねて描く */
 .solo table.yt tbody td.dn,.solo table.yt tbody td.dw,.solo table.yt tbody td.c.pm,.solo table.yt tbody td.c.ad{border-bottom:1px solid #c4c4c4!important;background-image:linear-gradient(#c4c4c4,#c4c4c4)!important;background-size:100% 1px!important;background-position:left bottom!important;background-repeat:no-repeat!important}
 .solo table.yt tbody td.c.am{border-top:1px solid #c4c4c4!important}
+/* 予定表②：今日の行（日・曜日は濃い青に白い文字、予定のマスはうすい青。2026年11月18日〜。印刷〔p2〕には付けない） */
+.solo table.yt tr.today2 > td.c{background-color:#dbe8f7!important}
+.solo table.yt tr.today2 > td.dn,.solo table.yt tr.today2 > td.dw{background-color:#2f5d9a!important;color:#fff!important;font-weight:700}
 
 /* ===== 予定表（A4横） ===== */
 .sheet-wrap{overflow:auto;background:#e9ecf0;border:1px solid var(--line);border-radius:8px;padding:14px}
@@ -2414,8 +2417,10 @@ function renderTableBody() {
       return `<td class="c pm${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`;
     };
     const rh = p2 ? `height:${rowH2}mm` : solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
-    body += `<tr style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
-    body += `<tr style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
+    // 予定表②（先生1人分。画面だけ）：今日の行は色を付けて目立たせる（2026年11月18日〜。利用者の希望）
+    const t2 = solo && !p2 && day === todayJst() ? ' class="today2"' : '';
+    body += `<tr${t2} style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
+    body += `<tr${t2} style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
   }
   const pg = groups.length > 1 ? `<span class="s-page">（${pageNo}／${groups.length}）</span>` : '';
   const tbl = `<table class="yt" style="width:${p2 ? '199.4mm' : solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
