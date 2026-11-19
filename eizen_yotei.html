@@ -2343,7 +2343,8 @@ function cellText(t, red, prefix, indent, size, parts) {
   return `<span class="${red && !part ? 'r' : ''}"${mv}>${prefix ? `<span class="ap">${prefix}</span>` : ''}<span class="tx"${sz}>${smallWords(redHtml(t, red, parts))}</span></span>`;
 }
 // 予定表では「委員会」「会議」の文字を、AM・PM と同じ大きさで出す（予定の文字の大きさを変えても、この2つは AM・PM と同じまま）
-const SMALL_WORDS = /委員会|会議/g;
+// 時刻（9:00・９：００など）も、AM・PM と同じ小さい文字にする（2026年11月19日〜）
+const SMALL_WORDS = /委員会|会議|[0-9０-９]{1,2}[:：][0-9０-９]{2}/g;
 function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
 // 同じ画面（同じ月・同じ表・同じ先生）のまま作り直すときは、見ていた位置（表の枠の中と画面全体）を作り直したあとに戻す（2026年11月9日〜。保存のたびに一番上へ戻らないように）
 let lastTableSig = '';
