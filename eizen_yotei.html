@@ -378,7 +378,10 @@ body.tbl-one #sheet.solo-wrap{min-width:0}
 .sheet.p2 table.yt thead th .ttl{font-size:9pt}
 .sheet.p2 table.yt thead th.dh{font-size:8pt}
 /* 予定表②の印刷：用紙の上下左右の真ん中に置く（2026年11月19日〜。利用者の希望） */
+.sheet.a4p.p2{width:210mm;height:297mm}
 .sheet.p2{display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden}
+.sheet.p2 .s-nm{font-size:13pt;font-weight:700;margin-left:6mm}
+.sheet.p2 .s-nm .ttl{font-size:9pt;font-weight:400}
 .sheet.p2 .s-title{width:150mm;box-sizing:border-box;flex:none}
 .sheet.p2 table.yt{flex:none;margin:0 auto}
 /* 予定表②の印刷：1日1行・午前と午後を同じ幅の2列に。終日は2列をまたいで真ん中（2026年11月19日〜） */
@@ -648,8 +651,6 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 /* スマホの予定表では、上の説明文（「予定のマスをクリックすると…」）を出さない（2026年11月4日〜。パソコンでは出す） */
 @media screen and (max-width:760px){#v-table .hide-personal-note{display:none!important}}
 .sheet.a4l.solo{width:auto;height:auto}
-.solo table.yt th,.solo table.yt td{border-width:1px;border-top-width:0.5px;border-bottom-width:0.5px}
-.solo table.yt{border-top-width:1px;border-bottom-width:1px}
 .solo .s-title{height:auto;padding:4px 6px;font-size:15px}
 .solo table.yt thead th{height:auto;padding:4px 0;font-size:14px}
 .solo table.yt thead th.dh{font-size:11px}
@@ -660,10 +661,17 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 .solo table.yt td.c .fit{font-size:13px;padding:2px 6px;white-space:normal;line-height:1.25}
 .solo table.yt td.c.ad .fit{font-size:14px}
 .solo table.yt td.c .ap{font-size:10px}
-/* スマホで見る予定表（先生1人ずつ）：日付ごとに、薄い灰色の横の罫線を引く（2026年11月4日〜。午前と午後の間には引かない） */
-/* 罫線（border）だけだと、スマホ（とくにiPhone）では細すぎて見えないことがあるため、マスの下の端に1点の線の絵も重ねて描く */
-.solo table.yt tbody td.dn,.solo table.yt tbody td.dw,.solo table.yt tbody td.c.pm,.solo table.yt tbody td.c.ad{border-bottom:1px solid #c4c4c4!important;background-image:linear-gradient(#c4c4c4,#c4c4c4)!important;background-size:100% 1px!important;background-position:left bottom!important;background-repeat:no-repeat!important}
-.solo table.yt tbody td.c.am{border-top:1px solid #c4c4c4!important}
+/* 予定表②（画面）：印刷と同じ、1日1行で午前・午後を別の列に。罫線はすべて同じ（実線1px・同じ色）（2026年11月19日〜） */
+.solo table.yt,.solo table.yt th,.solo table.yt td{border:1px solid #444!important;background-image:none!important}
+.solo table.yt{border-collapse:collapse}
+.solo table.yt td.dn{text-align:center;padding:0;border-right:0!important}
+.solo table.yt td.dw{text-align:center;padding:0;border-left:0!important}
+.solo table.yt td.c.am .fit,.solo table.yt td.c.pm .fit{text-align:left}
+.solo table.yt td.c.ad .fit{text-align:center}
+.solo table.yt thead th.hh{font-size:13px}
+.solo .s-title{align-items:baseline;gap:14px}
+.solo .s-nm{font-size:15px;font-weight:700}
+.solo .s-nm .ttl{font-size:11px;font-weight:400}
 /* 予定表②：今日の行（日・曜日は濃い青に白い文字、予定のマスはうすい青。2026年11月18日〜。印刷〔p2〕には付けない） */
 .solo table.yt tr.today2 > td.c{background-color:#dbe8f7!important}
 .solo table.yt tr.today2 > td.dn,.solo table.yt tr.today2 > td.dw{background-color:#2f5d9a!important;color:#fff!important;font-weight:700}
@@ -2419,9 +2427,9 @@ function renderTableBody() {
   const tableW = sideW + pw * pc;
   // 予定表②を印刷するとき（st.print2）：A4縦1枚。日・曜日の列は細く、残りを先生1人分に（2026年11月9日〜）
   const p2 = solo && !!st.print2, rowH2 = Math.min(8, (287 - titleH - 12 - 1.5) / nd);
-  let cols = p2 ? '<col style="width:6.5mm"><col style="width:7.5mm"><col><col>' : solo ? '<col style="width:16%"><col style="width:13%"><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
+  let cols = p2 ? '<col style="width:6.5mm"><col style="width:7.5mm"><col><col>' : solo ? '<col style="width:34px"><col style="width:40px"><col><col>' : `<col style="width:${dw}mm"><col style="width:${ww}mm">` + L.map(() => `<col style="width:${pw}mm">`).join('');
   if (R.length) cols += `<col style="width:${dw}mm"><col style="width:${ww}mm">` + R.map(() => `<col style="width:${pw}mm">`).join('');
-  let head = p2 ? `<th rowspan="2" colspan="2" class="dh dh1">日・曜日</th><th colspan="2" class="redge">${ttlHtml(L[0].header_name)}</th></tr><tr><th class="hh">午前</th><th class="hh redge">午後</th>` : `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${!R.length && i === L.length - 1 ? ' class="redge"' : ''}>${ttlHtml(x.header_name)}</th>`).join('');
+  let head = solo ? `<th colspan="2" class="dh dh1">日・曜日</th><th class="hh">午前</th><th class="hh redge">午後</th>` : `<th colspan="2" class="dh dh1">日・曜日</th>` + L.map((x, i) => `<th${!R.length && i === L.length - 1 ? ' class="redge"' : ''}>${ttlHtml(x.header_name)}</th>`).join('');
   if (R.length) head += `<th colspan="2" class="dh half-l" style="border-left:0.6px solid #000">日・曜日</th>` + R.map((x, i) => `<th${i === R.length - 1 ? ' class="redge"' : ''}>${ttlHtml(x.header_name)}</th>`).join('');
   let body = '';
   for (let d = 1; d <= nd; d++) {
@@ -2439,11 +2447,12 @@ function renderTableBody() {
       if (e.allday) return '';
       return `<td class="c pm${ed}${le(x)}" data-mid="${x.id}" data-day="${day}"><div class="fit">${cellText(e.pm, e.pm_red, 'PM', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td>`;
     };
-    if (p2) {
-      const x = L[0], e = withEnds(x.id, day), rdc = rd;
-      const dn = `<td class="dn${rdc}">${d}</td><td class="dw${rdc}">(${WD_JA[w]})</td>`;
-      if (e.allday) body += `<tr style="height:${rowH2}mm">${dn}<td colspan="2" class="c ad redge"><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td></tr>`;
-      else body += `<tr style="height:${rowH2}mm">${dn}<td class="c am"><div class="fit">${cellText(e.am, e.am_red, '', e.am_indent, e.am_size, e.am_red_parts)}</div></td><td class="c pm redge"><div class="fit">${cellText(e.pm, e.pm_red, '', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td></tr>`;
+    if (solo) {
+      const x = L[0], e = withEnds(x.id, day), rdc = rd, ed = !p2 && editable ? ' editable' : '', da = ` data-day="${day}"`, ma = ` data-mid="${x.id}" data-day="${day}"`;
+      const tdy = !p2 && day === todayJst() ? ' class="today2"' : '';
+      const dn = `<td class="dn${rdc}"${da}>${d}</td><td class="dw${rdc}"${da}>(${WD_JA[w]})</td>`;
+      if (e.allday) body += `<tr${tdy} style="${p2 ? 'height:' + rowH2 + 'mm' : 'height:28px'}">${dn}<td colspan="2" class="c ad${ed} redge"${ma}><div class="fit">${cellText(e.allday, e.allday_red, '', e.allday_indent, e.allday_size, e.allday_red_parts)}</div></td></tr>`;
+      else body += `<tr${tdy} style="${p2 ? 'height:' + rowH2 + 'mm' : 'height:28px'}">${dn}<td class="c am${ed}"${ma}><div class="fit">${cellText(e.am, e.am_red, '', e.am_indent, e.am_size, e.am_red_parts)}</div></td><td class="c pm${ed} redge"${ma}><div class="fit">${cellText(e.pm, e.pm_red, '', e.pm_indent, e.pm_size, e.pm_red_parts)}</div></td></tr>`;
       continue;
     }
     const rh = p2 ? `height:${rowH2}mm` : solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
@@ -2463,7 +2472,7 @@ function renderTableBody() {
     // 外わくのいちばん上・いちばん下の線も、同じ描き方の1本の線にする
     vl = `<div class="vlines">${xs.map(v => `<i style="left:${v}mm"></i>`).join('')}<b class="ht" style="width:calc(${tableW}mm + 0.6px)"></b><b class="hb" style="width:calc(${tableW}mm + 0.6px)"></b></div>`;
   }
-  return `<div class="sheet ${p2 ? 'a4p p2' : 'a4l'} ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span></div>${solo ? tbl : `<div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div>`}</div>`;
+  return `<div class="sheet ${p2 ? 'a4p p2' : 'a4l'} ypage${solo ? ' solo' : ''}"><div class="s-title"><span class="s-tt">${monthTitle(y, m)} 予定表${pg}</span>${solo ? `<span class="s-nm">${ttlHtml(L[0].header_name)}</span>` : ''}</div>${solo ? tbl : `<div class="ytw" style="width:${tableW}mm">${tbl}${vl}</div>`}</div>`;
   };
   // 予定表③（A4縦）：左から「特記」「1人目」「日・曜日」「2人目」「特記」（2026年11月9日〜）
   // この画面では、先生の予定は直せない（見るだけ）。特記だけ書ける。「お願いすること」のリストは「⚙ 設定」の中
@@ -3373,7 +3382,7 @@ document.addEventListener('keydown', ev => {
 function drawTodayFrame2() {
   $$('#sheet .sheet.solo').forEach(pg => {
     $$('.todayframe', pg).forEach(x => x.remove());
-    const tb = $('table.yt', pg), t1 = tb && $('tr.today2', tb), t2 = t1 && t1.nextElementSibling;
+    const tb = $('table.yt', pg), t1 = tb && $('tr.today2', tb), t2 = t1;
     if (!t1 || !t2) return;
     const zq = t3Z(), pr = pg.getBoundingClientRect(), r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect(), tbr = tb.getBoundingClientRect();
     const fr = document.createElement('div'); fr.className = 'todayframe';
@@ -3386,7 +3395,7 @@ function drawTodayFrame2() {
 function centerToday() {
   const w = $('#v-table .sheet-wrap'); if (!w || st.view !== 'table' || !w.clientHeight) return null;
   const t1 = $('#sheet tr.today3, #sheet tr.today2'); if (!t1) return null;
-  const t2 = t1.nextElementSibling || t1, r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect();
+  const t2 = t1.classList.contains('today2') ? t1 : (t1.nextElementSibling || t1), r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect();
   if (!r1.height) return null;
   const mid = (r1.top + r2.bottom) / 2, th = $('#sheet thead th'); // 見出しのマス（上に残るもの）の下の端から下を、見えるところとする
   if (w.scrollHeight > w.clientHeight + 1) {
@@ -4719,7 +4728,7 @@ function doPrint(pageCss) {
   setTimeout(() => { window.print(); setTimeout(() => { printing = false; }, 1000); }, 50);
 }
 // 予定表②の印刷（A4縦。2026年11月9日〜）：印刷用の大きさで作り直してから印刷し、終わったら画面用に戻す
-$('#tbSwitch').addEventListener('click', e => { if (!e.target.closest('#btnPrint2')) return; st.print2 = true; renderTable(); doPrint('size:210mm 297mm;margin:5mm'); });
+$('#tbSwitch').addEventListener('click', e => { if (!e.target.closest('#btnPrint2')) return; st.print2 = true; renderTable(); doPrint('size:210mm 297mm;margin:0'); });
 window.addEventListener('afterprint', () => { if (st.print2) { st.print2 = false; setTimeout(() => { if (st.view === 'table') renderTable(); }, 300); } });
 $('#btnPrintTable').addEventListener('click', () => {
   // 予定表③は、画面では横に広げているので、印刷用（A4縦の幅）に作り直してから印刷する（2026年11月9日〜）
