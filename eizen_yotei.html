@@ -377,6 +377,10 @@ body.tbl-one #sheet.solo-wrap{min-width:0}
 .sheet.p2 table.yt thead th{font-size:13pt}
 .sheet.p2 table.yt thead th .ttl{font-size:9pt}
 .sheet.p2 table.yt thead th.dh{font-size:8pt}
+/* 予定表②の印刷：用紙の上下左右の真ん中に置く（2026年11月19日〜。利用者の希望） */
+.sheet.p2{display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:hidden}
+.sheet.p2 .s-title{width:199.4mm;box-sizing:border-box;flex:none}
+.sheet.p2 table.yt{flex:none;margin:0 auto}
 #t3Pick{display:none;align-items:center;gap:6px;font-size:14px}
 /* スマホの予定表③（見るだけ。1日ずつ縦に並べる。2026年11月10日〜。利用者の希望） */
 .m3wrap{box-sizing:border-box;width:100%;padding:8px;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif;color:#1f2933}
