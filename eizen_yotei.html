@@ -2337,6 +2337,7 @@ function halves(list) { const n = list.length, k = Math.ceil(n / 2); return [lis
 const INDENT_MM = 1.5;
 function cellText(t, red, prefix, indent, size, parts) {
   if (!t) return '';
+  if (prefix && hasClock(t)) prefix = ''; // 時刻（13:00・9:00など）が入っているときは、AM・PMを付けない（2026年11月19日〜）
   const mv = indent ? ` style="position:relative;left:${indent * INDENT_MM}mm"` : '';
   const sz = size ? ` style="font-size:${(1 + size * 0.1).toFixed(2)}em"` : '';
   const part = red && parts;
@@ -2345,6 +2346,7 @@ function cellText(t, red, prefix, indent, size, parts) {
 // 予定表では「委員会」「会議」の文字を、AM・PM と同じ大きさで出す（予定の文字の大きさを変えても、この2つは AM・PM と同じまま）
 // 時刻（9:00・９：００など）も、AM・PM と同じ小さい文字にする（2026年11月19日〜）
 const SMALL_WORDS = /委員会|会議|[0-9０-９]{1,2}[:：][0-9０-９]{2}/g;
+function hasClock(t) { return /[0-9０-９]{1,2}[:：][0-9０-９]{2}/.test(String(t || '')); }
 function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
 // 同じ画面（同じ月・同じ表・同じ先生）のまま作り直すときは、見ていた位置（表の枠の中と画面全体）を作り直したあとに戻す（2026年11月9日〜。保存のたびに一番上へ戻らないように）
 let lastTableSig = '';
@@ -4520,7 +4522,7 @@ function xlRuns(t, red, parts, prefix, size) {
   const base = Math.round(XL_PT * (1 + (size || 0) * 0.1) * 10) / 10;
   const out = [];
   const push = (text, sz, r) => { if (!text) return; const l = out[out.length - 1]; if (l && l.sz === sz && l.red === r) l.t += text; else out.push({ t: text, sz, red: r }); };
-  if (prefix) push(prefix, XL_PT_SMALL, whole);
+  if (prefix && !hasClock(t)) push(prefix, XL_PT_SMALL, whole);
   String(t || '').split(RED_SEP).forEach((x, i) => {
     const r = whole || (i % 2 === 0 && !!x.trim() && ps.includes(x.trim()));
     x.split(XL_SMALL).forEach((w, j) => push(w, j % 2 === 1 ? XL_PT_SMALL : base, r));
