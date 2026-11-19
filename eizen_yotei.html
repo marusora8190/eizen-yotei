@@ -705,6 +705,15 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 .sheet{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);margin:0 auto;color:#000;font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif}
 .atpanel,.ntedit textarea{font-family:"Meiryo UI","Meiryo","Yu Gothic","MS PGothic",sans-serif!important}
 .sheet.a4l{width:287mm;height:200mm;padding:0}
+/* 予定表①：表全体をマウスでつかんで動かせる（2026年11月19日〜）。ずらした量は印刷にも効く。ブラウザーに覚える（yotei-t1off） */
+#sheet{--t1x:0mm;--t1y:0mm}
+body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo){transform:translate(var(--t1x),var(--t1y))}
+body.tbl-three #btnT1Reset,body.tbl-one #btnT1Reset{display:none}
+@media screen{
+  body:not(.tbl-three):not(.tbl-one) #v-table .sheet.a4l.ypage:not(.solo){cursor:move}
+  /* 後ろの背景は方眼紙（うすい罫線）。見ている位置といっしょに動く */
+  body:not(.tbl-three):not(.tbl-one) #v-table .sheet-wrap{background-color:#f6f8fa;background-image:linear-gradient(#d9dfe6 1px,transparent 1px),linear-gradient(90deg,#d9dfe6 1px,transparent 1px);background-size:20px 20px;background-attachment:local}
+}
 .ypage + .ypage{margin-top:14px}
 .s-page{font-size:9pt;margin-left:3mm}
 .s-title{height:7mm;font-size:12pt;display:flex;align-items:flex-end;padding:0 0 1mm 1mm}
@@ -916,6 +925,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
       <button class="btn" id="btnXlsx" title="表示している月の予定表①（6人分）を、手元の「R189部次課長青年予定表.xlsm」の同じ月のシート（12月なら「12」）に書き出します（ファイルを選ぶと、書き換えたファイルをダウンロードします）" hidden>📗 Excelに書き出し</button><input type="file" id="xlsxFile" accept=".xlsm,.xlsx" hidden>
+      <button class="btn" id="btnT1Reset" title="予定表①を手でずらした位置を、元（用紙の真ん中）にもどします">↺ 表の位置をもどす</button>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。<span class="admin-sub">「未」の印をクリックすると、受け取り済み（「済」）にできます。</span></p>
@@ -3859,6 +3869,17 @@ window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox()
 // 予定表をマウスでつかんで動かす（マジックハンド。2026年10月27日〜）。パソコン用・スマホ用の画面のどちらでも。
 // 少し（5px）動かしたらつかんで動かす形になり、そのときはマスのクリック（直し画面）は開かない。
 // 指で触る画面（スマホ・タブレット）は、もとからブラウザーの動きで動くので、マウスのときだけ。
+const T1_KEY = 'yotei-t1off';
+let t1Off = { x: 0, y: 0 };
+try { const o = JSON.parse(localStorage.getItem(T1_KEY) || 'null'); if (o && isFinite(o.x) && isFinite(o.y)) t1Off = { x: o.x, y: o.y }; } catch (_) {}
+function t1Mode() { return st.view === 'table' && !document.body.classList.contains('tbl-three') && !document.body.classList.contains('tbl-one') && !st.print2 && !isMobile(); }
+function t1Set(x, y, save) {
+  t1Off = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  $('#sheet').style.setProperty('--t1x', t1Off.x + 'mm'); $('#sheet').style.setProperty('--t1y', t1Off.y + 'mm');
+  try { localStorage.setItem(T1_KEY, JSON.stringify(t1Off)); } catch (_) {}
+}
+t1Set(t1Off.x, t1Off.y);
+$('#btnT1Reset').addEventListener('click', () => t1Set(0, 0));
 (function () {
   const w = $('#v-table .sheet-wrap'); if (!w) return;
   let down = null, moved = false;
@@ -3867,6 +3888,8 @@ window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox()
     if (e.pointerType !== 'mouse' || e.button !== 0) return;
     if (e.target.closest('button,input,select,textarea,a,label')) return;
     down = { x: e.clientX, y: e.clientY, sl: w.scrollLeft, st: w.scrollTop, wy: window.scrollY, id: e.pointerId };
+    // 予定表①：表（用紙）の上でつかんだときは、表全体を動かす（メモのマスは、それ自身のつかむ動きがあるので除く）
+    if (t1Mode() && e.target.closest('.sheet.a4l.ypage') && !e.target.closest('td.nt')) down.sheet = { ...t1Off };
   });
   w.addEventListener('pointermove', e => {
     if (!down || e.pointerId !== down.id) return;
@@ -3878,6 +3901,7 @@ window.addEventListener('resize', () => { if (st.view === 'table') fitTableBox()
       try { window.getSelection().removeAllRanges(); } catch (_) {}
     }
     e.preventDefault();
+    if (down.sheet) { t1Set(down.sheet.x + dx * 25.4 / 96, down.sheet.y + dy * 25.4 / 96); return; }
     w.scrollLeft = down.sl - dx;
     // 枠の中で上下に動かせないとき（予定表が枠に収まっているとき）は、画面全体を上下に動かす
     if (w.scrollHeight > w.clientHeight + 1) w.scrollTop = down.st - dy;
