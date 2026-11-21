@@ -638,6 +638,7 @@ body.tbl-one .atpanel{display:block;flex:1;min-width:340px;max-width:760px;posit
 .at-ctl .seg .btn:last-child{border-radius:0 5px 5px 0}
 .at-ctl .seg .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .at-when{font-size:15px;font-weight:700;margin:0 0 6px}
+.at-hint{font-size:13px;color:var(--sub);margin:-4px 0 8px} /* 「日付と時間で見る」の使い方の一言（2026年11月21日〜。利用者の希望） */
 table.attbl{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed} /* 午前・午後の列幅は均等で固定（2026年11月18日〜。利用者の希望） */
 table.attbl th,table.attbl td{border:1px solid #333;padding:7px 6px;text-align:left;vertical-align:top}
 table.attbl th{width:7.5em;white-space:nowrap}
@@ -3770,6 +3771,7 @@ async function renderAtPanel() {
   const day = st.atDate, [yy, mm, dd] = day.split('-').map(Number);
   if (!$('#atDate', box)) {
     box.innerHTML = `<h3>日付と時間で見る</h3>
+      <p class="at-hint">左側の予定表の日付（日・曜日）を左クリックすると、その日付になります。</p>
       <div class="at-ctl"><input type="date" id="atDate"><button type="button" class="btn sm" data-atstep="-1" title="前の日">◀</button><button type="button" class="btn sm" data-atstep="1" title="次の日">▶</button><button type="button" class="btn sm" id="atToday">今日</button></div>
       <div class="at-when" id="atWhen"></div><div id="atList"></div>`;
     $('#atDate', box).addEventListener('change', e => { if (e.target.value) { st.atDate = e.target.value; renderAtPanel(); } });
