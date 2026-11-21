@@ -608,6 +608,10 @@ body.t3only nav a,body.t3only nav .sep,body.t3only .mnav [data-view],body.t3only
 body.t3only header h1{cursor:default!important;background:none!important;text-decoration:none!important}
 #btnUpdateH{display:none}
 @media screen and (min-width:761px){body.t3only nav,body.t3only #btnNav{display:none!important}body.t3only #btnUpdateH{display:inline-flex;margin-left:auto}}
+/* 予定表②だけのURL（?t2=1。2026年11月21日〜。利用者の希望）：見るだけ。サイドバーを出さず、Update を上の帯の右端に出す */
+body.t2only nav a,body.t2only nav .sep,body.t2only .mnav [data-view],body.t2only .hide-personal-note{display:none!important}
+body.t2only header h1{cursor:default!important;background:none!important;text-decoration:none!important}
+@media screen and (min-width:761px){body.t2only nav,body.t2only #btnNav{display:none!important}body.t2only #btnUpdateH{display:inline-flex;margin-left:auto}}
 .urlrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0}
 .urlrow .nm{font-weight:700;min-width:14em}
 .urlrow a.urlop{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
@@ -966,10 +970,11 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <section id="v-master">
     <h2>マスター</h2>
     <div class="panel">
-      <h3 style="margin-top:0">見るだけのURL・予定表③だけのURL</h3>
+      <h3 style="margin-top:0">見るだけのURL・予定表②だけのURL・予定表③だけのURL</h3>
       <div class="urlrow"><span class="nm">見るだけ（予定表①②）</span><code data-q="view=1"></code><button type="button" class="btn sm urlcp" data-q="view=1">コピー</button><a class="btn sm urlop" data-q="view=1" target="_blank" rel="noopener noreferrer">開く</a></div>
+      <div class="urlrow"><span class="nm">予定表②だけ（見るだけ）</span><code data-q="t2=1"></code><button type="button" class="btn sm urlcp" data-q="t2=1">コピー</button><a class="btn sm urlop" data-q="t2=1" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">予定表③だけ（特記を書く）</span><code data-q="t3=1"></code><button type="button" class="btn sm urlcp" data-q="t3=1">コピー</button><a class="btn sm urlop" data-q="t3=1" target="_blank" rel="noopener noreferrer">開く</a></div>
-      <p class="note">「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
+      <p class="note">「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表②だけ」は、予定表②（先生1人ずつ・右に「日付と時間で見る」）だけが出て、直すことはできません（スマホでは先生1人ずつの予定表を見るだけになります）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t2=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
     </div>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
@@ -1037,7 +1042,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
           <li>先生ごとの入力用URLは、ふつうのURLの最後に <code>?p=番号</code> を付けたものです（番号は先生の一覧の番号）。管理者メニューの「マスター」の「個人用URL」でコピーできます。</li>
           <li>先生ごとのURLでは、予定入力・予定表①②・記入表の印刷・使い方だけが出ます。「まとめて編集」と管理者メニューは出ません。パスワードは無いため、URLを知っている人は誰でも入力できます。</li>
           <li>ふつうのURLも、パスワード無しで全員の予定を入力できます。ふつうのURLは、管理者だけで使ってください。</li>
-          <li>見るだけのURL（最後に <code>?view=1</code>）：予定表①②だけが出て、直すことはできません。予定表③だけのURL（最後に <code>?t3=1</code>）：パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（2026年11月9日〜）。どちらも「マスター」のいちばん上でコピーできます。末尾を消すとふつうのURLになるため、使い分けのためのもので、守りの仕組みではありません。</li>
+          <li>見るだけのURL（最後に <code>?view=1</code>）：予定表①②だけが出て、直すことはできません。予定表②だけのURL（最後に <code>?t2=1</code>）：予定表②だけが出て、直すことはできません（2026年11月21日〜）。予定表③だけのURL（最後に <code>?t3=1</code>）：パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（2026年11月9日〜）。どれも「マスター」のいちばん上でコピーできます。末尾を消すとふつうのURLになるため、使い分けのためのもので、守りの仕組みではありません。</li>
         </ul>
       </div>
     </details>
@@ -1273,7 +1278,7 @@ const adminSb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: safeSes
 // ===== 状態 =====
 const st = {
   members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [] },
-  y: 0, m: 0, arrows: [], notes: new Map(), requests: [], tbl3: false, viewOnly: false, t3Only: false, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null, tbMember: null,
+  y: 0, m: 0, arrows: [], notes: new Map(), requests: [], tbl3: false, viewOnly: false, t2Only: false, t3Only: false, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null, tbMember: null,
 };
 
 // ===== 小道具 =====
@@ -1647,6 +1652,7 @@ function showView(v) {
   if (isMobile() && !['input', 'table'].includes(v)) v = 'input'; // スマホは予定入力・予定表だけ
   // 見るだけのURL：予定表①②だけ。予定表③だけのURL：いつも予定表③（スマホでは、見るだけの予定表）
   if (st.viewOnly) { if (v !== 'table') { v = 'table'; st.tblOne = false; } st.tbl3 = false; }
+  if (st.t2Only) { v = 'table'; st.tblOne = !isMobile(); st.tbl3 = false; } // 予定表②だけのURL：いつも予定表②（スマホでは、ふつうの見る予定表。2026年11月21日〜）
   if (st.t3Only) { v = 'table'; st.tblOne = false; st.tbl3 = true; } // スマホでも予定表③（見るだけ。2026年11月10日〜）
   st.view = v;
   document.body.classList.toggle('tbl-three', v === 'table' && !!st.tbl3 && !st.personal && !isMobile());
@@ -5123,6 +5129,8 @@ $('#msHolAdd').addEventListener('click', async () => {
     }
     // 見るだけのURL（?view=1）・予定表③だけのURL（?t3=1）。2026年11月9日〜
     if (!st.personal && params.get('view') === '1') { st.viewOnly = true; document.body.classList.add('viewonly'); $('#whoLabel').textContent = '見るだけ'; }
+    // 予定表②だけのURL（?t2=1。2026年11月21日〜）：見るだけのURLと同じく直せない。予定表②だけを出す
+    else if (!st.personal && params.get('t2') === '1') { st.viewOnly = true; st.t2Only = true; document.body.classList.add('viewonly', 't2only'); $('#whoLabel').textContent = '予定表②'; }
     else if (!st.personal && params.get('t3') === '1') { st.t3Only = true; document.body.classList.add('t3only'); $('#whoLabel').textContent = '予定表③'; }
     // 見るだけ・予定表③だけのURLは、はじめは今月を開く（ふつうは来月。2026年11月9日〜。Update のあとは見ていた月のまま）
     if ((st.viewOnly || st.t3Only) && !(mq && /^\d{4}-\d{2}$/.test(mq))) { const td = todayJst(); st.y = Number(td.slice(0, 4)); st.m = Number(td.slice(5, 7)); }
