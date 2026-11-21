@@ -798,6 +798,16 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 #faPanel .farow .lb{width:6.5em}
 #faPanel .farow .v{min-width:3.5em;text-align:center;color:#555}
 @media print{#faPanel{display:none!important}}
+/* 記入表の印刷：用紙をマウスでつかんで動かせる（マジックハンド。2026年11月21日〜。利用者の希望）。ずらした量（mm）は印刷にも効く。ブラウザーに覚える（yotei-fmoff）。用紙からはみ出さないよう、上下左右とも8mmまで */
+#fmPages{--fmx:0mm;--fmy:0mm}
+@media screen{
+  #fmPages .kpage{transform:translate(var(--fmx),var(--fmy));cursor:move}
+  #fmPages.grabbing,#fmPages.grabbing *{cursor:grabbing!important;user-select:none}
+  /* 後ろの背景は方眼紙（うすい罫線）。予定表①と同じ */
+  #fmPages.sheet-wrap{background-color:#f6f8fa;background-image:linear-gradient(#d9dfe6 1px,transparent 1px),linear-gradient(90deg,#d9dfe6 1px,transparent 1px);background-size:20px 20px;background-attachment:local}
+}
+/* 印刷は用紙の余白0で、ふつうの位置（左上から8mm。前と同じ）に、ずらした分を足す */
+@media print{#fmPages .kpage{transform:translate(calc(8mm + var(--fmx)),calc(8mm + var(--fmy)))}}
 .k-body table + table{border-left:0}
 .k-body table + table th:first-child,.k-body table + table td:first-child{border-left:0} /* 真ん中の縦線を、ほかの縦線と同じ太さに（2026年11月13日〜。左の表の右の線だけにする） */
 .k-foot{height:7mm;display:flex;justify-content:space-between;align-items:flex-start;padding:1mm 1mm 0;font-size:10pt}
@@ -944,6 +954,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <span id="fmMembersWrap"><span>印刷する先生：</span><span id="fmMembers"></span></span>
       <label><input type="checkbox" id="fmFill"> 入力済みの予定も印刷する</label>
       <span style="flex:1"></span>
+      <button class="btn" id="btnFmReset" title="記入表を手でずらした位置を、元にもどします">↺ 印刷の位置をもどす</button>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
     <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
@@ -1182,7 +1193,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表は見るだけです。予定を直すときは「予定入力」で直します。</li>
     </ul>
     <h3>記入表の印刷</h3>
-    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。</p>
+    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます。「↺ 印刷の位置をもどす」で元にもどります）。</p>
     <h3>スマホで使うとき</h3>
     <ul>
       <li>上の「Update」「予定表」「予定入力」の3つのボタンを使います。</li>
@@ -1200,7 +1211,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <p>先生方の毎月の予定を1枚にまとめた「予定表」（A4横）を作ります。</p>
     <h3>毎月の流れ</h3>
     <ol>
-      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。</li>
+      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効き、このパソコンのブラウザーが覚えます。「↺ 印刷の位置をもどす」で元にもどります）。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表①」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表①」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表①」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
@@ -4448,6 +4459,47 @@ async function faSave() {
   faEdit = null; faShow(); renderForm(); toast('記入表の矢印の位置を保存しました');
 }
 $('#fmPages').addEventListener('click', ev => { const a = ev.target.closest('.yarrow.fa'); if (a) faOpen(a.dataset.fa); });
+// 記入表の印刷の位置を、用紙をマウスでつかんで動かす（マジックハンド。2026年11月21日〜。利用者の希望）
+// 少し（5px）動かしたらつかんで動かす形になり、そのときは矢印のクリックは開かない。ずらした量は印刷にも効く（上下左右とも8mmまで）
+const FM_KEY = 'yotei-fmoff', FM_MAX = 8;
+let fmOff = { x: 0, y: 0 };
+try { const o = JSON.parse(localStorage.getItem(FM_KEY) || 'null'); if (o && isFinite(o.x) && isFinite(o.y)) fmOff = { x: o.x, y: o.y }; } catch (_) {}
+function fmSet(x, y) {
+  const c = v => Math.max(-FM_MAX, Math.min(FM_MAX, Math.round(v * 10) / 10));
+  fmOff = { x: c(x), y: c(y) };
+  $('#fmPages').style.setProperty('--fmx', fmOff.x + 'mm'); $('#fmPages').style.setProperty('--fmy', fmOff.y + 'mm');
+  try { localStorage.setItem(FM_KEY, JSON.stringify(fmOff)); } catch (_) {}
+}
+fmSet(fmOff.x, fmOff.y);
+$('#btnFmReset').addEventListener('click', () => fmSet(0, 0));
+(function () {
+  const w = $('#fmPages'); let down = null, moved = false;
+  w.addEventListener('pointerdown', e => {
+    moved = false;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (!e.target.closest('.kpage') || e.target.closest('button,input,select,textarea,a,label')) return;
+    down = { x: e.clientX, y: e.clientY, id: e.pointerId, o: { ...fmOff } };
+  });
+  w.addEventListener('pointermove', e => {
+    if (!down || e.pointerId !== down.id) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (!moved) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      moved = true; w.classList.add('grabbing');
+      try { w.setPointerCapture(down.id); } catch (_) {}
+      try { window.getSelection().removeAllRanges(); } catch (_) {}
+    }
+    e.preventDefault();
+    const k = 1 / pxPerMm();
+    fmSet(down.o.x + dx * k, down.o.y + dy * k);
+  });
+  const end = () => { if (!down) return; try { w.releasePointerCapture(down.id); } catch (_) {} down = null; w.classList.remove('grabbing'); };
+  w.addEventListener('pointerup', end);
+  w.addEventListener('pointercancel', end);
+  w.addEventListener('lostpointercapture', end);
+  w.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  w.addEventListener('dragstart', e => e.preventDefault());
+})();
 $('#faPanel').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-fa]'); if (!b || !faEdit) return;
   const a = b.dataset.fa;
@@ -4775,7 +4827,10 @@ window.addEventListener('resize', () => {
   clearTimeout(t3ResizeTimer);
   t3ResizeTimer = setTimeout(() => { if (!st.print3 && !$('#modal').classList.contains('show')) renderTable(); }, 250);
 });
-$('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:8mm'));
+// 記入表の印刷は用紙の余白0（ふつうの位置の8mmは、記入表の側でずらす。2026年11月21日〜）
+$('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:0'));
+// Ctrl＋P で記入表を印刷したときも、同じ用紙の設定にする
+window.addEventListener('beforeprint', () => { if (st.view === 'form') $('#pageStyle').textContent = '@page{size:297mm 210mm;margin:0}'; });
 
 // ===== 管理者 =====
 async function ensureAdmin() {
