@@ -718,6 +718,12 @@ body.tbl-three #btnT1Reset,body.tbl-one #btnT1Reset{display:none}
   body:not(.tbl-three):not(.tbl-one) #v-table .sheet.a4l.ypage:not(.solo){cursor:move}
   /* 後ろの背景は方眼紙（うすい罫線）。見ている位置といっしょに動く */
   body:not(.tbl-three):not(.tbl-one) #v-table .sheet-wrap{background-color:#f6f8fa;background-image:linear-gradient(#d9dfe6 1px,transparent 1px),linear-gradient(90deg,#d9dfe6 1px,transparent 1px);background-size:20px 20px;background-attachment:local}
+  /* 表を動かしたぶん、下・横に動かしたときに残る題名・名前の行・日付の列の止まる位置を戻す（2026年11月25日〜。動かした表で、下に動かすと名前の行がずれて上に予定が見えていた） */
+  body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) .s-title{top:calc(0mm - var(--t1y))}
+  body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) .s-tt{left:calc(1mm - var(--t1x))}
+  body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) table.yt thead th{top:calc(var(--tth,7mm) - 1px - var(--t1y))}
+  body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) table.yt td.dn1,body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) table.yt thead th.dh1{left:calc(0mm - var(--t1x))}
+  body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo):not(.duo) table.yt td.dw1{left:calc(var(--dnw,7mm) - var(--t1x))}
 }
 .ypage + .ypage{margin-top:14px}
 .s-page{font-size:9pt;margin-left:3mm}
