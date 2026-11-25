@@ -811,7 +811,7 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 #faPanel .farow .lb{width:6.5em}
 #faPanel .farow .v{min-width:3.5em;text-align:center;color:#555}
 @media print{#faPanel{display:none!important}}
-/* 記入表の印刷：用紙をマウスでつかんで動かせる（マジックハンド。2026年11月21日〜。利用者の希望）。ずらした量（mm）は印刷にも効く。ブラウザーに覚える（yotei-fmoff）。用紙からはみ出さないよう、上下左右とも8mmまで */
+/* 記入表の印刷：用紙をマウスでつかんで動かせる（マジックハンド。2026年11月21日〜。利用者の希望）。ずらした量（mm）は印刷にも効く。ブラウザーに覚える（yotei-fmoff。2026年11月25日〜は「印刷の位置を保存する」と「印刷」を押したときだけ）。用紙からはみ出さないよう、上下左右とも8mmまで */
 #fmPages{--fmx:0mm;--fmy:0mm}
 @media screen{
   #fmPages .kpage{transform:translate(var(--fmx),var(--fmy));cursor:move}
@@ -973,7 +973,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <label><input type="checkbox" id="fmFill"> 入力済みの予定も印刷する</label>
       <label id="fmMealBlankWrap" title="「入力済みの予定も印刷する」のとき、食事の列の ○・✖ を出さずに空欄にします（列は残ります）"><input type="checkbox" id="fmMealBlank"> 食事の○・✖は空欄にする</label>
       <span style="flex:1"></span>
-      <button class="btn" id="btnFmReset" title="記入表を手でずらした位置を、元にもどします">↺ 印刷の位置をもどす</button>
+      <button class="btn" id="btnFmSave" title="今の記入表の位置を、このパソコンに覚えさせます（次に開いたときもこの位置）。「印刷」を押したときも、その位置を自動で覚えます">💾 印刷の位置を保存する</button>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
     <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。そのとき「食事の○・✖は空欄にする」にもチェックを入れると、食事の列は空欄で印刷されます（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
@@ -1223,7 +1223,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表は見るだけです。予定を直すときは「予定入力」で直します。</li>
     </ul>
     <h3>記入表の印刷</h3>
-    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます。「↺ 印刷の位置をもどす」で元にもどります）。「入力済みの予定も印刷する」のとき、「食事の○・✖は空欄にする」にチェックを入れると、食事の列は空欄で印刷されます。</p>
+    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、「印刷」を押したときに覚えられ、次に開いたときもその位置になります。「入力済みの予定も印刷する」のとき、「食事の○・✖は空欄にする」にチェックを入れると、食事の列は空欄で印刷されます。</p>
     <h3>スマホで使うとき</h3>
     <ul>
       <li>上の「Update」「予定表」「予定入力」の3つのボタンを使います。</li>
@@ -1241,7 +1241,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <p>先生方の毎月の予定を1枚にまとめた「予定表」（A4横）を作ります。</p>
     <h3>毎月の流れ</h3>
     <ol>
-      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効き、このパソコンのブラウザーが覚えます。「↺ 印刷の位置をもどす」で元にもどります）。「入力済みの予定も印刷する」で今の予定を入れて印刷するときに、「食事の○・✖は空欄にする」にチェックを入れると、食事の列だけ空欄になります。</li>
+      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、最後に「印刷」を押したときに、このパソコンのブラウザーが覚えます（動かしただけでは覚えません）。「入力済みの予定も印刷する」で今の予定を入れて印刷するときに、「食事の○・✖は空欄にする」にチェックを入れると、食事の列だけ空欄になります。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表①」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表①」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表①」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
@@ -4518,10 +4518,11 @@ function fmSet(x, y) {
   const c = v => Math.max(-FM_MAX, Math.min(FM_MAX, Math.round(v * 10) / 10));
   fmOff = { x: c(x), y: c(y) };
   $('#fmPages').style.setProperty('--fmx', fmOff.x + 'mm'); $('#fmPages').style.setProperty('--fmy', fmOff.y + 'mm');
-  try { localStorage.setItem(FM_KEY, JSON.stringify(fmOff)); } catch (_) {}
 }
+// 位置を覚えるのは「印刷の位置を保存する」を押したときと、「印刷（A4横）」を押したときだけ（2026年11月25日〜。利用者の希望。それまではつかんで動かすたびに覚え、「印刷の位置をもどす」で0に戻した）
+function fmSave() { try { localStorage.setItem(FM_KEY, JSON.stringify(fmOff)); return true; } catch (_) { return false; } }
 fmSet(fmOff.x, fmOff.y);
-$('#btnFmReset').addEventListener('click', () => fmSet(0, 0));
+$('#btnFmSave').addEventListener('click', () => { if (fmSave()) toast('印刷の位置を保存しました'); else toast('保存できませんでした', true); });
 (function () {
   const w = $('#fmPages'); let down = null, moved = false;
   w.addEventListener('pointerdown', e => {
@@ -4878,7 +4879,7 @@ window.addEventListener('resize', () => {
   t3ResizeTimer = setTimeout(() => { if (!st.print3 && !$('#modal').classList.contains('show')) renderTable(); }, 250);
 });
 // 記入表の印刷は用紙の余白0（ふつうの位置の8mmは、記入表の側でずらす。2026年11月21日〜）
-$('#btnPrintForm').addEventListener('click', () => doPrint('size:297mm 210mm;margin:0'));
+$('#btnPrintForm').addEventListener('click', () => { fmSave(); doPrint('size:297mm 210mm;margin:0'); }); // 印刷したときの位置を覚える（2026年11月25日〜）
 // Ctrl＋P で記入表を印刷したときも、同じ用紙の設定にする
 window.addEventListener('beforeprint', () => { if (st.view === 'form') $('#pageStyle').textContent = '@page{size:297mm 210mm;margin:0}'; });
 
