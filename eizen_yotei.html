@@ -971,11 +971,12 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="toolbar">
       <span id="fmMembersWrap"><span>印刷する先生：</span><span id="fmMembers"></span></span>
       <label><input type="checkbox" id="fmFill"> 入力済みの予定も印刷する</label>
+      <label id="fmMealBlankWrap" title="「入力済みの予定も印刷する」のとき、食事の列の ○・✖ を出さずに空欄にします（列は残ります）"><input type="checkbox" id="fmMealBlank"> 食事の○・✖は空欄にする</label>
       <span style="flex:1"></span>
       <button class="btn" id="btnFmReset" title="記入表を手でずらした位置を、元にもどします">↺ 印刷の位置をもどす</button>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
-    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。そのとき「食事の○・✖は空欄にする」にもチェックを入れると、食事の列は空欄で印刷されます（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
     <div class="sheet-wrap" id="fmPages"></div>
     <div id="faPanel" hidden></div>
   </section>
@@ -1222,7 +1223,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表は見るだけです。予定を直すときは「予定入力」で直します。</li>
     </ul>
     <h3>記入表の印刷</h3>
-    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます。「↺ 印刷の位置をもどす」で元にもどります）。</p>
+    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます。「↺ 印刷の位置をもどす」で元にもどります）。「入力済みの予定も印刷する」のとき、「食事の○・✖は空欄にする」にチェックを入れると、食事の列は空欄で印刷されます。</p>
     <h3>スマホで使うとき</h3>
     <ul>
       <li>上の「Update」「予定表」「予定入力」の3つのボタンを使います。</li>
@@ -1240,7 +1241,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <p>先生方の毎月の予定を1枚にまとめた「予定表」（A4横）を作ります。</p>
     <h3>毎月の流れ</h3>
     <ol>
-      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効き、このパソコンのブラウザーが覚えます。「↺ 印刷の位置をもどす」で元にもどります）。</li>
+      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効き、このパソコンのブラウザーが覚えます。「↺ 印刷の位置をもどす」で元にもどります）。「入力済みの予定も印刷する」で今の予定を入れて印刷するときに、「食事の○・✖は空欄にする」にチェックを入れると、食事の列だけ空欄になります。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表①」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表①」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表①」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
@@ -4363,6 +4364,7 @@ function renderForm() {
   if (!fmSelected) fmSelected = new Set(st.members.map(x => x.id));
   $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${ttlHtml(dispName(x))}</label>`).join('');
   const fill = $('#fmFill').checked;
+  $('#fmMealBlank').disabled = !fill; $('#fmMealBlankWrap').style.opacity = fill ? '' : '.5'; // 予定を印刷しないときは、はじめから空欄
   const { y, m } = st, nd = dim(y, m);
   // 先生ごとのURLでは、その先生の記入表だけを出す（印刷する先生の選択欄は出さない）
   $('#fmMembersWrap').style.display = st.personal ? 'none' : '';
@@ -4389,7 +4391,7 @@ function renderForm() {
           pm = e.pm ? `<td data-k="pm" class="kt${e.pm_red && !e.pm_red_parts ? ' r' : ''}">${tx('pm')}</td>` : '<td data-k="pm"></td>';
         }
         // 昼食の「いらない」は、記入表では細い「×」にする（2026年11月13日〜。予定入力などの画面は「✖」のまま）
-        const mk = fill ? mealMark(e.meal, day) : '';
+        const mk = fill && !$('#fmMealBlank').checked ? mealMark(e.meal, day) : ''; // 「食事の○・✖は空欄にする」なら空欄（2026年11月25日〜）
         h += `<tr data-d="${d}"><td class="kd${rd}${is26 ? ' k26' : ''}">${d}</td><td class="kw${rd}${is26 ? ' k26' : ''}">${WD_JA[w]}</td>${meal ? `<td class="km">${mk === '✖' ? '<span class="kx">×</span>' : mk}</td>` : ''}${ad || am + pm}</tr>`;
       }
       return h + '</tbody></table>';
@@ -4463,6 +4465,7 @@ function drawFormArrows() {
 }
 $('#fmMembers').addEventListener('change', e => { const id = Number(e.target.value); e.target.checked ? fmSelected.add(id) : fmSelected.delete(id); renderForm(); });
 $('#fmFill').addEventListener('change', renderForm);
+$('#fmMealBlank').addEventListener('change', renderForm);
 
 // ===== 記入表の矢印を動かす（2026年11月13日〜。利用者の希望。管理者用のURLだけ） =====
 // 記入表の矢印をクリックすると、右下に「左へ・右へ・上の端・下の端」の枠が出る。動かした分は記入表だけに使う（予定表①の矢印は変わらない）。
