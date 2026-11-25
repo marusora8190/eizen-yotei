@@ -1009,6 +1009,16 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       </div>
     </div>
     <div class="panel">
+      <h3 style="margin-top:0">小さい文字にする言葉</h3>
+      <p class="note">予定にこの言葉が入っていると、予定表①②③とExcelで、その言葉だけ「AM」「PM」と同じ小さい文字になります（今までの予定にもすぐ効きます）。「委員会」「会議」と時刻（9:00 など）は、はじめから小さい文字です（外せません）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。</p>
+      <p class="note" id="msSmallBase"></p>
+      <div class="msbox"><table class="grid" id="msSmallList" style="max-width:560px"></table></div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="msSmallNew" placeholder="追加する言葉（例：打合せ）" style="width:16em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
+        <button class="btn" id="msSmallAdd">＋ 追加</button>
+      </div>
+    </div>
+    <div class="panel">
       <h3 style="margin-top:0">行事（予定入力・予定表・記入表に出す文字）</h3>
       <p class="note">毎年決まっている行事です。先生の予定が空いている日は、先生全員の、「時間」で選んだ欄（終日・午前・午後）に、はじめから入ります（予定表・記入表にも出ます）。同じ日に終日の行事があるときは、午前・午後の行事は出ません。「月」を「毎月」にすると、毎月その日に入ります。同じ日に「その月だけ」の行事があるときは、そちらが優先されます（例：1月26日は「春季大祭」、ほかの月の26日は「本部月次祭」）。</p>
       <div class="msbox"><table class="grid" id="msEvents"></table></div>
@@ -1102,7 +1112,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
         <ul>
           <li>データベースはスパーベース（②〜⑥と共用）。表は yotei_ で始まる7個です。</li>
           <li>予定（yotei_entries）・提出の印（yotei_submissions）・手で引く矢印（yotei_arrows）：見る・入れる・直すは誰でも、削除は管理者アカウントだけ。アプリはふだん予定を消さずに空にします（矢印は active を外します）。</li>
-          <li>先生の一覧（yotei_members）・祝日（yotei_holidays）・設定（yotei_settings。予定表③の2人〔tbl3_members〕もここ）・行事（yotei_events）：見るのは誰でも、追加・書き換え・削除は管理者アカウントだけ。</li>
+          <li>先生の一覧（yotei_members）・祝日（yotei_holidays）・設定（yotei_settings。予定表③の2人〔tbl3_members〕、小さい文字にする言葉〔small_keywords。2026年11月25日〜〕もここ）・行事（yotei_events）：見るのは誰でも、追加・書き換え・削除は管理者アカウントだけ。</li>
           <li>予定表③の特記（yotei_notes。2026年11月9日〜。1日に左右1つずつ。書式の欄つき）・お願いのリスト（yotei_requests。先生ごと）：見る・入れる・直すは誰でも、削除は管理者アカウントだけ（アプリは消さずに、特記は空に、リストは active=false にする）。</li>
           <li>新しく表を作るときは、権限（GRANT）・RLS・守りの決まり（ポリシー）を一緒に付けます（依頼メモの【6】）。</li>
         </ul>
@@ -1258,7 +1268,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <h3>先生ご本人に入力してもらうとき</h3>
     <p>管理者メニューの「マスター」に、先生ごとの「個人用URL」があります。これを先生に渡すと、その先生の入力画面がすぐ開きます（ほかの先生の入力欄は出ません）。パスワードはいりません。先生ごとのURLでは、「予定表①」「予定表②」でほかの先生の予定も見られますが、直すことはできません。「記入表の印刷」では、その先生の記入表だけを印刷できます。「まとめて編集」のボタンと、管理者メニューは出ません。「使い方」も、先生向けの説明（管理者向けの説明を除いたもの）になります。</p>
     <h3>管理者メニュー</h3>
-    <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・画面の呼び名・予定表の見出し・記入表の宛名・昼食の欄を出す先生・在籍、提出の期限と提出先、自動で赤字にする言葉、行事、祝日を変えられます。いちばん下の「古いデータの整理」で、古い予定と提出の印をまとめて消せます。提出の印を取り消すときも、管理者パスワードがいります。</p>
+    <p>「🔑 管理者メニュー」を押して、管理者パスワードを入れると「マスター」が出ます。先生の追加・並び順・画面の呼び名・予定表の見出し・記入表の宛名・昼食の欄を出す先生・在籍、提出の期限と提出先、自動で赤字にする言葉、小さい文字にする言葉（「委員会」「会議」のように、AM・PMと同じ小さい文字で出す言葉）、行事、祝日を変えられます。いちばん下の「古いデータの整理」で、古い予定と提出の印をまとめて消せます。提出の印を取り消すときも、管理者パスワードがいります。</p>
     <h3>困ったとき</h3>
     <ul>
       <li>画面が古いまま・おかしいときは、サイドバーの赤い「Update」を押します。</li>
@@ -1286,7 +1296,7 @@ const adminSb = supabase.createClient(SB_URL, SB_KEY, { auth: { storage: safeSes
 
 // ===== 状態 =====
 const st = {
-  members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [] },
+  members: [], allMembers: [], holidays: new Map(), settings: { deadline_day: 27, submit_to: '営繕課 青木年朗', red_keywords: [], small_keywords: [] },
   y: 0, m: 0, arrows: [], notes: new Map(), requests: [], tbl3: false, viewOnly: false, t2Only: false, t3Only: false, entries: new Map(), subs: new Map(), isAdmin: false, personal: null, view: 'input', inMember: null, tbMember: null,
 };
 
@@ -1475,6 +1485,8 @@ async function loadMasters() {
   for (const s of set.data) st.settings[s.key] = s.value;
   st.settings.deadline_day = Number(st.settings.deadline_day) || 27;
   if (!Array.isArray(st.settings.red_keywords)) st.settings.red_keywords = [];
+  if (!Array.isArray(st.settings.small_keywords)) st.settings.small_keywords = [];
+  setSmallWords();
 }
 async function loadMonth() {
   const { y, m } = st;
@@ -2371,9 +2383,22 @@ function cellText(t, red, prefix, indent, size, parts) {
 }
 // 予定表では「委員会」「会議」の文字を、AM・PM と同じ大きさで出す（予定の文字の大きさを変えても、この2つは AM・PM と同じまま）
 // 時刻（9:00・９：００など）も、AM・PM と同じ小さい文字にする（2026年11月19日〜）
-const SMALL_WORDS = /委員会|会議|[0-9０-９]{1,2}[:：][0-9０-９]{2}/g;
+// 2026年11月25日〜：管理者メニューの「マスター」で、小さい文字にする言葉を足せる（yotei_settings の small_keywords）。「委員会」「会議」と時刻はいつも小さい（消せない）
+const SMALL_BASE = ['委員会', '会議'];
+const CLOCK_SRC = '[0-9０-９]{1,2}[:：][0-9０-９]{2}';
+const reEsc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+let SMALL_WORDS = /委員会|会議|[0-9０-９]{1,2}[:：][0-9０-９]{2}/g;
+let XL_SMALL = /(委員会|会議)/; // Excelに書き出すときの小さい文字（6pt）
+function smallList() { return [...new Set([...SMALL_BASE, ...(st.settings.small_keywords || [])].map(w => String(w || '').trim()).filter(Boolean))]; }
+function setSmallWords() {
+  const ws = smallList().sort((a, b) => b.length - a.length).map(reEsc).join('|'); // 長い言葉から先に見る
+  SMALL_WORDS = new RegExp(ws + '|' + CLOCK_SRC, 'g');
+  XL_SMALL = new RegExp('(' + ws + ')');
+}
 function hasClock(t) { return /[0-9０-９]{1,2}[:：][0-9０-９]{2}/.test(String(t || '')); }
-function smallWords(html) { return html.replace(SMALL_WORDS, w => `<span class="ap">${w}</span>`); }
+// タグ（<span …>）や &amp; などの中は小さくしない（足した言葉が英字でも表がこわれないように）
+function smallIn(html, cls) { return String(html).replace(/(<[^>]*>|&[#0-9a-zA-Z]+;)|[^<&]+/g, (m, skip) => skip ? m : m.replace(SMALL_WORDS, w => `<span class="${cls}">${w}</span>`)); }
+function smallWords(html) { return smallIn(html, 'ap'); }
 // 同じ画面（同じ月・同じ表・同じ先生）のまま作り直すときは、見ていた位置（表の枠の中と画面全体）を作り直したあとに戻す（2026年11月9日〜。保存のたびに一番上へ戻らないように）
 let lastTableSig = '';
 // 予定表③の表の大きさ（2026年11月11日〜。利用者の希望）。50%〜200%、10%ずつ。このパソコンのブラウザーに覚える（localStorage の yotei-t3zoom）
@@ -3516,7 +3541,7 @@ function renderT3Mobile() {
 function cpSched(list, mid, day, small) {
   if (!mid) return '';
   const e = list.find(x => x.member_id === mid && x.day === day), parts = [];
-  const tx = (t, red) => `<span class="${red ? 'red' : ''}">${small ? esc(t).replace(SMALL_WORDS, w => `<span class="nap">${w}</span>`) : esc(t)}</span>`;
+  const tx = (t, red) => `<span class="${red ? 'red' : ''}">${small ? smallIn(esc(t), 'nap') : esc(t)}</span>`;
   const lb = w => small ? `<span class="nap">${w}</span>` : w;
   if (e && e.allday) parts.push(`${lb('終日')} ${tx(e.allday, e.allday_red)}`);
   else { if (e && e.am) parts.push(`${lb('AM')} ${tx(e.am, e.am_red)}`); if (e && e.pm) parts.push(`${lb('PM')} ${tx(e.pm, e.pm_red)}`); }
@@ -4543,7 +4568,7 @@ const XL_A_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 const XL_COLS = [[2, 3, 4], [7, 8, 9]]; // 左の3人：C・D・E列、右の3人：H・I・J列（A列を0として数える）
 const XL_ROW0 = 4; // 1日の午前の行。午後はその下の行。1日2行
 const XL_PT = 8.5, XL_PT_SMALL = 6, XL_FONT = 'Meiryo UI'; // 元のExcelと同じ（予定の文字 8.5pt、AM・PM・「委員会」「会議」は 6pt）
-const XL_SMALL = /(委員会|会議)/;
+// XL_SMALL（Excelの小さい文字）は SMALL_WORDS のそばで作る（マスターで足した言葉も入る。2026年11月25日〜）
 let jszipP = null;
 function loadJSZip() {
   if (window.JSZip) return Promise.resolve(window.JSZip);
@@ -4964,6 +4989,9 @@ function renderMaster() {
   $('#msSubmitTo').value = st.settings.submit_to || '';
   const reds = st.settings.red_keywords || [];
   $('#msRedList').innerHTML = `<tr><th style="width:3em">No.</th><th>言葉</th><th></th><th></th></tr>` + (reds.length ? reds.map((w, i) => `<tr data-i="${i}"><td>${i + 1}</td><td><input type="text" class="r-word" value="${esc(w)}"></td><td style="width:4.5em"><button class="btn sm pri r-save">保存</button></td><td style="width:4.5em"><button class="btn sm r-del">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="empty">言葉がありません</td></tr>');
+  const smalls = st.settings.small_keywords || [];
+  $('#msSmallBase').textContent = 'はじめから小さい言葉：' + SMALL_BASE.join('・') + '・時刻';
+  $('#msSmallList').innerHTML = `<tr><th style="width:3em">No.</th><th>言葉</th><th></th><th></th></tr>` + (smalls.length ? smalls.map((w, i) => `<tr data-i="${i}"><td>${i + 1}</td><td><input type="text" class="s-word" value="${esc(w)}"></td><td style="width:4.5em"><button class="btn sm pri s-save">保存</button></td><td style="width:4.5em"><button class="btn sm s-del">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="empty">足した言葉はありません</td></tr>');
   const monthOpts = v => `<option value="" ${v == null ? 'selected' : ''}>毎月</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}月</option>`).join('');
   const dayOpts = v => Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}日</option>`).join('');
   $('#msEvents').innerHTML = `<tr><th>月</th><th>日から</th><th>日まで</th><th>時間</th><th>出す文字</th><th>赤字</th><th></th><th></th></tr>` + (st.events || []).map(x => `<tr data-id="${x.id}">
@@ -5110,6 +5138,42 @@ $('#msRedAdd').addEventListener('click', async () => {
   if (await saveRedWords(words, '追加しました')) $('#msRedNew').value = '';
 });
 $('#msRedNew').addEventListener('keydown', e => { if (e.key === 'Enter') $('#msRedAdd').click(); });
+// 小さい文字にする言葉（2026年11月25日〜）。保存したら表も作り直す
+const SMALL_NG = /[<>&"']/;
+async function saveSmallWords(words, msg) {
+  words = [...new Set(words.map(w => w.trim()).filter(w => w && !SMALL_BASE.includes(w)))];
+  const ok = await adminDo(() => adminSb.from('yotei_settings').upsert({ key: 'small_keywords', value: words }), msg);
+  if (ok) render();
+  return ok;
+}
+function smallWordOk(w) {
+  if (!w) { toast('言葉を入れてください', true); return false; }
+  if (SMALL_NG.test(w)) { toast('< > & " \' の記号は使えません', true); return false; }
+  if (SMALL_BASE.includes(w)) { toast('その言葉は、はじめから小さい文字です', true); return false; }
+  return true;
+}
+$('#msSmallList').addEventListener('click', async e => {
+  const tr = e.target.closest('tr[data-i]'); if (!tr) return;
+  const i = Number(tr.dataset.i), words = [...(st.settings.small_keywords || [])];
+  if (e.target.classList.contains('s-save')) {
+    const w = $('.s-word', tr).value.trim();
+    if (!w) { toast('言葉を入れてください（いらないときは「削除」）', true); return; }
+    if (!smallWordOk(w)) return;
+    words[i] = w; await saveSmallWords(words, '保存しました');
+  } else if (e.target.classList.contains('s-del')) {
+    if (!confirm(`「${words[i]}」を小さい文字にする言葉から外しますか？`)) return;
+    words.splice(i, 1); await saveSmallWords(words, '削除しました');
+  }
+});
+$('#msSmallAdd').addEventListener('click', async () => {
+  const w = $('#msSmallNew').value.trim();
+  if (!smallWordOk(w)) return;
+  const words = [...(st.settings.small_keywords || [])];
+  if (words.includes(w)) { toast('その言葉はもう入っています', true); return; }
+  words.push(w);
+  if (await saveSmallWords(words, '追加しました')) $('#msSmallNew').value = '';
+});
+$('#msSmallNew').addEventListener('keydown', e => { if (e.key === 'Enter') $('#msSmallAdd').click(); });
 $('#msHolYear').addEventListener('change', e => { holYear = Number(e.target.value); renderMaster(); });
 $('#msHolList').addEventListener('click', async e => {
   const b = e.target.closest('.h-del'); if (!b) return;
