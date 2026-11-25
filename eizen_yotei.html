@@ -834,6 +834,11 @@ table.grid input[type=text],table.grid input[type=number],table.grid input[type=
 /* マスターの表：枠の中で上下に動き、見出しの行は上に残る */
 .msbox{overflow:auto;max-height:60vh}
 .msbox table.grid tr:first-child th{position:sticky;top:0;z-index:2;background:var(--panel);text-align:center;box-shadow:inset 0 -1px 0 var(--line)}
+/* 「自動で赤字にする言葉」「小さい文字にする言葉」は3列に並べる（2026年11月25日〜。上から下へ、左の列から順に） */
+table.grid.kw3 th,table.grid.kw3 td{padding:4px 5px}
+table.grid.kw3 .kwg{border-left:2px solid var(--line)}
+table.grid.kw3 td.kwn{width:2.2em;text-align:right;color:var(--sub)}
+table.grid.kw3 td.kwb{width:1%;white-space:nowrap}
 table.grid td.url{font-size:12px;color:var(--sub);word-break:break-all}
 textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:6px;padding:8px}
 .help p,.help li{font-size:14.5px}
@@ -1002,7 +1007,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <div class="panel">
       <h3 style="margin-top:0">自動で赤字にする言葉</h3>
       <p class="note">予定にこの言葉が入っていると、入力したときに自動で「赤」になります（あとから手で外せます）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。すでに入っている予定の赤字は変わりません。</p>
-      <div class="msbox"><table class="grid" id="msRedList" style="max-width:560px"></table></div>
+      <div class="msbox"><table class="grid kw3" id="msRedList"></table></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" id="msRedNew" placeholder="追加する言葉（例：教祖殿）" style="width:16em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
         <button class="btn" id="msRedAdd">＋ 追加</button>
@@ -1012,7 +1017,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <h3 style="margin-top:0">小さい文字にする言葉</h3>
       <p class="note">予定にこの言葉が入っていると、予定表①②③とExcelで、その言葉だけ「AM」「PM」と同じ小さい文字になります（今までの予定にもすぐ効きます）。「委員会」「会議」と時刻（9:00 など）は、はじめから小さい文字です（外せません）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。</p>
       <p class="note" id="msSmallBase"></p>
-      <div class="msbox"><table class="grid" id="msSmallList" style="max-width:560px"></table></div>
+      <div class="msbox"><table class="grid kw3" id="msSmallList"></table></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" id="msSmallNew" placeholder="追加する言葉（例：打合せ）" style="width:16em;padding:4px 6px;border:1px solid var(--line);border-radius:5px">
         <button class="btn" id="msSmallAdd">＋ 追加</button>
@@ -4987,11 +4992,29 @@ function renderMaster() {
   $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>画面の呼び名</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
   $('#msDeadline').value = st.settings.deadline_day;
   $('#msSubmitTo').value = st.settings.submit_to || '';
+  // 言葉の一覧を3列に並べる（2026年11月25日〜）。上から下へ、左の列から順に番号が続く。ボタンは data-i で何番目かを見る
+  const kw3 = (words, cls, emptyMsg) => {
+    const COLS = 3, rows = Math.ceil(words.length / COLS);
+    const head = '<tr>' + Array.from({ length: COLS }, (_, c) => `<th class="${c ? 'kwg' : ''}">No.</th><th>言葉</th><th></th><th></th>`).join('') + '</tr>';
+    if (!words.length) return head + `<tr><td colspan="${COLS * 4}" class="empty">${emptyMsg}</td></tr>`;
+    let body = '';
+    for (let r = 0; r < rows; r++) {
+      body += '<tr>';
+      for (let c = 0; c < COLS; c++) {
+        const i = c * rows + r, g = c ? ' kwg' : '';
+        body += i < words.length
+          ? `<td class="kwn${g}">${i + 1}</td><td><input type="text" class="${cls}-word" data-i="${i}" value="${esc(words[i])}"></td><td class="kwb" data-i="${i}"><button class="btn sm pri ${cls}-save">保存</button></td><td class="kwb" data-i="${i}"><button class="btn sm ${cls}-del">削除</button></td>`
+          : `<td class="kwn${g}"></td><td></td><td></td><td></td>`;
+      }
+      body += '</tr>';
+    }
+    return head + body;
+  };
   const reds = st.settings.red_keywords || [];
-  $('#msRedList').innerHTML = `<tr><th style="width:3em">No.</th><th>言葉</th><th></th><th></th></tr>` + (reds.length ? reds.map((w, i) => `<tr data-i="${i}"><td>${i + 1}</td><td><input type="text" class="r-word" value="${esc(w)}"></td><td style="width:4.5em"><button class="btn sm pri r-save">保存</button></td><td style="width:4.5em"><button class="btn sm r-del">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="empty">言葉がありません</td></tr>');
+  $('#msRedList').innerHTML = kw3(reds, 'r', '言葉がありません');
   const smalls = st.settings.small_keywords || [];
   $('#msSmallBase').textContent = 'はじめから小さい言葉：' + SMALL_BASE.join('・') + '・時刻';
-  $('#msSmallList').innerHTML = `<tr><th style="width:3em">No.</th><th>言葉</th><th></th><th></th></tr>` + (smalls.length ? smalls.map((w, i) => `<tr data-i="${i}"><td>${i + 1}</td><td><input type="text" class="s-word" value="${esc(w)}"></td><td style="width:4.5em"><button class="btn sm pri s-save">保存</button></td><td style="width:4.5em"><button class="btn sm s-del">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="empty">足した言葉はありません</td></tr>');
+  $('#msSmallList').innerHTML = kw3(smalls, 's', '足した言葉はありません');
   const monthOpts = v => `<option value="" ${v == null ? 'selected' : ''}>毎月</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}月</option>`).join('');
   const dayOpts = v => Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}" ${v === i + 1 ? 'selected' : ''}>${i + 1}日</option>`).join('');
   $('#msEvents').innerHTML = `<tr><th>月</th><th>日から</th><th>日まで</th><th>時間</th><th>出す文字</th><th>赤字</th><th></th><th></th></tr>` + (st.events || []).map(x => `<tr data-id="${x.id}">
@@ -5118,10 +5141,10 @@ function saveRedWords(words, msg) {
   return adminDo(() => adminSb.from('yotei_settings').upsert({ key: 'red_keywords', value: words }), msg);
 }
 $('#msRedList').addEventListener('click', async e => {
-  const tr = e.target.closest('tr[data-i]'); if (!tr) return;
+  const tr = e.target.closest('td[data-i]'); if (!tr) return;
   const i = Number(tr.dataset.i), words = [...(st.settings.red_keywords || [])];
   if (e.target.classList.contains('r-save')) {
-    const w = $('.r-word', tr).value.trim();
+    const w = $(`#msRedList .r-word[data-i="${tr.dataset.i}"]`).value.trim();
     if (!w) { toast('言葉を入れてください（いらないときは「削除」）', true); return; }
     words[i] = w; await saveRedWords(words, '保存しました');
   } else if (e.target.classList.contains('r-del')) {
@@ -5153,10 +5176,10 @@ function smallWordOk(w) {
   return true;
 }
 $('#msSmallList').addEventListener('click', async e => {
-  const tr = e.target.closest('tr[data-i]'); if (!tr) return;
+  const tr = e.target.closest('td[data-i]'); if (!tr) return;
   const i = Number(tr.dataset.i), words = [...(st.settings.small_keywords || [])];
   if (e.target.classList.contains('s-save')) {
-    const w = $('.s-word', tr).value.trim();
+    const w = $(`#msSmallList .s-word[data-i="${tr.dataset.i}"]`).value.trim();
     if (!w) { toast('言葉を入れてください（いらないときは「削除」）', true); return; }
     if (!smallWordOk(w)) return;
     words[i] = w; await saveSmallWords(words, '保存しました');
