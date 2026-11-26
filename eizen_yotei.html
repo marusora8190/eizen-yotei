@@ -361,6 +361,12 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .tbswitch .tbs-btns .btn .n2{font-size:11px;min-height:1.15em}
 .tbswitch .tbs-btns .btn.act{background:var(--nav-act);border-color:var(--nav-act);color:#fff}
 .tbswitch .tbs-btns .btn .pinmk{position:absolute;top:-6px;right:-3px;font-size:11px}
+/* 名前のボタンは1行（「今村」の後ろに小さく「部長」。2026年11月26日〜。利用者の希望。「固定」「印刷」は2行のまま） */
+.tbswitch .tbs-btns .btn.tbs-nm{flex-direction:row;align-items:baseline;justify-content:center;gap:1px;padding:6px 2px;overflow:hidden}
+.tbswitch .tbs-btns .btn.tbs-nm .n2{min-height:0}
+.tbswitch .tbs-btns .btn.tbs-nm .n1,.tbswitch .tbs-btns .btn.tbs-nm .n2{flex:none;max-width:none;overflow:visible;text-overflow:clip}
+/* スマホ：名前と「部長」などが1行に入るよう、文字を少し小さくする */
+@media screen and (max-width:760px){.tbswitch .tbs-btns .btn.tbs-nm{padding:7px 0;gap:0}.tbswitch .tbs-btns .btn.tbs-nm .n1{font-size:12.5px}.tbswitch .tbs-btns .btn.tbs-nm .n2{font-size:8.5px}}
 .tbswitch .tbs-btns .btn.tbs-pin{flex:0 0 auto;padding:4px 7px;border-style:dashed}
 .tbswitch .tbs-btns .btn.tbs-pin.on{background:#fff4d6;border-color:#d9a400;border-style:solid}
 .tbswitch .tbs-btns .btn.tbs-pin .n1{font-size:14px;font-weight:400}
@@ -3905,7 +3911,7 @@ function renderTbSwitch(cur) {
   box.style.display = '';
   // 「◀」「▶」の代わりに、先生全員の名前のボタン（1行目に名前、2行目に「部長」など）を並べる（2026年11月26日〜。利用者の希望）
   const pin = st.personal ? 0 : tbPinGet();
-  const btn = x => { const [a, b] = tbNameParts(dispName(x)); return `<button type="button" class="btn${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}" title="${esc(dispName(x))}の予定を出します"><span class="n1">${esc(a)}</span><span class="n2">${esc(b)}</span>${x.id === pin ? '<span class="pinmk">📌</span>' : ''}</button>`; };
+  const btn = x => { const [a, b] = tbNameParts(dispName(x)); return `<button type="button" class="btn tbs-nm${x.id === cur.id ? ' act' : ''}" data-tbm="${x.id}" title="${esc(dispName(x))}の予定を出します"><span class="n1">${esc(a)}</span><span class="n2">${esc(b)}</span>${x.id === pin ? '<span class="pinmk">📌</span>' : ''}</button>`; };
   // 「📌 固定」：今出している先生を、次に開くときの先生にする（先生ごとのURLでは出さない）。もう一度押すと固定をやめる
   const pinOn = pin && pin === cur.id;
   const pinBtn = st.personal ? '' : `<button type="button" class="btn tbs-pin${pinOn ? ' on' : ''}" id="btnTbPin" title="${pinOn ? '固定をやめます（次に開くときは、最後に見ていた先生で開きます）' : '今出している先生に固定します（次に開くときは、この先生で開きます）'}"><span class="n1">📌</span><span class="n2">${pinOn ? '固定中' : '固定'}</span></button>`;
