@@ -725,7 +725,7 @@ body.tbl-one .tbswitch .tbs-name{font-size:17px}
 /* 予定表①：表全体をマウスでつかんで動かせる（2026年11月19日〜）。ずらした量は印刷にも効く。ブラウザーに覚える（yotei-t1off） */
 #sheet{--t1x:0mm;--t1y:0mm}
 body:not(.tbl-three):not(.tbl-one) .sheet.a4l.ypage:not(.solo){transform:translate(var(--t1x),var(--t1y))}
-body.tbl-three #btnT1Reset,body.tbl-one #btnT1Reset{display:none}
+body.tbl-three #btnT1Save,body.tbl-one #btnT1Save{display:none}
 @media screen{
   body:not(.tbl-three):not(.tbl-one) #v-table .sheet.a4l.ypage:not(.solo){cursor:move}
   /* 後ろの背景は方眼紙（うすい罫線）。見ている位置といっしょに動く */
@@ -967,7 +967,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn" id="btnT3Set" title="2人それぞれの「お願いすること」と、真ん中の列のリストを直します">⚙ 設定</button>
       <button class="btn" id="btnT3Help" title="予定表③の使い方を出します">❓ 予定表③の使い方</button>
       <button class="btn" id="btnXlsx" title="表示している月の予定表①（6人分）を、手元の「R189部次課長青年予定表.xlsm」の同じ月のシート（12月なら「12」）に書き出します（ファイルを選ぶと、書き換えたファイルをダウンロードします）" hidden>📗 Excelに書き出し</button><input type="file" id="xlsxFile" accept=".xlsm,.xlsx" hidden>
-      <button class="btn" id="btnT1Reset" title="予定表①を手でずらした位置を、元（用紙の真ん中）にもどします">↺ 表の位置をもどす</button>
+      <button class="btn" id="btnT1Save" title="今の予定表①の位置を、このパソコンに覚えさせます（次に開いたときもこの位置）。「印刷（A4横）」を押したときも、その位置を自動で覚えます">💾 印刷の位置を保存する</button>
       <button class="btn pri" id="btnPrintTable">印刷（A4横）</button>
     </div>
     <p class="note hide-personal-note">予定のマスをクリックすると、その日の予定を直せます（紙で受け取った記入表を写すときにも使えます）。<span class="admin-sub">「未」の印をクリックすると、受け取り済み（「済」）にできます。</span></p>
@@ -1279,7 +1279,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表①のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
-      <li>予定表①は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。</li>
+      <li>予定表①は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。動かした位置は「💾 印刷の位置を保存する」か「印刷（A4横）」を押したときに、そのパソコンに覚えます（次に開いたときもその位置。動かしただけでは覚えません。もどすときは手で動かして保存します）。</li>
       <li>予定表①で予定の文字の位置を動かしたいときは、予定表①のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
@@ -3977,13 +3977,14 @@ const T1_KEY = 'yotei-t1off';
 let t1Off = { x: 0, y: 0 };
 try { const o = JSON.parse(localStorage.getItem(T1_KEY) || 'null'); if (o && isFinite(o.x) && isFinite(o.y)) t1Off = { x: o.x, y: o.y }; } catch (_) {}
 function t1Mode() { return st.view === 'table' && !document.body.classList.contains('tbl-three') && !document.body.classList.contains('tbl-one') && !st.print2 && !isMobile(); }
-function t1Set(x, y, save) {
+function t1Set(x, y) {
   t1Off = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
   $('#sheet').style.setProperty('--t1x', t1Off.x + 'mm'); $('#sheet').style.setProperty('--t1y', t1Off.y + 'mm');
-  try { localStorage.setItem(T1_KEY, JSON.stringify(t1Off)); } catch (_) {}
 }
+// 位置を覚えるのは「印刷の位置を保存する」を押したときと、「印刷（A4横）」を押したときだけ（2026年11月26日〜。利用者の希望。記入表と同じ形。それまではつかんで動かすたびに覚え、「表の位置をもどす」で0に戻した）
+function t1Save() { try { localStorage.setItem(T1_KEY, JSON.stringify(t1Off)); return true; } catch (_) { return false; } }
 t1Set(t1Off.x, t1Off.y);
-$('#btnT1Reset').addEventListener('click', () => t1Set(0, 0));
+$('#btnT1Save').addEventListener('click', () => { if (t1Save()) toast('印刷の位置を保存しました'); else toast('保存できませんでした', true); });
 (function () {
   const w = $('#v-table .sheet-wrap'); if (!w) return;
   let down = null, moved = false;
@@ -4931,6 +4932,7 @@ window.addEventListener('afterprint', () => { if (st.print2) { st.print2 = false
 $('#btnPrintTable').addEventListener('click', () => {
   // 予定表③は、画面では横に広げているので、印刷用（A4縦の幅）に作り直してから印刷する（2026年11月9日〜）
   if (document.body.classList.contains('tbl-three')) { st.print3 = true; renderTable(); }
+  else if (t1Mode()) t1Save(); // 予定表①：印刷したときの位置を覚える（2026年11月26日〜）
   doPrint(document.body.classList.contains('tbl-three') ? 'size:210mm 297mm;margin:5mm' : 'size:297mm 210mm;margin:5mm');
 });
 // Ctrl＋P で印刷したときも、予定表③は印刷用の幅に作り直す。終わったら画面用に戻す
