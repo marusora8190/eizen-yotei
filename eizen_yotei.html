@@ -364,7 +364,9 @@ body.spv .layout{background:var(--bg);min-height:calc(100vh - var(--hdr))}
 .tbswitch .tbs-btns .btn.tbs-pin{flex:0 0 auto;padding:4px 7px;border-style:dashed}
 .tbswitch .tbs-btns .btn.tbs-pin.on{background:#fff4d6;border-color:#d9a400;border-style:solid}
 .tbswitch .tbs-btns .btn.tbs-pin .n1{font-size:14px;font-weight:400}
-.tbswitch .tbs-btns .btn.tbs-print{flex:0 0 auto;padding:4px 12px}
+/* 「印刷（A4縦）」：1行目に「印刷」、2行目に「A4縦」の2行で、中身がちょうど入る大きさ（2026年11月26日〜。利用者の希望） */
+.tbswitch .tbs-btns .btn.tbs-print{flex:0 0 auto;padding:4px 6px}
+.tbswitch .tbs-btns .btn.tbs-print .n1{font-size:14px}
 @media screen and (max-width:760px){.tbswitch .tbs-btns{gap:3px}.tbswitch .tbs-btns .btn .n1{font-size:14px}.tbswitch .tbs-btns .btn .n2{font-size:10px}.tbswitch .tbs-btns .btn.tbs-pin{padding:4px 4px}}
 @media print{.tbswitch{display:none!important}}
 /* 先生の切り替えの欄は、下に動かしても上の帯のすぐ下に出たままにする（上に隠れないように。2026年11月5日〜） */
@@ -3906,7 +3908,7 @@ function renderTbSwitch(cur) {
   const pinOn = pin && pin === cur.id;
   const pinBtn = st.personal ? '' : `<button type="button" class="btn tbs-pin${pinOn ? ' on' : ''}" id="btnTbPin" title="${pinOn ? '固定をやめます（次に開くときは、最後に見ていた先生で開きます）' : '今出している先生に固定します（次に開くときは、この先生で開きます）'}"><span class="n1">📌</span><span class="n2">${pinOn ? '固定中' : '固定'}</span></button>`;
   box.innerHTML = `<div class="tbs-btns">${st.members.map(btn).join('')}${pinBtn}`
-    + (st.tblOne && !isMobile() ? `<button type="button" class="btn pri tbs-print" id="btnPrint2" title="今出している先生の1か月分を、A4縦1枚に印刷します">印刷（A4縦）</button>` : '') + `</div>`;
+    + (st.tblOne && !isMobile() ? `<button type="button" class="btn pri tbs-print" id="btnPrint2" title="今出している先生の1か月分を、A4縦1枚に印刷します"><span class="n1">印刷</span><span class="n2">A4縦</span></button>` : '') + `</div>`;
   // 名前のボタンの列と「予定表を左右に指でなでても…」の案内は、2026年11月4日に利用者の希望でなくした（「◀」「▶」と指でなでる動きで切り替える）
   // 2026年11月26日〜：「◀」「▶」をなくし、名前のボタンに戻した（利用者の希望）。指でなでる切り替えはそのまま
 }
