@@ -848,7 +848,7 @@ table.grid input[type=text],table.grid input[type=number],table.grid input[type=
 /* マスターの表：枠の中で上下に動き、見出しの行は上に残る */
 .msbox{overflow:auto;max-height:60vh}
 .msbox table.grid tr:first-child th{position:sticky;top:0;z-index:2;background:var(--panel);text-align:center;box-shadow:inset 0 -1px 0 var(--line)}
-/* 「自動で赤字にする言葉」「小さい文字にする言葉」は3列に並べる（2026年11月25日〜。上から下へ、左の列から順に） */
+/* 「自動で赤字にする言葉」「小さい文字にする言葉」は4列に並べる（2026年11月25日〜は3列、2026年11月26日〜は4列。利用者の希望。上から下へ、左の列から順に） */
 table.grid.kw3 th,table.grid.kw3 td{padding:4px 5px}
 table.grid.kw3 .kwg{border-left:2px solid var(--line)}
 table.grid.kw3 td.kwn{width:2.2em;text-align:right;color:var(--sub)}
@@ -5063,9 +5063,9 @@ function renderMaster() {
   $('#msMembers').innerHTML = `<tr><th>並び順</th><th>名前（短く）</th><th>画面の呼び名</th><th>予定表の見出し</th><th>記入表の宛名</th><th>昼食</th><th>在籍</th><th></th><th>個人用URL</th></tr>${rows}`;
   $('#msDeadline').value = st.settings.deadline_day;
   $('#msSubmitTo').value = st.settings.submit_to || '';
-  // 言葉の一覧を3列に並べる（2026年11月25日〜）。上から下へ、左の列から順に番号が続く。ボタンは data-i で何番目かを見る
+  // 言葉の一覧を4列に並べる（2026年11月25日〜は3列、2026年11月26日〜は4列。利用者の希望）。上から下へ、左の列から順に番号が続く。ボタンは data-i で何番目かを見る
   const kw3 = (words, cls, emptyMsg) => {
-    const COLS = 3, rows = Math.ceil(words.length / COLS);
+    const COLS = 4, rows = Math.ceil(words.length / COLS);
     const head = '<tr>' + Array.from({ length: COLS }, (_, c) => `<th class="${c ? 'kwg' : ''}">No.</th><th>言葉</th><th></th><th></th>`).join('') + '</tr>';
     if (!words.length) return head + `<tr><td colspan="${COLS * 4}" class="empty">${emptyMsg}</td></tr>`;
     let body = '';
