@@ -3818,8 +3818,9 @@ function atItems(list, mid, day, k) {
   }
   if (!out.length && !inCont && !(e && (e.am || e.pm || e.allday || e.event_off))) {
     const ev = eventFor(day);
-    if (ev && ev.allday) add('終日', ev.allday.text, ev.allday.red, null, '行事');
-    else if (ev && ev[k]) add(SLOT_LABEL[k], ev[k].text, ev[k].red, null, '行事');
+    // 行事の予定にも、後ろの「（行事）」の文字は付けない（2026年11月26日〜。利用者の希望）
+    if (ev && ev.allday) add('終日', ev.allday.text, ev.allday.red, null, '');
+    else if (ev && ev[k]) add(SLOT_LABEL[k], ev[k].text, ev[k].red, null, '');
   }
   return out;
 }
