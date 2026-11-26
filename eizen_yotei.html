@@ -999,11 +999,13 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <section id="v-master">
     <h2>マスター</h2>
     <div class="panel">
-      <h3 style="margin-top:0">見るだけのURL・予定表②だけのURL・予定表③だけのURL</h3>
+      <h3 style="margin-top:0">このシステムのURL・見るだけのURL・予定表②だけのURL・予定表③だけのURL</h3>
+      <!-- このシステムのふつうのURL（入力できる。2026年11月26日〜。利用者の希望） -->
+      <div class="urlrow"><span class="nm">このシステム（入力できる）</span><code data-q=""></code><button type="button" class="btn sm urlcp" data-q="">コピー</button><a class="btn sm urlop" data-q="" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">見るだけ（予定表①②）</span><code data-q="view=1"></code><button type="button" class="btn sm urlcp" data-q="view=1">コピー</button><a class="btn sm urlop" data-q="view=1" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">予定表②だけ（見るだけ）</span><code data-q="t2=1"></code><button type="button" class="btn sm urlcp" data-q="t2=1">コピー</button><a class="btn sm urlop" data-q="t2=1" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">予定表③だけ（特記を書く）</span><code data-q="t3=1"></code><button type="button" class="btn sm urlcp" data-q="t3=1">コピー</button><a class="btn sm urlop" data-q="t3=1" target="_blank" rel="noopener noreferrer">開く</a></div>
-      <p class="note">「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表②だけ」は、予定表②（先生1人ずつ・右に「日付と時間で見る」）だけが出て、直すことはできません（スマホでは先生1人ずつの予定表を見るだけになります）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t2=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
+      <p class="note">「このシステム」は、ふつうのURL（予定の入力・予定表①②③・記入表の印刷などが使えます）です。「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表②だけ」は、予定表②（先生1人ずつ・右に「日付と時間で見る」）だけが出て、直すことはできません（スマホでは先生1人ずつの予定表を見るだけになります）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t2=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
     </div>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
@@ -5040,7 +5042,7 @@ $('#setLockForm').addEventListener('submit', async e => {
 let holYear = new Date().getFullYear();
 function personalUrl(id) { return location.origin + location.pathname + '?p=' + id; }
 // 見るだけのURL・予定表③だけのURL（マスター。2026年11月9日〜）
-const modeUrl = q => location.origin + location.pathname + '?' + q;
+const modeUrl = q => location.origin + location.pathname + (q ? '?' + q : ''); // q が空なら、このシステムのふつうのURL（2026年11月26日〜）
 $$('#v-master code[data-q]').forEach(c => { c.textContent = modeUrl(c.dataset.q); });
 $$('#v-master a.urlop[data-q]').forEach(a => { a.href = modeUrl(a.dataset.q); }); // 開くボタン（2026年11月10日〜）
 $('#v-master').addEventListener('click', async e => {
