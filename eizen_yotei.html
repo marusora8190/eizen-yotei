@@ -216,6 +216,8 @@ body.real-mobile .spvbtn{display:none}
 .sheet{position:relative}
 .yarrow{position:absolute;width:0;border-left:0.35mm solid #000;pointer-events:none}
 .yarrow.nohead::after{display:none}
+/* 予定表①：「〜日まで続く」の矢印は、押すと始まりの日の画面が開く（2026年11月26日〜。利用者の希望）。押しやすいよう、線の左右に見えない幅を付ける */
+@media screen{#sheet .yarrow.ca{pointer-events:auto;cursor:pointer}#sheet .yarrow.ca::before{content:"";position:absolute;left:-1.8mm;width:3.6mm;top:0;bottom:0}#sheet .yarrow.ca:hover{border-left-color:#1a73e8}#sheet .yarrow.ca:hover::after{border-top-color:#1a73e8}}
 .marrows{margin-top:10px;border-top:1px solid var(--line2);padding-top:8px;font-size:14px}
 .marrows .ma-head{display:flex;align-items:center;gap:10px;font-weight:700}
 .marrow{border:1px solid var(--line);border-radius:6px;padding:6px 8px;margin-top:6px;background:#fafbfc}
@@ -1287,7 +1289,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表①のマスをクリックした画面で、続く予定の矢印の「上の端」「下の端」も動かせます。また、「＋ 矢印を引く」で、予定の文字とは別に矢印だけを引けます（始まりの日・終わりの日〔午前の上・午後の上・午後の下〕・左右の位置を選べます。押すとすぐ保存されます）。</li>
       <li>続く予定のあいだの日にも、別の予定を書けます。予定表では、矢印がその文字のところだけ切れて、文字をよけます。最後の日の欄に書いた文字は、そのまま予定表の最後の日に出ます（例：8日に「少年会委員会、教会長演習」〜10日、9日に別の予定、10日に「教会長演習」）。</li>
       <li>予定入力の上の欄（名前）で選んだ先生は、その端末（ブラウザー）が覚えていて、次に開いたときもその先生が出ます（端末ごとに別々です。先生ごとのURLでは、いつもその先生です）。</li>
-      <li>予定表①は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。動かした位置は「💾 印刷の位置を保存する」か「印刷（A4横）」を押したときに、そのパソコンに覚えます（次に開いたときもその位置。動かしただけでは覚えません。もどすときは手で動かして保存します）。</li>
+      <li>予定表①は、パソコンではマウスでつかんで（左ボタンを押したまま動かして）上下・左右に動かせます。少しでも動かしたときは、マスの直し画面は開きません。マスを直したいときは、動かさずにクリックします。「〜日まで続く」の矢印そのものを押すと、始まりの日の画面が開きます。矢印が通っている途中の日のマスを押すと、「矢印・続く予定を直す」（始まりの日の画面）か「この日の予定を書く・直す」かを選べます（2026年11月26日〜）。動かした位置は「💾 印刷の位置を保存する」か「印刷（A4横）」を押したときに、そのパソコンに覚えます（次に開いたときもその位置。動かしただけでは覚えません。もどすときは手で動かして保存します）。</li>
       <li>予定表①で予定の文字の位置を動かしたいときは、予定表①のマスをクリックして「◀ 左へ」「右へ ▶」を押し、「保存」を押します（AM・PM の文字もいっしょに動きます。押すとすぐ予定表に映るので、見ながら決められます。「やめる」で元に戻ります）。長い予定の文字は「A− 小さく」「A＋ 大きく」で大きさを変えられます（マスに入りきらないときは、これまでどおり自動でも小さくなります）。「〜日まで続く」予定では「矢印の位置」も出て、矢印を右・左に動かせます。</li>
       <li>本部元旦祭・本部月次祭などの行事（マスターの「行事」で決めたもの）は、予定が空いている日に、マスターで決めた欄（終日・午前・午後）に、はじめから入っています。書き換えることも、消すこともできます（消すと、その先生だけ出なくなります）。</li>
       <li>書いた内容はすぐに自動で保存されます。右端の ✓ が保存できた印です。× が出たときは、もう一度書き直してください。</li>
@@ -4039,7 +4041,7 @@ function drawArrows() {
     return pick(k) || pick('ad');
   };
   // 1本の矢印を引く（あいだのマスに文字があれば、その文字のところだけ線を切ってよける）
-  const draw = (mid, a, b, xRaw, top, bot, endBottom) => {
+  const draw = (mid, a, b, xRaw, top, bot, endBottom, ca) => {
     const page = a.closest('.ypage'); if (!page || b.closest('.ypage') !== page) return;
     const base = page.getBoundingClientRect(), ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
     // 左右に動かしても、その先生の列（マス）の中に収める（日付の列などの下に隠れないように）
@@ -4065,6 +4067,8 @@ function drawArrows() {
       if (s2 - s1 < 0.6) return;
       const el = document.createElement('div'); el.className = 'yarrow' + (i === segs.length - 1 && s2 === y2 ? '' : ' nohead');
       el.style.left = x + 'mm'; el.style.top = s1 + 'mm'; el.style.height = (s2 - s1) + 'mm';
+      // 「〜日まで続く」の矢印（直せる画面だけ）：押すと始まりの日の画面を開く（2026年11月26日〜）
+      if (ca) { el.classList.add('ca'); el.dataset.cmid = mid; el.dataset.cday = ca; el.title = 'クリックすると、始まりの日の予定（矢印の位置）を直せます'; }
       page.appendChild(el);
     });
   };
@@ -4074,7 +4078,7 @@ function drawArrows() {
     if (!a || !b) continue;
     const base = a.closest('.ypage').getBoundingClientRect();
     const rt = firstCharRect($('.tx', a)) || a.getBoundingClientRect();
-    draw(c.mid, a, b, (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM, c.top * ARROW_END_MM, c.bot * ARROW_END_MM);
+    draw(c.mid, a, b, (rt.left + rt.width / 2 - base.left) * MM + c.arrow * INDENT_MM, c.top * ARROW_END_MM, c.bot * ARROW_END_MM, false, a.classList.contains('editable') ? c.start : null);
   }
   // 手で引いた矢印（予定の文字とは別）：始まりのマスのまん中から
   for (const r of st.arrows || []) {
@@ -4231,9 +4235,33 @@ $('#sheet').addEventListener('click', e => {
   const nt = e.target.closest('td.nt.editable');
   if (nt && (e.ctrlKey || e.metaKey || e.shiftKey)) { ntSelClick(nt, e.shiftKey); return; } // Ctrl＋クリック・Shift＋クリックは、マスを選ぶ（2026年11月10日〜）
   if (nt) { if (st.ntSel && st.ntSel.size) ntSelClear(); openNoteEditor(nt.dataset.day, nt.dataset.side, nt.dataset.line); return; }
+  // 「〜日まで続く」の矢印そのものを押したとき：始まりの日の画面を開く（2026年11月26日〜。利用者の希望）
+  const ar = e.target.closest('.yarrow.ca');
+  if (ar) { openEntryEditor(Number(ar.dataset.cmid), ar.dataset.cday, e.clientX); return; }
   const td = e.target.closest('td.c.editable'); if (!td) return;
-  openEntryEditor(Number(td.dataset.mid), td.dataset.day, e.clientX);
+  const mid = Number(td.dataset.mid), day = td.dataset.day;
+  // 矢印が通っている途中の日（〜終わりの日）のマスを押したとき：「始まりの日の予定（矢印）を直す」か「この日の予定を書く」かを選ぶ（2026年11月26日〜。利用者の希望）
+  const cs = continuations(mid).filter(c => c.start < day && day <= c.until);
+  if (cs.length) { openContChooser(mid, day, cs, e.clientX); return; }
+  openEntryEditor(mid, day, e.clientX);
 });
+function openContChooser(mid, day, cs, clickX) {
+  const d = Number(day.slice(8)), [yy, mm] = day.split('-').map(Number);
+  const lab = c => `${Number(c.start.slice(5, 7))}月${Number(c.start.slice(8))}日（${WD_JA[wdOf(Number(c.start.slice(0, 4)), Number(c.start.slice(5, 7)), Number(c.start.slice(8)))]}）の${SLOT_LABEL[c.k]}「${esc(c.text)}」`;
+  openModal(`<h3>${ttlHtml(dispName(memberById(mid)))}　${mm}月${d}日（${WD_JA[wdOf(yy, mm, d)]}）</h3>
+    <p class="note" style="margin:0 0 8px">この日は、矢印（続く予定）が通っています。どちらを直しますか？</p>
+    ${cs.map((c, i) => `<p style="margin:6px 0"><button type="button" class="btn pri" data-cc="${i}" style="width:100%;text-align:left">↓ 矢印・続く予定を直す：${lab(c)}</button></p>`).join('')}
+    <p style="margin:6px 0"><button type="button" class="btn" data-cc="day" style="width:100%;text-align:left">✎ この日（${d}日）の予定を書く・直す</button></p>
+    <div class="acts"><button class="btn" id="ccCancel">やめる</button></div>`);
+  const box = $('#modalBox');
+  $('#ccCancel', box).addEventListener('click', closeModal);
+  box.addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-cc]'); if (!b) return;
+    closeModal();
+    if (b.dataset.cc === 'day') openEntryEditor(mid, day, clickX);
+    else { const c = cs[Number(b.dataset.cc)]; openEntryEditor(mid, c.start, clickX); }
+  });
+}
 $('#tbChips').addEventListener('click', async e => {
   const c = e.target.closest('.chip'); if (!c || st.personal || st.viewOnly || st.t3Only) return;
   const mid = Number(c.dataset.mid), mem = memberById(mid), s = st.subs.get(mid);
