@@ -1039,13 +1039,12 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
   <section id="v-master">
     <h2>マスター</h2>
     <div class="panel">
-      <h3 style="margin-top:0">このシステムのURL・見るだけのURL・予定表②だけのURL・予定表③だけのURL</h3>
+      <h3 style="margin-top:0">このシステムのURL・予定表②だけのURL・予定表③だけのURL</h3>
       <!-- このシステムのふつうのURL（入力できる。2026年11月26日〜。利用者の希望） -->
       <div class="urlrow"><span class="nm">このシステム（入力できる）</span><code data-q=""></code><button type="button" class="btn sm urlcp" data-q="">コピー</button><a class="btn sm urlop" data-q="" target="_blank" rel="noopener noreferrer">開く</a></div>
-      <div class="urlrow"><span class="nm">見るだけ（予定表①②）</span><code data-q="view=1"></code><button type="button" class="btn sm urlcp" data-q="view=1">コピー</button><a class="btn sm urlop" data-q="view=1" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">予定表②だけ（見るだけ）</span><code data-q="t2=1"></code><button type="button" class="btn sm urlcp" data-q="t2=1">コピー</button><a class="btn sm urlop" data-q="t2=1" target="_blank" rel="noopener noreferrer">開く</a></div>
       <div class="urlrow"><span class="nm">予定表③だけ（特記を書く）</span><code data-q="t3=1"></code><button type="button" class="btn sm urlcp" data-q="t3=1">コピー</button><a class="btn sm urlop" data-q="t3=1" target="_blank" rel="noopener noreferrer">開く</a></div>
-      <p class="note">「このシステム」は、ふつうのURL（予定の入力・予定表①②③・記入表の印刷などが使えます）です。「見るだけ」は予定表①②だけが出て、直すことはできません（スマホでも見られます）。「予定表②だけ」は、予定表②（先生1人ずつ・右に「日付と時間で見る」）だけが出て、直すことはできません（スマホでは先生1人ずつの予定表を見るだけになります）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。最後の「?view=1」「?t2=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
+      <p class="note">「このシステム」は、ふつうのURL（予定の入力・予定表①②③・記入表の印刷などが使えます）です。「予定表②だけ」は、予定表②（先生1人ずつ・右に「日付と時間で見る」）だけが出て、直すことはできません（スマホでは先生1人ずつの予定表を見るだけになります）。「予定表③だけ」は、パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（先生の予定は見るだけ。スマホでは予定表を見るだけになります）。「開く」で、そのURLを新しいタブで開けます。どちらもパスワードは無いので、URLを知っている人は開けます。前に配った見るだけのURL（最後が「?view=1」）は、2026年11月27日から「予定表②だけ」と同じ画面になります。最後の「?t2=1」「?t3=1」を消すと、ふつうのURL（入力できる）になることに気をつけてください。</p>
     </div>
     <div class="panel">
       <h3 style="margin-top:0">先生の一覧</h3>
@@ -1123,7 +1122,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
           <li>先生ごとの入力用URLは、ふつうのURLの最後に <code>?p=番号</code> を付けたものです（番号は先生の一覧の番号）。管理者メニューの「マスター」の「個人用URL」でコピーできます。</li>
           <li>先生ごとのURLでは、予定入力・予定表①②・記入表の印刷・使い方だけが出ます。「まとめて編集」と管理者メニューは出ません。パスワードは無いため、URLを知っている人は誰でも入力できます。</li>
           <li>ふつうのURLも、パスワード無しで全員の予定を入力できます。ふつうのURLは、管理者だけで使ってください。</li>
-          <li>見るだけのURL（最後に <code>?view=1</code>）：予定表①②だけが出て、直すことはできません。予定表②だけのURL（最後に <code>?t2=1</code>）：予定表②だけが出て、直すことはできません（2026年11月21日〜）。予定表③だけのURL（最後に <code>?t3=1</code>）：パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（2026年11月9日〜）。どれも「マスター」のいちばん上でコピーできます。末尾を消すとふつうのURLになるため、使い分けのためのもので、守りの仕組みではありません。</li>
+          <li>予定表②だけのURL（最後に <code>?t2=1</code>）：予定表②だけが出て、直すことはできません（2026年11月21日〜）。前の見るだけのURL（最後に <code>?view=1</code>）は2026年11月27日でやめ、開くと予定表②だけのURLと同じ画面になります。予定表③だけのURL（最後に <code>?t3=1</code>）：パソコンで予定表③だけが出て、特記・お願いのリスト・2人の選び直しができます（2026年11月9日〜）。どれも「マスター」のいちばん上でコピーできます。末尾を消すとふつうのURLになるため、使い分けのためのもので、守りの仕組みではありません。</li>
         </ul>
       </div>
     </details>
@@ -5391,10 +5390,9 @@ $('#msHolAdd').addEventListener('click', async () => {
       st.personal = p; st.inMember = p; document.body.classList.add('personal');
       $('#whoLabel').innerHTML = ttlHtml(dispName(memberById(p)));
     }
-    // 見るだけのURL（?view=1）・予定表③だけのURL（?t3=1）。2026年11月9日〜
-    if (!st.personal && params.get('view') === '1') { st.viewOnly = true; document.body.classList.add('viewonly'); $('#whoLabel').textContent = '見るだけ'; }
-    // 予定表②だけのURL（?t2=1。2026年11月21日〜）：見るだけのURLと同じく直せない。予定表②だけを出す
-    else if (!st.personal && params.get('t2') === '1') { st.viewOnly = true; st.t2Only = true; document.body.classList.add('viewonly', 't2only'); $('#whoLabel').textContent = '予定表②'; }
+    // 予定表②だけのURL（?t2=1。2026年11月21日〜）：直せない。予定表②だけを出す
+    // 見るだけのURL（?view=1）は2026年11月27日でやめた（利用者の希望）。前に配った ?view=1 で開いても、?t2=1 と同じ画面にする（ふつうの入力できる画面にならないように）
+    if (!st.personal && (params.get('t2') === '1' || params.get('view') === '1')) { st.viewOnly = true; st.t2Only = true; document.body.classList.add('viewonly', 't2only'); $('#whoLabel').textContent = '予定表②'; }
     else if (!st.personal && params.get('t3') === '1') { st.t3Only = true; document.body.classList.add('t3only'); $('#whoLabel').textContent = '予定表③'; }
     // 見るだけ・予定表③だけのURLは、はじめは今月を開く（ふつうは来月。2026年11月9日〜。Update のあとは見ていた月のまま）
     if ((st.viewOnly || st.t3Only) && !(mq && /^\d{4}-\d{2}$/.test(mq))) { const td = todayJst(); st.y = Number(td.slice(0, 4)); st.m = Number(td.slice(5, 7)); }
