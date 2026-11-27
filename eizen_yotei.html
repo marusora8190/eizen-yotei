@@ -850,6 +850,7 @@ table.yt td.redge,table.yt th.redge{border-right:0.6px solid #000}
 .k-body td.kt{font-size:9pt;white-space:nowrap;font-weight:700} /* 記入表の予定の文字は太字（2026年11月13日〜） */
 .k-body td.kt.r{color:var(--red)}
 .k-body td.kt .r{color:var(--red)}
+.k-body td.kt .fap{font-size:0.69em} /* 記入表でも、AM・PM・時刻・「会議」「委員会」・小さい文字にする言葉は小さく（予定表③と同じ割合。2026年11月27日〜） */
 .k-body td.km{text-align:center;padding:0}
 .k-body td.km .kx{font-family:"Yu Gothic","Meiryo",sans-serif;font-size:12pt;line-height:1} /* 昼食の「いらない」は細い「×」（2026年11月13日〜。それまでは太い「✖」） */
 .kpage{position:relative} /* 記入表の矢印の位置の元（2026年11月13日〜） */
@@ -1030,7 +1031,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <button class="btn" id="btnFmSave" title="今の記入表の位置を、このパソコンに覚えさせます（次に開いたときもこの位置）。「印刷」を押したときも、その位置を自動で覚えます">💾 印刷の位置を保存する</button>
       <button class="btn pri" id="btnPrintForm">印刷（A4横）</button>
     </div>
-    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。そのとき「食事の○・✖は空欄にする」にもチェックを入れると、食事の列は空欄で印刷されます（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
+    <p class="note">紙で書いていただくための記入表です（1人1枚）。マスターで「昼食」にチェックした先生には「食事」の列が付きます。「入力済みの予定も印刷する」にチェックを入れると、確認用に今入っている予定を印刷します。そのとき「食事の○・✖は空欄にする」にもチェックを入れると、食事の列は空欄で印刷されます。予定の中のAM・PM・時刻（9:00 など）・「会議」「委員会」などは、小さい文字で印刷されます（「〜日まで続く」予定と手で引いた矢印は、予定表①と同じく矢印で出ます。<span class="hide-personal-note">矢印をクリックすると、記入表の中だけで位置を動かせます</span>）。</p>
     <div class="sheet-wrap" id="fmPages"></div>
     <div id="faPanel" hidden></div>
   </section>
@@ -1071,7 +1072,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     </div>
     <div class="panel">
       <h3 style="margin-top:0">小さい文字にする言葉</h3>
-      <p class="note">予定にこの言葉が入っていると、予定表①②③とExcelで、その言葉だけ「AM」「PM」と同じ小さい文字になります（今までの予定にもすぐ効きます）。「委員会」「会議」と時刻（9:00 など）は、はじめから小さい文字です（外せません）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。</p>
+      <p class="note">予定にこの言葉が入っていると、予定表①②③・記入表の印刷・Excelで、その言葉だけ「AM」「PM」と同じ小さい文字になります（今までの予定にもすぐ効きます）。「委員会」「会議」と時刻（9:00 など）は、はじめから小さい文字です（外せません）。言葉を書き換えたら「保存」、いらない言葉は「削除」を押します。</p>
       <p class="note" id="msSmallBase"></p>
       <div class="msbox"><table class="grid kw3" id="msSmallList"></table></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -1278,7 +1279,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
       <li>予定表は見るだけです。予定を直すときは「予定入力」で直します。</li>
     </ul>
     <h3>記入表の印刷</h3>
-    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、「印刷」を押したときに覚えられ、次に開いたときもその位置になります。「入力済みの予定も印刷する」のとき、「食事の○・✖は空欄にする」にチェックを入れると、食事の列は空欄で印刷されます。</p>
+    <p>紙に書いて予定を出すときは、パソコンの「🖨 記入表の印刷」で、ご自分の記入表を印刷できます。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に少し（8mmまで）ずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、「印刷」を押したときに覚えられ、次に開いたときもその位置になります。「入力済みの予定も印刷する」のとき、「食事の○・✖は空欄にする」にチェックを入れると、食事の列は空欄で印刷されます。予定の中のAM・PM・時刻（9:00 など）・「会議」「委員会」などは、小さい文字で印刷されます。</p>
     <h3>スマホで使うとき</h3>
     <ul>
       <li>上の「Update」「予定表」「予定入力」の3つのボタンを使います。</li>
@@ -1296,7 +1297,7 @@ textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:
     <p>先生方の毎月の予定を1枚にまとめた「予定表」（A4横）を作ります。</p>
     <h3>毎月の流れ</h3>
     <ol>
-      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、最後に「印刷」を押したときに、このパソコンのブラウザーが覚えます（動かしただけでは覚えません）。「入力済みの予定も印刷する」で今の予定を入れて印刷するときに、「食事の○・✖は空欄にする」にチェックを入れると、食事の列だけ空欄になります。</li>
+      <li><b>記入表を配る</b>（紙で集める場合）：「記入表の印刷」で翌月を選んで印刷し、先生方に渡します。印刷の位置は、記入表をマウスでつかんで動かすと、上下左右に8mmまでずらせます（印刷にも効きます）。位置は「💾 印刷の位置を保存する」を押したときと、最後に「印刷」を押したときに、このパソコンのブラウザーが覚えます（動かしただけでは覚えません）。「入力済みの予定も印刷する」で今の予定を入れて印刷するときに、「食事の○・✖は空欄にする」にチェックを入れると、食事の列だけ空欄になります。予定の中のAM・PM・時刻（9:00 など）・「会議」「委員会」などは、小さい文字で印刷されます。</li>
       <li><b>予定を入れる</b>：先生ご本人が「予定入力」で入力するか、受け取った紙の記入表を見て「予定入力」または「予定表①」のマスをクリックして入力します。</li>
       <li><b>提出の確認</b>：管理者メニューを開いていると、「予定表①」の上に「済」「未」の印が出て、誰が提出済みかが分かります（管理者メニューを開いていないときは出ません）。紙で受け取ったときは、「未」の印をクリックして受け取り済みにできます。</li>
       <li><b>予定表を印刷</b>：「予定表①」の「印刷（A4横）」を押します。印刷の画面で用紙が「A4」、向きが「横」、倍率が「100%（実際のサイズ）」になっているか確かめてください。</li>
@@ -4522,6 +4523,12 @@ function openEntryEditor(mid, day, clickX) {
 
 // ===== 記入表 =====
 let fmSelected = null;
+// 記入表の予定の文字で、AM・PM（予定の中に書いたもの）・時刻・「会議」「委員会」・マスターで足した小さい文字の言葉を小さくする（2026年11月27日〜。利用者の希望）
+// タグ（<span …>）や &amp; などの中は変えない（smallIn と同じ）
+function fmSmall(html) {
+  const re = new RegExp(SMALL_WORDS.source + '|AM|PM|ＡＭ|ＰＭ', 'g');
+  return String(html).replace(/(<[^>]*>|&[#0-9a-zA-Z]+;)|[^<&]+/g, (m, skip) => skip ? m : m.replace(re, w => `<span class="fap">${w}</span>`));
+}
 function renderForm() {
   if (!fmSelected) fmSelected = new Set(st.members.map(x => x.id));
   $('#fmMembers').innerHTML = st.members.map(x => `<label style="margin-right:8px;white-space:nowrap"><input type="checkbox" value="${x.id}" ${fmSelected.has(x.id) ? 'checked' : ''}> ${ttlHtml(dispName(x))}</label>`).join('');
@@ -4546,7 +4553,7 @@ function renderForm() {
         const e = fill ? xlEntry(mem.id, day, fmEnds) : evEntry(ev);
         const is26 = !!ev; // 行事の日は日付の欄に色を付ける
         let am = '', pm = '', ad = '';
-        const tx = k => redHtml(e[k], e[k + '_red'], e[k + '_red_parts']); // 「（〜○日）」は付けない（2026年11月13日〜。矢印と最後の日の文字で分かるため）
+        const tx = k => fmSmall(redHtml(e[k], e[k + '_red'], e[k + '_red_parts'])); // 「（〜○日）」は付けない（2026年11月13日〜。矢印と最後の日の文字で分かるため）
         if (e.allday) ad = `<td colspan="2" data-k="allday" class="kt${e.allday_red && !e.allday_red_parts ? ' r' : ''}" style="text-align:center">${tx('allday')}</td>`;
         else {
           am = e.am ? `<td data-k="am" class="kt${e.am_red && !e.am_red_parts ? ' r' : ''}">${tx('am')}</td>` : '<td data-k="am"></td>';
