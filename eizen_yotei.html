@@ -1750,7 +1750,9 @@ function showView(v) {
 }
 function render() {
   // 予定表②（パソコン）では、上の「来月へ」のボタンを「今日」にする（押すと今日の月・今日の行。2026年11月27日〜。利用者の希望）
-  { const b = $('#mNextMonth'), one = st.view === 'table' && !!st.tblOne; b.textContent = one ? '今日' : '来月へ'; b.title = one ? '今日の月を開き、今日の行を真ん中に出します' : ''; }
+  // 見るだけのURL（?t2=1）の予定表①・スマホでは「今月」にする（押すと今月を開く。2026年11月27日〜。利用者の希望）
+  { const b = $('#mNextMonth'), one = st.view === 'table' && !!st.tblOne, cur = !one && st.viewOnly && st.view === 'table';
+    b.textContent = one ? '今日' : cur ? '今月' : '来月へ'; b.title = one ? '今日の月を開き、今日の行を真ん中に出します' : cur ? '今月を開きます' : ''; }
   $('#mLabel').innerHTML = `${monthTitle(st.y, st.m)} <span class="msub">（${st.y}年${st.m}月）</span>`;
   if (st.view === 'input') renderInput();
   else if (st.view === 'table') renderTable();
@@ -1802,6 +1804,7 @@ $('#mNextMonth').addEventListener('click', () => {
     if (ymStr(st.y, st.m) !== td.slice(0, 7)) { changeMonth(Number(td.slice(0, 4)), Number(td.slice(5, 7))); return; }
     lastTableSig = ''; render(); return; // 同じ月のときも、今日の行を真ん中に出し直す
   }
+  if (st.viewOnly && st.view === 'table') { const td = todayJst(); changeMonth(Number(td.slice(0, 4)), Number(td.slice(5, 7))); return; } // 見るだけ：「今月」（2026年11月27日〜）
   const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1));
 });
 $('#btnUpdate').addEventListener('click', () => {
