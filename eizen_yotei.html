@@ -490,6 +490,17 @@ table.yt td.nt.ntsrc{opacity:.45}
   .duo .ytw .todayframe span,.solo>.todayframe span{position:absolute;right:2px;top:-1px;transform:translateY(-100%);background:#2f5d9a;color:#fff;font-size:11px;font-weight:700;line-height:1;padding:2px 6px;border-radius:3px 3px 0 0}
 }
 @media print{.duo .ytw .todayframe,.solo>.todayframe{display:none}}
+/* 見るだけのURLの予定表①：今日の2行（予定表②と同じ色。日・曜日は青に白い字、予定のマスはうすい青。まわりを青い線で囲む。画面だけ。2026年11月27日〜） */
+@media screen{
+  table.yt tr.today1 > td.c{background-color:#dbe8f7!important}
+  table.yt tr.today1 > td.dn{background-color:#2f5d9a!important;color:#fff!important;font-weight:700}
+  table.yt tr.today1a > td{box-shadow:inset 0 2px 0 #2f5d9a}
+  table.yt tr.today1a > td[rowspan="2"]{box-shadow:inset 0 2px 0 #2f5d9a,inset 0 -2px 0 #2f5d9a}
+  table.yt tr.today1a > td.redge{box-shadow:inset 0 2px 0 #2f5d9a,inset -2px 0 0 #2f5d9a}
+  table.yt tr.today1a > td.redge[rowspan="2"]{box-shadow:inset 0 2px 0 #2f5d9a,inset 0 -2px 0 #2f5d9a,inset -2px 0 0 #2f5d9a}
+  table.yt tr.today1b > td{box-shadow:inset 0 -2px 0 #2f5d9a}
+  table.yt tr.today1b > td.redge{box-shadow:inset 0 -2px 0 #2f5d9a,inset -2px 0 0 #2f5d9a}
+}
 .sheet.solo{position:relative}
 .duo .ytw table.yt{position:relative;z-index:1}
 @media screen{
@@ -1739,6 +1750,8 @@ function showView(v) {
   if (v === 'input') staleCheck();
 }
 function render() {
+  // 予定表②（パソコン）では、上の「来月へ」のボタンを「今日」にする（押すと今日の月・今日の行。2026年11月27日〜。利用者の希望）
+  { const b = $('#mNextMonth'), one = st.view === 'table' && !!st.tblOne; b.textContent = one ? '今日' : '来月へ'; b.title = one ? '今日の月を開き、今日の行を真ん中に出します' : ''; }
   $('#mLabel').innerHTML = `${monthTitle(st.y, st.m)} <span class="msub">（${st.y}年${st.m}月）</span>`;
   if (st.view === 'input') renderInput();
   else if (st.view === 'table') renderTable();
@@ -1784,7 +1797,14 @@ async function changeMonth(y, m) {
 }
 $('#mPrev').addEventListener('click', () => changeMonth(...prevYM(st.y, st.m)));
 $('#mNext').addEventListener('click', () => changeMonth(...nextYM(st.y, st.m)));
-$('#mNextMonth').addEventListener('click', () => { const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1)); });
+$('#mNextMonth').addEventListener('click', () => {
+  if (st.view === 'table' && st.tblOne) { // 予定表②：「今日」（2026年11月27日〜）
+    const td = todayJst(); st.atDate = td; // 右の「日付と時間で見る」も今日に
+    if (ymStr(st.y, st.m) !== td.slice(0, 7)) { changeMonth(Number(td.slice(0, 4)), Number(td.slice(5, 7))); return; }
+    lastTableSig = ''; render(); return; // 同じ月のときも、今日の行を真ん中に出し直す
+  }
+  const t = new Date(); changeMonth(...nextYM(t.getFullYear(), t.getMonth() + 1));
+});
 $('#btnUpdate').addEventListener('click', () => {
   if (pendingSaves > 0) { toast('保存が終わってから、もう一度押してください'); return; }
   // 押したことが分かるように、ボタンを「更新中…」にして、画面に「読み込み中」を出す
@@ -2580,10 +2600,10 @@ function renderTableBody() {
       continue;
     }
     const rh = p2 ? `height:${rowH2}mm` : solo ? 'min-height:22px;height:22px' : `height:${rowH}mm`;
-    // 予定表②（先生1人分。画面だけ）：今日の行は色を付けて目立たせる（2026年11月18日〜。利用者の希望）
-    const t2 = solo && !p2 && day === todayJst() ? ' class="today2"' : '';
-    body += `<tr${t2} style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
-    body += `<tr${t2} style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
+    // 見るだけのURLの予定表①：今日の2行を、予定表②と同じ色にして青い枠で囲む（画面だけ。印刷には出さない。2026年11月27日〜。利用者の希望）
+    const t1a = st.viewOnly && day === todayJst() ? ' class="today1 today1a"' : '', t1b = t1a ? ' class="today1 today1b"' : '';
+    body += `<tr${t1a} style="${rh}">${dcell(true)}${L.map(cell1).join('')}${R.length ? dcell(false) + R.map(cell1).join('') : ''}</tr>`;
+    body += `<tr${t1b} style="${rh}">${L.map(cell2).join('')}${R.map(cell2).join('')}</tr>`;
   }
   const pg = groups.length > 1 ? `<span class="s-page">（${pageNo}／${groups.length}）</span>` : '';
   const tbl = `<table class="yt" style="width:${p2 ? '150mm' : solo ? '100%' : tableW + 'mm'}"><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
